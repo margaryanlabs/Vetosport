@@ -14,6 +14,17 @@ export const sandboxFootballInputs: FootballLiveInputs = {
   awayRedCards: 0,
 };
 
+export const sandboxFootballBeforeInputs: FootballLiveInputs = {
+  ...sandboxFootballInputs,
+  elapsedMinutes: 60,
+  liveXgHome: 1.24,
+  liveXgAway: 0.91,
+  tempoIndex: 0.92,
+};
+
+export const sandboxFootballBeforeSurface =
+  buildFootballProbabilitySurface(sandboxFootballBeforeInputs);
+
 export const sandboxFootballSurface =
   buildFootballProbabilitySurface(sandboxFootballInputs);
 
