@@ -63,33 +63,33 @@ export const evaluateModelPromotion = (
   push(
     "sample",
     challenger.sampleRows >= policy.minimumRows,
-    \`\${challenger.sampleRows}/\${policy.minimumRows} required rows.\`,
+    `${challenger.sampleRows}/${policy.minimumRows} required rows.`,
   );
 
   push(
     "walk-forward",
     challenger.walkForwardWindows >= policy.minimumWalkForwardWindows,
-    \`\${challenger.walkForwardWindows}/\${policy.minimumWalkForwardWindows} required windows.\`,
+    `${challenger.walkForwardWindows}/${policy.minimumWalkForwardWindows} required windows.`,
   );
 
   const brierImprovement = champion.brier - challenger.brier;
   push(
     "brier",
     brierImprovement >= policy.requiredBrierImprovement,
-    \`Brier improvement \${brierImprovement.toFixed(4)}; required \${policy.requiredBrierImprovement.toFixed(4)}.\`,
+    `Brier improvement ${brierImprovement.toFixed(4)}; required ${policy.requiredBrierImprovement.toFixed(4)}.`,
   );
 
   const logLossImprovement = champion.logLoss - challenger.logLoss;
   push(
     "log-loss",
     logLossImprovement >= policy.requiredLogLossImprovement,
-    \`Log-loss improvement \${logLossImprovement.toFixed(4)}; required \${policy.requiredLogLossImprovement.toFixed(4)}.\`,
+    `Log-loss improvement ${logLossImprovement.toFixed(4)}; required ${policy.requiredLogLossImprovement.toFixed(4)}.`,
   );
 
   push(
     "calibration",
     challenger.expectedCalibrationError <= policy.maximumEce,
-    \`ECE \${challenger.expectedCalibrationError.toFixed(4)}; max \${policy.maximumEce.toFixed(4)}.\`,
+    `ECE ${challenger.expectedCalibrationError.toFixed(4)}; max ${policy.maximumEce.toFixed(4)}.`,
   );
 
   const positiveClvRate =
@@ -99,7 +99,7 @@ export const evaluateModelPromotion = (
   push(
     "clv-stability",
     positiveClvRate >= policy.minimumPositiveClvWindowRate,
-    \`Positive CLV windows \${(positiveClvRate * 100).toFixed(1)}%; required \${(policy.minimumPositiveClvWindowRate * 100).toFixed(1)}%.\`,
+    `Positive CLV windows ${(positiveClvRate * 100).toFixed(1)}%; required ${(policy.minimumPositiveClvWindowRate * 100).toFixed(1)}%.`,
   );
 
   const clvNotWorse =
@@ -108,7 +108,7 @@ export const evaluateModelPromotion = (
   push(
     "clv-level",
     clvNotWorse,
-    \`Champion CLV \${champion.meanClvOdds?.toFixed(4) ?? "n/a"}; challenger \${challenger.meanClvOdds?.toFixed(4) ?? "n/a"}.\`,
+    `Champion CLV ${champion.meanClvOdds?.toFixed(4) ?? "n/a"}; challenger ${challenger.meanClvOdds?.toFixed(4) ?? "n/a"}.`,
   );
 
   const drawdownLimit =
@@ -117,7 +117,7 @@ export const evaluateModelPromotion = (
   push(
     "drawdown",
     challenger.maxDrawdown <= drawdownLimit,
-    \`Drawdown \${challenger.maxDrawdown.toFixed(2)}; limit \${drawdownLimit.toFixed(2)}.\`,
+    `Drawdown ${challenger.maxDrawdown.toFixed(2)}; limit ${drawdownLimit.toFixed(2)}.`,
   );
 
   const passed = checks.filter((check) => check.passed).length;
