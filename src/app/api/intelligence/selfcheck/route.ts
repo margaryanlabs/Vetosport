@@ -31,6 +31,7 @@ import { runRegimeHysteresisSelfCheck } from "@/lib/regime-hysteresis/selfcheck"
 import { runTransitionHazardSelfCheck } from "@/lib/transition-hazard/selfcheck";
 import { runRegimeCoherenceSelfCheck } from "@/lib/regime-coherence/selfcheck";
 import { runHazardCalibrationSelfCheck } from "@/lib/hazard-calibration/selfcheck";
+import { runTransitionAuthoritySelfCheck } from "@/lib/transition-authority/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -174,6 +175,10 @@ export function GET() {
     hazardCalibration: {
       model: "veto.regime.hazard-calibration.v1",
       ...runHazardCalibrationSelfCheck(),
+    },
+    transitionAuthority: {
+      model: "veto.regime.transition-authority.v1",
+      ...runTransitionAuthoritySelfCheck(),
     },
   };
 
