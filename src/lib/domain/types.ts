@@ -146,6 +146,8 @@ export interface DecisionLedgerEntry {
   eventId: string;
   marketId: string;
   selectionId: string;
+  selectionLine?: number;
+  selectionSide?: MarketSelection["side"];
   capturedAt: string;
   decision: Decision;
   modelVersionSet: string[];
