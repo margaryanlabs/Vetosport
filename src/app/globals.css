@@ -9520,3 +9520,510 @@ body::before {
     display: none;
   }
 }
+
+/* =========================================================
+   PARALLAX VI / REGISTERED EXPERIMENT LEDGER
+   ========================================================= */
+
+.experimentLedgerSurface {
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  background:
+    linear-gradient(180deg, rgba(116,132,124,.008), transparent 26%),
+    rgba(255,255,255,.001);
+}
+
+.experimentLedgerHead {
+  min-height: 62px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.experimentLedgerHead > div:first-child {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.experimentLedgerHead h3 {
+  margin: 0;
+  color: #e0e6e3;
+  font-size: 9px;
+  letter-spacing: .14em;
+}
+
+.experimentLedgerHead p {
+  margin: 4px 0 0;
+  color: #4d5853;
+  font-size: 7px;
+}
+
+.experimentLedgerHead > span {
+  color: #786b50;
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .09em;
+}
+
+.experimentLedgerSummary {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.experimentLedgerSummary > div {
+  min-height: 82px;
+  padding: 13px 15px;
+  display: grid;
+  align-content: space-between;
+  border-right: 1px solid var(--line-soft);
+}
+
+.experimentLedgerSummary > div:last-child {
+  border-right: 0;
+}
+
+.experimentLedgerSummary span {
+  color: #414b47;
+  font-size: 5px;
+  letter-spacing: .1em;
+}
+
+.experimentLedgerSummary strong {
+  color: #a7b1ac;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  font-weight: 550;
+}
+
+.experimentLedgerMain {
+  display: grid;
+  grid-template-columns: minmax(360px,.9fr) minmax(480px,1.1fr);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.experimentProtocol,
+.experimentPromotion {
+  min-height: 430px;
+  padding: 17px 18px;
+}
+
+.experimentProtocol {
+  border-right: 1px solid var(--line-soft);
+}
+
+.experimentSubhead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.experimentSubhead > div {
+  display: grid;
+  gap: 5px;
+}
+
+.experimentSubhead span {
+  color: #46514c;
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .11em;
+}
+
+.experimentSubhead strong {
+  color: #a0aaa5;
+  font-size: 8px;
+}
+
+.experimentSubhead small {
+  color: #46514c;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 5px;
+}
+
+.experimentSubhead em {
+  padding: 4px 6px;
+  border: 1px solid var(--line-soft);
+  font-size: 5px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: .07em;
+}
+
+.experimentSubhead em.eligible_for_canary {
+  color: var(--edge);
+  border-color: rgba(91,227,162,.18);
+}
+
+.experimentSubhead em.keep_shadow {
+  color: var(--watch);
+  border-color: rgba(191,162,105,.18);
+}
+
+.experimentSubhead em.block {
+  color: var(--danger);
+  border-color: rgba(227,102,110,.18);
+}
+
+.experimentProtocolHash {
+  margin-top: 20px;
+  min-height: 62px;
+  padding: 11px 12px;
+  display: grid;
+  align-content: center;
+  gap: 7px;
+  border: 1px solid rgba(91,227,162,.08);
+  background: rgba(91,227,162,.008);
+}
+
+.experimentProtocolHash span {
+  color: #4a5550;
+  font-size: 5px;
+  letter-spacing: .09em;
+}
+
+.experimentProtocolHash code {
+  overflow: hidden;
+  color: #83908a;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.experimentProtocolGrid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  border-top: 1px solid var(--line-soft);
+  border-left: 1px solid var(--line-soft);
+}
+
+.experimentProtocolGrid > div {
+  min-height: 64px;
+  padding: 9px;
+  display: grid;
+  align-content: space-between;
+  border-right: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.experimentProtocolGrid span,
+.experimentWindow > span,
+.experimentFeatureLock > span {
+  color: #414b47;
+  font-size: 5px;
+  letter-spacing: .08em;
+}
+
+.experimentProtocolGrid strong {
+  color: #8d9892;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 8px;
+  font-weight: 550;
+}
+
+.experimentWindow {
+  margin-top: 16px;
+  display: grid;
+  gap: 7px;
+}
+
+.experimentWindow strong {
+  color: #919c96;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 8px;
+  font-weight: 550;
+}
+
+.experimentWindow strong i {
+  margin: 0 8px;
+  color: #46514c;
+  font-style: normal;
+}
+
+.experimentWindow small {
+  color: #4a5550;
+  font-size: 5px;
+}
+
+.experimentFeatureLock {
+  margin-top: 17px;
+  display: grid;
+  gap: 8px;
+}
+
+.experimentFeatureLock > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.experimentFeatureLock b {
+  padding: 4px 6px;
+  border: 1px solid var(--line-soft);
+  color: #65716b;
+  font-size: 5px;
+  font-weight: 650;
+  background: rgba(255,255,255,.002);
+}
+
+.experimentObserved {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  border-top: 1px solid var(--line-soft);
+  border-left: 1px solid var(--line-soft);
+}
+
+.experimentObserved > div {
+  min-height: 66px;
+  padding: 9px;
+  display: grid;
+  align-content: space-between;
+  border-right: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.experimentObserved span {
+  color: #414b47;
+  font-size: 5px;
+  letter-spacing: .08em;
+}
+
+.experimentObserved strong {
+  color: #a0aaa5;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 9px;
+  font-weight: 550;
+}
+
+.experimentChecks {
+  margin-top: 17px;
+  display: grid;
+}
+
+.experimentChecks > div {
+  min-height: 43px;
+  display: grid;
+  grid-template-columns: 9px minmax(0,1fr) 42px 40px;
+  gap: 9px;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.experimentChecks > div:last-child {
+  border-bottom: 0;
+}
+
+.experimentChecks i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+.experimentChecks .passed i {
+  background: var(--edge);
+}
+
+.experimentChecks > div > div {
+  display: grid;
+  gap: 3px;
+}
+
+.experimentChecks strong {
+  color: #88948e;
+  font-size: 6px;
+}
+
+.experimentChecks small {
+  color: #49544f;
+  font-size: 5px;
+}
+
+.experimentChecks em {
+  color: #59645f;
+  font-size: 5px;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.experimentChecks b {
+  color: var(--danger);
+  font-size: 5px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.experimentChecks .passed b {
+  color: var(--edge);
+}
+
+.experimentChain {
+  min-height: 134px;
+  padding: 17px 18px;
+  display: grid;
+  grid-template-columns: 210px minmax(0,1fr);
+  gap: 22px;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.experimentChain > div:first-child {
+  display: grid;
+  gap: 5px;
+}
+
+.experimentChain > div:first-child span {
+  color: #46514c;
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .11em;
+}
+
+.experimentChain > div:first-child strong {
+  color: #9ba6a0;
+  font-size: 8px;
+}
+
+.experimentChainRows {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 9px;
+}
+
+.experimentChainRows article {
+  min-height: 78px;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 22px minmax(0,1fr) 12px;
+  gap: 7px;
+  align-items: center;
+  border: 1px solid var(--line-soft);
+  background: rgba(255,255,255,.002);
+}
+
+.experimentChainRows article > span {
+  color: #3f4944;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 5px;
+}
+
+.experimentChainRows article > div {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.experimentChainRows strong {
+  color: #8f9b95;
+  font-size: 6px;
+}
+
+.experimentChainRows small {
+  overflow: hidden;
+  color: #4f5b55;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.experimentChainRows i {
+  color: #3e4944;
+  font-size: 7px;
+  font-style: normal;
+}
+
+.experimentLedgerMethod {
+  min-height: 58px;
+  padding: 11px 18px;
+  display: grid;
+  grid-template-columns: 105px minmax(0,1fr) auto;
+  gap: 18px;
+  align-items: center;
+  background: rgba(191,162,105,.008);
+}
+
+.experimentLedgerMethod > span {
+  color: var(--watch);
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+
+.experimentLedgerMethod p {
+  margin: 0;
+  color: #56615c;
+  font-size: 6px;
+  line-height: 1.5;
+}
+
+.experimentLedgerMethod code {
+  color: #46514c;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 5px;
+}
+
+@media (max-width: 980px) {
+  .experimentLedgerMain {
+    grid-template-columns: 1fr;
+  }
+
+  .experimentProtocol {
+    border-right: 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .experimentChain {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .experimentLedgerHead {
+    min-height: auto;
+    padding: 13px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .experimentLedgerSummary {
+    grid-template-columns: repeat(2,1fr);
+  }
+
+  .experimentProtocol,
+  .experimentPromotion,
+  .experimentChain,
+  .experimentLedgerMethod {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .experimentProtocolGrid {
+    grid-template-columns: repeat(2,1fr);
+  }
+
+  .experimentObserved {
+    grid-template-columns: repeat(2,1fr);
+  }
+
+  .experimentChainRows {
+    grid-template-columns: 1fr;
+  }
+
+  .experimentLedgerMethod {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .experimentLedgerMethod code {
+    display: none;
+  }
+}
