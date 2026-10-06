@@ -4,7 +4,7 @@ export interface ConformalResidual {
   id:string;
   regime:RegimeLabel;
   predicted:number;
-  outcome:0|1;
+  referenceProbability:number;
 }
 
 export interface ConformalEnvelopeInput {
