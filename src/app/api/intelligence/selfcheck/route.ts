@@ -24,6 +24,7 @@ import { runCalibrationDriftSelfCheck } from "@/lib/calibration/selfcheck";
 import { runSuspensionCensoringSelfCheck } from "@/lib/censoring/selfcheck";
 import { runAbstentionSelfCheck } from "@/lib/abstention/selfcheck";
 import { runRegimeChangeSelfCheck } from "@/lib/regime/selfcheck";
+import { runRegimeAttributionSelfCheck } from "@/lib/regime-attribution/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -139,6 +140,10 @@ export function GET() {
     regimeChange: {
       model: "veto.regime.change-point.v1",
       ...runRegimeChangeSelfCheck(),
+    },
+    regimeAttribution: {
+      model: "veto.regime.attribution.v1",
+      ...runRegimeAttributionSelfCheck(),
     },
   };
 
