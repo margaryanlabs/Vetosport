@@ -6,6 +6,7 @@ import type {
 } from "@/lib/domain/types";
 import type {
   EventStateSnapshot,
+  HistoricalImportRecord,
   PersistedEvent,
   PredictionRecord,
   ProviderHealthSample,
@@ -289,6 +290,27 @@ export class SupabaseRestPersistence implements VetoPersistence {
           captured_at: entry.capturedAt,
           immutable_fingerprint: entry.immutableFingerprint,
           model_version_set: entry.modelVersionSet,
+        }),
+      },
+      "return=minimal",
+    );
+  }
+
+  async recordHistoricalImport(record: HistoricalImportRecord): Promise<void> {
+    await this.request(
+      "/historical_imports",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          provider: record.provider,
+          dataset_kind: record.datasetKind,
+          sport: record.sport,
+          competition: record.competition,
+          from_at: record.fromAt,
+          to_at: record.toAt,
+          rows_imported: record.rowsImported,
+          checksum: record.checksum,
+          metadata: record.metadata,
         }),
       },
       "return=minimal",
