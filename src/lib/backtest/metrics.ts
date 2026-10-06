@@ -2,6 +2,8 @@ import {
   brierScore,
   calibrationBuckets,
   logLoss,
+  expectedCalibrationError,
+  maximumCalibrationError,
   type PredictionOutcome,
 } from "@/lib/intelligence/calibration";
 import type { BacktestRow } from "./types";
@@ -128,6 +130,14 @@ export const backtestMetrics = (
     hitRate: resolved > 0 ? wins / resolved : 0,
     brier: brierScore(predictionRows),
     logLoss: logLoss(predictionRows),
+    expectedCalibrationError: expectedCalibrationError(
+      predictionRows,
+      options?.calibrationBuckets ?? 10,
+    ),
+    maximumCalibrationError: maximumCalibrationError(
+      predictionRows,
+      options?.calibrationBuckets ?? 10,
+    ),
     entryMarketBrier: brierScore(entryBenchmark),
     entryMarketLogLoss: logLoss(entryBenchmark),
     closingMarketBrier:
