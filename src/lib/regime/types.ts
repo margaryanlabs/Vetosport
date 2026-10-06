@@ -39,6 +39,7 @@ export interface ChangePointFrame {
   persistence:number;
   changeProbability:number;
   regime:RegimeLabel;
+  regimeScores:Record<RegimeLabel,number>;
   hardChange:boolean;
 }
 
