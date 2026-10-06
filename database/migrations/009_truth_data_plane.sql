@@ -25,6 +25,9 @@ create table if not exists truth_journal (
   source_emitted_at timestamptz not null,
   gateway_received_at timestamptz not null,
   normalized_at timestamptz not null,
+  knowledge_available_at timestamptz not null,
+  acquisition_mode text not null default 'LIVE'
+    check (acquisition_mode in ('LIVE','HISTORICAL_BACKFILL')),
   committed_at timestamptz not null default clock_timestamp(),
 
   source_clock_offset_ms integer not null default 0,
@@ -46,6 +49,9 @@ create table if not exists truth_journal (
 
 create index if not exists truth_journal_event_receive_idx
   on truth_journal (event_id, gateway_received_at desc);
+
+create index if not exists truth_journal_event_knowledge_idx
+  on truth_journal (event_id, knowledge_available_at desc);
 
 create index if not exists truth_journal_provider_receive_idx
   on truth_journal (source_provider, gateway_received_at desc);
