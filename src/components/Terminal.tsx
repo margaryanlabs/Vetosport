@@ -51,6 +51,22 @@ export function Terminal() {
     };
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedEvent = params.get("event");
+    if (requestedEvent && workspaceById[requestedEvent]) {
+      setSelectedEventId(requestedEvent);
+    }
+  }, []);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("event") !== selectedEventId) {
+      url.searchParams.set("event", selectedEventId);
+      window.history.replaceState({}, "", url);
+    }
+  }, [selectedEventId]);
+
   const dictionary = dictionaries[locale];
   const activeWorkspace = workspaceById[selectedEventId] ?? liveWorkspaces[0];
 
