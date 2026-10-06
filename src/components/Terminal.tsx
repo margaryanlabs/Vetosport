@@ -619,28 +619,56 @@ export function Terminal() {
         </div>
       </section>
 
-      <section className="panel evidencePanel" id="ledger">
-        <div className="panelHeader">
+      <section className="ledgerSurface" id="ledger">
+        <div className="ledgerSurfaceHead">
           <div>
             <span className="panelIndex">11</span>
             <div>
               <h2>{dictionary.evidence}</h2>
-              <p>Why the probability surface moved</p>
+              <p>Immutable evidence trail behind the probability surface</p>
             </div>
           </div>
-          <span className="ledgerSeal">STATE IMMUTABLE AFTER CAPTURE</span>
+          <div className="ledgerIntegrity">
+            <span>LEDGER</span>
+            <strong>SEALED</strong>
+            <i />
+          </div>
         </div>
-        <div className="evidenceTape">
-          {evidence.map((item) => (
-            <article className="evidenceCard" key={`${item.time}-${item.title}`}>
-              <div className="evidenceCardTop">
-                <span>{item.time}</span>
-                <b>{item.kind}</b>
+
+        <div className="ledgerMetaRail">
+          <span>EVENT <b>ARS-LIV-2026-10-06</b></span>
+          <span>STATE <b>#18429</b></span>
+          <span>MODEL SET <b>football.goal-state.v1</b></span>
+          <span>CAPTURE <b>64:18.820</b></span>
+          <span>MODE <b>RESEARCH</b></span>
+        </div>
+
+        <div className="ledgerTimeline">
+          {evidence.map((item, index) => (
+            <article className="ledgerEntry" key={`${item.time}-${item.title}`}>
+              <div className="ledgerEntryIndex">
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <i />
               </div>
-              <h3>{item.title}</h3>
-              <div className="evidenceBottom">
+              <div className="ledgerEntryTime">
+                <strong>{item.time}</strong>
+                <span>{item.kind}</span>
+              </div>
+              <div className="ledgerEntryBody">
+                <strong>{item.title}</strong>
+                <small>Captured evidence · no post-hoc mutation</small>
+              </div>
+              <div className="ledgerEntryImpact">
+                <span>IMPACT</span>
                 <strong>{item.impact}</strong>
-                <span>R {Math.round(item.reliability * 100)}</span>
+              </div>
+              <div className="ledgerEntryReliability">
+                <span>RELIABILITY</span>
+                <strong>{Math.round(item.reliability * 100)}</strong>
+              </div>
+              <div className="ledgerEntryHash">
+                <span>PROOF</span>
+                <code>0x{(index + 18429).toString(16).padStart(6, "0")}…{(Math.round(item.reliability * 997)).toString(16)}</code>
               </div>
             </article>
           ))}
