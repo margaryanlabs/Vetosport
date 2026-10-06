@@ -4,11 +4,12 @@ import {
 } from "@/lib/data-plane/engine";
 import type {
   PersistedJournalRecord,
+  PreparedJournalRecord,
 } from "@/lib/data-plane/types";
 
 const persist = <T>(
   id: string,
-  record: ReturnType<typeof prepareJournalRecord<T>>,
+  record: PreparedJournalRecord<T>,
   committedAt: string,
 ): PersistedJournalRecord<T> => ({
   ...record,
