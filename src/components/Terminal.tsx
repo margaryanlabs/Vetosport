@@ -17,7 +17,8 @@ import { ProbabilityChart } from "@/components/ProbabilityChart";
 import { sandboxAffectedMarkets, sandboxLiveDeltas } from "@/lib/sandbox/live-changes";
 import { explainLiveChange } from "@/lib/live-twin/explain";
 import { repricePriority } from "@/lib/live-twin/materiality";
-import { sandboxFootballSurface } from "@/lib/sandbox/football-model";
+import { sandboxFootballBeforeSurface, sandboxFootballSurface } from "@/lib/sandbox/football-model";
+import { materialFootballShifts } from "@/lib/models/football/diff";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) => `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)} п.п.`;
@@ -79,6 +80,11 @@ export function Terminal() {
   const under35FairOdds = under35Model?.fairOdds ?? 0;
   const under35MarketProbability = 1 / 1.43;
   const under35Gap = under35Probability - under35MarketProbability;
+  const footballShifts = materialFootballShifts(
+    sandboxFootballBeforeSurface,
+    sandboxFootballSurface,
+    0.008,
+  ).slice(0, 4);
 
   return (
     <main className="appFrame">
@@ -241,10 +247,12 @@ export function Terminal() {
               </div>
               <p>{liveExplanation.summary}</p>
               <div className="liveTwinDrivers">
-                {liveExplanation.drivers.map((driver) => (
-                  <div key={driver.label}>
-                    <span>{driver.label}</span>
-                    <strong>{driver.impact}</strong>
+                {footballShifts.map((shift) => (
+                  <div key={`${shift.marketId}-${shift.selectionId}`}>
+                    <span>{shift.label}</span>
+                    <strong className={shift.direction === "up" ? "positive" : shift.direction === "down" ? "negative" : ""}>
+                      {pp(shift.probabilityShift)}
+                    </strong>
                   </div>
                 ))}
               </div>
