@@ -6,6 +6,7 @@ import { sandboxFootballSurface } from "@/lib/sandbox/football-model";
 import { sandboxParallaxAnalysis } from "@/lib/parallax/sandbox";
 import { TemporalResponseLab } from "@/components/TemporalResponseLab";
 import { CrossMarketPropagation } from "@/components/CrossMarketPropagation";
+import { ShockExecutionPanel } from "@/components/ShockExecutionPanel";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) =>
@@ -403,6 +404,7 @@ export function ParallaxCore({ locale }: { locale: Locale }) {
 
       <TemporalResponseLab locale={locale} />
       <CrossMarketPropagation locale={locale} />
+      <ShockExecutionPanel locale={locale} />
 
       <div className="parallaxCounterfactuals">
         <div className="parallaxCounterHead">
