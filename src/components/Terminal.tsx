@@ -3,7 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Locale, Opportunity, Sport } from "@/lib/domain/types";
 import { dictionaries } from "@/lib/i18n/dictionaries";
-import { liveWorkspaces, workspaceById } from "@/lib/sandbox/workspaces";
+import {
+  liveWorkspaces,
+  workspaceById,
+  type LiveWorkspace,
+} from "@/lib/sandbox/workspaces";
 import { ProbabilityChart } from "@/components/ProbabilityChart";
 import { MarketSurfaceExplorer } from "@/components/MarketSurfaceExplorer";
 import { AsianLinesBoard } from "@/components/AsianLinesBoard";
@@ -38,6 +42,7 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   const [selectedId, setSelectedId] = useState(liveWorkspaces[0].opportunities[0].selection.id);
   const [marketMode, setMarketMode] = useState<"all" | "edges">("all");
   const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
+  const [remoteWorkspace, setRemoteWorkspace] = useState<LiveWorkspace | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -64,8 +69,45 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
     }
   }, [selectedEventId]);
 
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+
+    const refreshWorkspace = () => {
+      fetch(`/api/live/workspace?id=${encodeURIComponent(selectedEventId)}`, {
+        cache: "no-store",
+        signal: controller.signal,
+      })
+        .then((response) => (response.ok ? response.json() : null))
+        .then((payload: { workspace?: LiveWorkspace } | null) => {
+          if (
+            active &&
+            payload?.workspace &&
+            payload.workspace.id === selectedEventId
+          ) {
+            setRemoteWorkspace(payload.workspace);
+          }
+        })
+        .catch(() => {
+          // Static server-rendered workspace remains the safe fallback.
+        });
+    };
+
+    setRemoteWorkspace(null);
+    refreshWorkspace();
+    const interval = window.setInterval(refreshWorkspace, 15_000);
+
+    return () => {
+      active = false;
+      controller.abort();
+      window.clearInterval(interval);
+    };
+  }, [selectedEventId]);
+
   const dictionary = dictionaries[locale];
-  const activeWorkspace = workspaceById[selectedEventId] ?? liveWorkspaces[0];
+  const staticWorkspace = workspaceById[selectedEventId] ?? liveWorkspaces[0];
+  const activeWorkspace =
+    remoteWorkspace?.id === selectedEventId ? remoteWorkspace : staticWorkspace;
 
   useEffect(() => {
     setSelectedId(activeWorkspace.opportunities[0].selection.id);
