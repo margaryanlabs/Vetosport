@@ -6,6 +6,8 @@ import type {
   ProbabilityPoint,
 } from "@/lib/sandbox/live";
 import { sandboxOpportunities } from "@/lib/sandbox/sample";
+import { buildBasketballSurface } from "@/lib/models/basketball/engine";
+import { buildTennisPointState } from "@/lib/models/tennis/engine";
 import {
   evidence as footballEvidence,
   marketMoves as footballMoves,
@@ -121,13 +123,34 @@ const opportunity = (input: {
   };
 };
 
+const basketballModel = buildBasketballSurface({
+  homeScore: 78,
+  awayScore: 73,
+  elapsedSeconds: 31 * 60 + 39,
+  projectedPossessionsPerTeam: 98,
+  homePointsPerPossession: 1.12,
+  awayPointsPerPossession: 1.04,
+});
+
+const tennisModel = buildTennisPointState({
+  playerServePointWin: 0.65,
+  opponentServePointWin: 0.63,
+  playerSets: 0,
+  opponentSets: 0,
+  playerGames: 4,
+  opponentGames: 3,
+  playerServing: true,
+  serverPoints: 0,
+  returnerPoints: 0,
+});
+
 const basketballOpportunities: Opportunity[] = [
   opportunity({
     eventId: "sandbox-bos-nyk",
     marketId: "basketball.total_points",
     selectionId: "under-229.5",
     label: "Тотал меньше 229.5",
-    probability: 0.682,
+    probability: basketballModel.totalUnder(229.5),
     odds: 1.72,
     score: 82,
     agreement: 88,
@@ -144,7 +167,7 @@ const basketballOpportunities: Opportunity[] = [
     marketId: "basketball.spread",
     selectionId: "bos-minus-4.5",
     label: "Boston −4.5",
-    probability: 0.596,
+    probability: basketballModel.homeCover(-4.5),
     odds: 1.91,
     score: 74,
     agreement: 81,
@@ -160,7 +183,7 @@ const basketballOpportunities: Opportunity[] = [
     marketId: "basketball.team_total",
     selectionId: "nyk-under-111.5",
     label: "NYK · тотал меньше 111.5",
-    probability: 0.641,
+    probability: basketballModel.awayTeamUnder(111.5),
     odds: 1.79,
     score: 79,
     agreement: 85,
@@ -195,7 +218,7 @@ const tennisOpportunities: Opportunity[] = [
     marketId: "tennis.match_winner",
     selectionId: "sinner",
     label: "Sinner победит",
-    probability: 0.612,
+    probability: tennisModel.matchWinProbability,
     odds: 1.78,
     score: 84,
     agreement: 90,
@@ -228,7 +251,7 @@ const tennisOpportunities: Opportunity[] = [
     marketId: "tennis.next_game",
     selectionId: "sinner-hold",
     label: "Sinner удержит следующую подачу",
-    probability: 0.781,
+    probability: tennisModel.playerHoldProbability,
     odds: 1.34,
     score: 71,
     agreement: 87,
@@ -397,10 +420,10 @@ export const liveWorkspaces: LiveWorkspace[] = [
       { label: "Foul pressure", value: "42", note: "stable", strength: 42 },
     ],
     specialistMarkets: [
-      { label: "Under 229.5", probability: 0.682, fairOdds: 1 / 0.682, marketOdds: 1.72, decision: "EDGE" },
-      { label: "NYK U111.5", probability: 0.641, fairOdds: 1 / 0.641, marketOdds: 1.79, decision: "EDGE" },
-      { label: "Boston −4.5", probability: 0.596, fairOdds: 1 / 0.596, marketOdds: 1.91, decision: "WATCH" },
-      { label: "Tatum O28.5", probability: 0.557, fairOdds: 1 / 0.557, marketOdds: 1.92, decision: "WATCH" },
+      { label: "Under 229.5", probability: basketballOpportunities[0].fairProbability, fairOdds: basketballOpportunities[0].fairOdds, marketOdds: 1.72, decision: basketballOpportunities[0].decision },
+      { label: "NYK U111.5", probability: basketballOpportunities[2].fairProbability, fairOdds: basketballOpportunities[2].fairOdds, marketOdds: 1.79, decision: basketballOpportunities[2].decision },
+      { label: "Boston −4.5", probability: basketballOpportunities[1].fairProbability, fairOdds: basketballOpportunities[1].fairOdds, marketOdds: 1.91, decision: basketballOpportunities[1].decision },
+      { label: "Tatum O28.5", probability: basketballOpportunities[3].fairProbability, fairOdds: basketballOpportunities[3].fairOdds, marketOdds: 1.92, decision: basketballOpportunities[3].decision },
     ],
   },
   {
@@ -482,10 +505,10 @@ export const liveWorkspaces: LiveWorkspace[] = [
       { label: "Fatigue risk", value: "23", note: "low", strength: 23 },
     ],
     specialistMarkets: [
-      { label: "Sinner ML", probability: 0.612, fairOdds: 1 / 0.612, marketOdds: 1.78, decision: "EDGE" },
-      { label: "Over 22.5", probability: 0.587, fairOdds: 1 / 0.587, marketOdds: 1.88, decision: "WATCH" },
-      { label: "Sinner next hold", probability: 0.781, fairOdds: 1 / 0.781, marketOdds: 1.34, decision: "WATCH" },
-      { label: "Alcaraz set 2", probability: 0.438, fairOdds: 1 / 0.438, marketOdds: 2.12, decision: "PASS" },
+      { label: "Sinner ML", probability: tennisOpportunities[0].fairProbability, fairOdds: tennisOpportunities[0].fairOdds, marketOdds: 1.78, decision: tennisOpportunities[0].decision },
+      { label: "Over 22.5", probability: tennisOpportunities[1].fairProbability, fairOdds: tennisOpportunities[1].fairOdds, marketOdds: 1.88, decision: tennisOpportunities[1].decision },
+      { label: "Sinner next hold", probability: tennisOpportunities[2].fairProbability, fairOdds: tennisOpportunities[2].fairOdds, marketOdds: 1.34, decision: tennisOpportunities[2].decision },
+      { label: "Alcaraz set 2", probability: tennisOpportunities[3].fairProbability, fairOdds: tennisOpportunities[3].fairOdds, marketOdds: 2.12, decision: tennisOpportunities[3].decision },
     ],
   },
 ];
