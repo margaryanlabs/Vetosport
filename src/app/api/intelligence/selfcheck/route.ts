@@ -29,6 +29,7 @@ import { runRegimeRouterSelfCheck } from "@/lib/regime-router/selfcheck";
 import { runConformalSelfCheck } from "@/lib/conformal/selfcheck";
 import { runRegimeHysteresisSelfCheck } from "@/lib/regime-hysteresis/selfcheck";
 import { runTransitionHazardSelfCheck } from "@/lib/transition-hazard/selfcheck";
+import { runRegimeCoherenceSelfCheck } from "@/lib/regime-coherence/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -164,6 +165,10 @@ export function GET() {
     transitionHazard: {
       model: "veto.regime.transition-hazard.v1",
       ...runTransitionHazardSelfCheck(),
+    },
+    regimeCoherence: {
+      model: "veto.regime.coherence-gate.v1",
+      ...runRegimeCoherenceSelfCheck(),
     },
   };
 
