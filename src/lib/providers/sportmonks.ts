@@ -16,6 +16,18 @@ type SportmonksState = {
   developer_name?: string;
 };
 
+type SportmonksScore = {
+  id: number;
+  fixture_id: number;
+  type_id: number;
+  participant_id: number;
+  description?: string;
+  score?: {
+    goals?: number;
+    participant?: "home" | "away";
+  };
+};
+
 type SportmonksFixture = {
   id: number;
   league_id?: number;
@@ -24,6 +36,7 @@ type SportmonksFixture = {
   starting_at: string;
   participants?: SportmonksParticipant[];
   state?: SportmonksState;
+  scores?: SportmonksScore[];
 };
 
 type SportmonksInplayOdd = {
@@ -43,7 +56,15 @@ type SportmonksInplayOdd = {
   latest_bookmaker_update?: string | null;
 };
 
-type Paged<T> = { data: T[]; pagination?: unknown };
+type Pagination = {
+  count?: number;
+  per_page?: number;
+  current_page?: number;
+  next_page?: string | null;
+  has_more?: boolean;
+};
+
+type Paged<T> = { data: T[]; pagination?: Pagination };
 
 export interface SportmonksOptions {
   apiToken: string;
@@ -116,11 +137,48 @@ export class SportmonksFootballClient {
     );
   }
 
-  getFixturesBetween(startDate: string, endDate: string) {
+  getFixturesBetween(
+    startDate: string,
+    endDate: string,
+    page = 1,
+    perPage = 50,
+  ) {
     return this.request<Paged<SportmonksFixture>>(
       `/fixtures/between/${encodeURIComponent(startDate)}/${encodeURIComponent(endDate)}`,
-      { include: "participants;state" },
+      {
+        include: "participants;state;scores",
+        page: String(page),
+        per_page: String(Math.min(50, Math.max(1, perPage))),
+      },
     );
+  }
+
+  async getAllFixturesBetween(
+    startDate: string,
+    endDate: string,
+    maxPages = 20,
+  ): Promise<ProviderEnvelope<SportmonksFixture[]>> {
+    const startedAt = new Date();
+    const fixtures: SportmonksFixture[] = [];
+    let page = 1;
+    let latencyMs = 0;
+
+    while (page <= maxPages) {
+      const response = await this.getFixturesBetween(startDate, endDate, page, 50);
+      latencyMs += response.latencyMs;
+      fixtures.push(...response.data.data);
+
+      if (!response.data.pagination?.has_more) break;
+      page += 1;
+    }
+
+    return {
+      provider: this.id,
+      requestedAt: startedAt.toISOString(),
+      receivedAt: new Date().toISOString(),
+      latencyMs,
+      data: fixtures,
+    };
   }
 
   getLatestUpdatedFixtures() {
@@ -156,6 +214,36 @@ export class SportmonksFootballClient {
       home: home ? { id: String(home.id), name: home.name } : undefined,
       away: away ? { id: String(away.id), name: away.name } : undefined,
     };
+  }
+
+  extractFinalScore(fixture: SportmonksFixture) {
+    const scores = fixture.scores ?? [];
+    const preferred = scores.filter((row) =>
+      ["CURRENT", "FULLTIME", "FULL_TIME"].includes(
+        (row.description ?? "").toUpperCase(),
+      ),
+    );
+    const source = preferred.length > 0 ? preferred : scores;
+
+    const latestBySide = new Map<"home" | "away", number>();
+    for (const row of source) {
+      const side = row.score?.participant;
+      const goals = row.score?.goals;
+      if (
+        (side === "home" || side === "away") &&
+        typeof goals === "number" &&
+        Number.isFinite(goals)
+      ) {
+        latestBySide.set(
+          side,
+          Math.max(latestBySide.get(side) ?? 0, goals),
+        );
+      }
+    }
+
+    const home = latestBySide.get("home");
+    const away = latestBySide.get("away");
+    return home == null || away == null ? null : { home, away };
   }
 
   normalizeInplayOdds(rows: SportmonksInplayOdd[]): MarketQuote[] {
