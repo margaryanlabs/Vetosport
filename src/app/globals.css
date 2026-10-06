@@ -9102,3 +9102,421 @@ body::before {
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   PARALLAX V / ALPHA MEMORY
+   ========================================================= */
+
+.alphaMemorySurface {
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  background:
+    linear-gradient(180deg, rgba(91,227,162,.008), transparent 24%),
+    rgba(255,255,255,.0015);
+}
+
+.alphaMemoryHead {
+  min-height: 62px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.alphaMemoryHead > div:first-child {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.alphaMemoryHead h3 {
+  margin: 0;
+  color: #e0e7e3;
+  font-size: 9px;
+  letter-spacing: .14em;
+}
+
+.alphaMemoryHead p {
+  margin: 4px 0 0;
+  color: #4d5853;
+  font-size: 7px;
+}
+
+.alphaMemoryHead > span {
+  color: #776a4e;
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .09em;
+}
+
+.alphaStateFingerprint {
+  min-height: 78px;
+  padding: 13px 18px;
+  display: grid;
+  grid-template-columns: 180px minmax(0,1fr);
+  gap: 18px;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.alphaStateFingerprint > div:first-child {
+  display: grid;
+  gap: 6px;
+}
+
+.alphaStateFingerprint span {
+  color: #46514c;
+  font-size: 5px;
+  letter-spacing: .09em;
+}
+
+.alphaStateFingerprint strong {
+  color: #9fa9a4;
+  font-size: 8px;
+}
+
+.alphaTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.alphaTags span,
+.alphaMemoryIdentity > div span {
+  padding: 4px 6px;
+  border: 1px solid var(--line-soft);
+  color: #69746e;
+  font-size: 5px;
+  letter-spacing: .05em;
+  background: rgba(255,255,255,.002);
+}
+
+.alphaMemoryMain {
+  display: grid;
+  grid-template-columns: minmax(360px,.9fr) minmax(460px,1.1fr);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.alphaMemoryGraph,
+.alphaHypothesis {
+  min-height: 430px;
+  padding: 17px 18px;
+}
+
+.alphaMemoryGraph {
+  border-right: 1px solid var(--line-soft);
+}
+
+.alphaSubhead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.alphaSubhead > div {
+  display: grid;
+  gap: 5px;
+}
+
+.alphaSubhead span {
+  color: #46514c;
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .11em;
+}
+
+.alphaSubhead strong {
+  color: #9da8a2;
+  font-size: 8px;
+}
+
+.alphaSubhead small {
+  color: #414b47;
+  font-size: 5px;
+}
+
+.alphaSubhead em {
+  padding: 4px 6px;
+  border: 1px solid var(--line-soft);
+  font-size: 5px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.alphaSubhead em.shadow_candidate {
+  color: var(--edge);
+  border-color: rgba(91,227,162,.18);
+}
+
+.alphaSubhead em.research_only {
+  color: var(--watch);
+  border-color: rgba(191,162,105,.18);
+}
+
+.alphaSubhead em.reject {
+  color: var(--danger);
+  border-color: rgba(227,102,110,.18);
+}
+
+.alphaMemoryList {
+  margin-top: 18px;
+  display: grid;
+}
+
+.alphaMemoryList article {
+  min-height: 86px;
+  display: grid;
+  grid-template-columns: 54px minmax(160px,1fr) 160px;
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.alphaMemoryList article:last-child {
+  border-bottom: 0;
+}
+
+.alphaMemoryRank {
+  display: grid;
+  gap: 5px;
+}
+
+.alphaMemoryRank span {
+  color: #3f4944;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 5px;
+}
+
+.alphaMemoryRank strong {
+  color: var(--edge);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 10px;
+  font-weight: 560;
+}
+
+.alphaMemoryIdentity {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.alphaMemoryIdentity > strong {
+  color: #929e98;
+  font-size: 7px;
+}
+
+.alphaMemoryIdentity > small {
+  overflow: hidden;
+  color: #46514c;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.alphaMemoryIdentity > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.alphaMemoryMetrics {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 5px 9px;
+}
+
+.alphaMemoryMetrics span {
+  color: #46514c;
+  font-size: 5px;
+  letter-spacing: .05em;
+}
+
+.alphaMemoryMetrics b {
+  color: #78847e;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 6px;
+  font-weight: 550;
+}
+
+.alphaGateHero {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  border-top: 1px solid var(--line-soft);
+  border-left: 1px solid var(--line-soft);
+}
+
+.alphaGateHero > div {
+  min-height: 72px;
+  padding: 10px;
+  display: grid;
+  align-content: space-between;
+  gap: 6px;
+  border-right: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.alphaGateHero span {
+  color: #414b47;
+  font-size: 5px;
+  letter-spacing: .08em;
+}
+
+.alphaGateHero strong {
+  color: #a5afa9;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 10px;
+  font-weight: 550;
+}
+
+.alphaGateChecks {
+  margin-top: 16px;
+  display: grid;
+}
+
+.alphaGateChecks > div {
+  min-height: 43px;
+  display: grid;
+  grid-template-columns: 9px minmax(0,1fr) 42px 40px;
+  gap: 9px;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.alphaGateChecks > div:last-child {
+  border-bottom: 0;
+}
+
+.alphaGateChecks i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+.alphaGateChecks .passed i {
+  background: var(--edge);
+}
+
+.alphaGateChecks > div > div {
+  display: grid;
+  gap: 3px;
+}
+
+.alphaGateChecks strong {
+  color: #88948e;
+  font-size: 6px;
+}
+
+.alphaGateChecks small {
+  color: #49544f;
+  font-size: 5px;
+}
+
+.alphaGateChecks em {
+  color: #59645f;
+  font-size: 5px;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.alphaGateChecks b {
+  color: var(--danger);
+  font-size: 5px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.alphaGateChecks .passed b {
+  color: var(--edge);
+}
+
+.alphaMemoryMethod {
+  min-height: 58px;
+  padding: 11px 18px;
+  display: grid;
+  grid-template-columns: 105px minmax(0,1fr) auto;
+  gap: 18px;
+  align-items: center;
+  background: rgba(191,162,105,.008);
+}
+
+.alphaMemoryMethod > span {
+  color: var(--watch);
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+
+.alphaMemoryMethod p {
+  margin: 0;
+  color: #56615c;
+  font-size: 6px;
+  line-height: 1.5;
+}
+
+.alphaMemoryMethod code {
+  color: #46514c;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 5px;
+}
+
+@media (max-width: 980px) {
+  .alphaMemoryMain {
+    grid-template-columns: 1fr;
+  }
+
+  .alphaMemoryGraph {
+    border-right: 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+}
+
+@media (max-width: 680px) {
+  .alphaMemoryHead {
+    min-height: auto;
+    padding: 13px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .alphaStateFingerprint {
+    grid-template-columns: 1fr;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .alphaMemoryGraph,
+  .alphaHypothesis,
+  .alphaMemoryMethod {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .alphaMemoryList article {
+    grid-template-columns: 45px minmax(0,1fr);
+  }
+
+  .alphaMemoryMetrics {
+    grid-column: 1 / -1;
+    padding-bottom: 10px;
+  }
+
+  .alphaGateHero {
+    grid-template-columns: repeat(2,1fr);
+  }
+
+  .alphaMemoryMethod {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .alphaMemoryMethod code {
+    display: none;
+  }
+}
