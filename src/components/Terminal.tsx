@@ -17,6 +17,7 @@ import { ProbabilityChart } from "@/components/ProbabilityChart";
 import { sandboxAffectedMarkets, sandboxLiveDeltas } from "@/lib/sandbox/live-changes";
 import { explainLiveChange } from "@/lib/live-twin/explain";
 import { repricePriority } from "@/lib/live-twin/materiality";
+import { sandboxFootballSurface } from "@/lib/sandbox/football-model";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) => `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)} п.п.`;
@@ -69,6 +70,15 @@ export function Terminal() {
   const providerMode = configuredProviders > 0 ? "ADAPTERS CONFIGURED" : "SANDBOX";
   const liveExplanation = explainLiveChange(sandboxLiveDeltas);
   const livePriority = repricePriority(sandboxLiveDeltas);
+  const under35Model = sandboxFootballSurface.markets.find(
+    (market) =>
+      market.marketId === "football.total_goals" &&
+      market.selectionId === "under-3.5",
+  );
+  const under35Probability = under35Model?.probability ?? 0;
+  const under35FairOdds = under35Model?.fairOdds ?? 0;
+  const under35MarketProbability = 1 / 1.43;
+  const under35Gap = under35Probability - under35MarketProbability;
 
   return (
     <main className="appFrame">
@@ -218,7 +228,7 @@ export function Terminal() {
               <StatePill label={dictionary.regime} value="CONTROLLED" note="low transition" />
               <StatePill label={dictionary.tempo} value="71/100" note="−19% / 10m" />
               <StatePill label={dictionary.uncertainty} value="21/100" note="LOW" />
-              <StatePill label={dictionary.marketGap} value="+8.5 п.п." note="UNDER 3.5" accent />
+              <StatePill label={dictionary.marketGap} value={pp(under35Gap)} note="UNDER 3.5" accent />
             </div>
 
             <div className="liveTwinChange">
@@ -253,18 +263,18 @@ export function Terminal() {
                 <div className="subhead">
                   <div>
                     <span className="miniLabel">{dictionary.probabilitySurface}</span>
-                    <strong>Under 3.5 · live repricing</strong>
+                    <strong>Under 3.5 · football.goal-state.v1</strong>
                   </div>
                   <div className="surfaceHeadline">
                     <span>VETO</span>
-                    <strong>78.4%</strong>
+                    <strong>{pct(under35Probability)}</strong>
                   </div>
                 </div>
                 <ProbabilityChart points={probabilityHistory} />
                 <div className="surfaceFooter">
-                  <span>Market implied <b>69.9%</b></span>
-                  <span>Fair price <b>1.28</b></span>
-                  <span className="positive">Gap <b>+8.5 п.п.</b></span>
+                  <span>Market implied <b>{pct(under35MarketProbability)}</b></span>
+                  <span>Fair price <b>{under35FairOdds.toFixed(2)}</b></span>
+                  <span className="positive">Gap <b>{pp(under35Gap)}</b></span>
                 </div>
               </div>
 
