@@ -2714,3 +2714,86 @@ body::before {
     gap: 1px;
   }
 }
+
+/* Signal-system QA polish */
+.signalSystem .topbar nav a[href="#live"] {
+  color: #87948e;
+}
+
+.signalSystem .topbar nav a[href="#live"]::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--edge);
+  box-shadow: 0 0 8px rgba(91,227,162,.28);
+  vertical-align: 1px;
+}
+
+.signalSystem .decision {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.signalSystem .decision::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .86;
+}
+
+.signalSystem .asianBoard .segmented button {
+  position: relative;
+}
+
+.signalSystem .asianBoard .segmented button.active {
+  color: var(--edge);
+  background: rgba(91,227,162,.055);
+}
+
+.signalSystem .asianBoard .segmented button.active::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 1px;
+  height: 1px;
+  background: var(--edge);
+}
+
+.signalSystem .dialRing span {
+  color: #65716b;
+  font-size: 7px;
+  letter-spacing: .16em;
+}
+
+.signalSystem .decisionProbability span {
+  color: #66716c;
+  letter-spacing: .03em;
+}
+
+.signalHero h1 {
+  max-width: 850px;
+  line-height: .92;
+  letter-spacing: -.06em;
+}
+
+@media (min-width: 900px) {
+  .signalSystem .liveRail {
+    grid-template-columns: 170px minmax(0, 1fr);
+  }
+
+  .signalSystem .liveCards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  .signalSystem .liveEventCard {
+    min-width: 0;
+  }
+}
