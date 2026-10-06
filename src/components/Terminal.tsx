@@ -15,6 +15,7 @@ import { BacktestLab } from "@/components/BacktestLab";
 import { ModelGovernancePanel } from "@/components/ModelGovernancePanel";
 import { EngineUniverse } from "@/components/EngineUniverse";
 import { LiveCommandCenter } from "@/components/LiveCommandCenter";
+import { ParallaxCore } from "@/components/ParallaxCore";
 import { SpecialistSportSurface } from "@/components/SpecialistSportSurface";
 import { VetoMark } from "@/components/VetoMark";
 import { sandboxFootballBeforeSurface, sandboxFootballSurface } from "@/lib/sandbox/football-model";
@@ -215,6 +216,7 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
       <nav className="surfaceRailNav" aria-label="VETO surface sections">
         <a href="#live"><b>01</b><span>LIVE</span></a>
         <a href="#events"><b>02</b><span>EVENT</span></a>
+        <a href="#parallax"><b>04</b><span>PARALLAX</span></a>
         <a href="#market-surface"><b>05</b><span>SURFACE</span></a>
         <a href="#pricing"><b>06</b><span>PRICING</span></a>
         <a href="#models"><b>08</b><span>MODELS</span></a>
@@ -236,18 +238,18 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
 
           <h1>
             {locale === "ru"
-              ? "Не смотри на коэффициент. Смотри, где рынок опаздывает."
+              ? "VETO не выбирает победителя. VETO проверяет цену."
               : locale === "hy"
-                ? "Մի նայիր միայն գործակցին։ Տես՝ որտեղ է շուկան ուշանում։"
-                : "Don’t watch the odds. Watch where the market is late."}
+                ? "VETO-ն չի ընտրում հաղթողին։ VETO-ն ստուգում է գինը։"
+                : "VETO doesn’t pick winners. It audits the price."}
           </h1>
 
           <p className="heroCopy">
             {locale === "ru"
-              ? "VETO непрерывно пересчитывает матч, рынок и сценарии. Выбирай событие — и вся система мгновенно перестраивается под его sport-state."
+              ? "VETO реконструирует состояние игры, затем реконструирует подразумеваемый рынком мир и показывает, где эти две реальности расходятся."
               : locale === "hy"
-                ? "VETO-ն անընդհատ վերագնահատում է խաղը, շուկան և սցենարները։ Ընտրիր իրադարձությունը՝ ամբողջ համակարգը վերակառուցվում է դրա sport-state-ի շուրջ։"
-                : "VETO continuously reprices the event, market and scenario tree. Pick an event and the entire system rebuilds around its sport-state."}
+                ? "VETO-ն վերականգնում է խաղի վիճակը, հետո շուկայի ենթադրվող աշխարհը և ցույց է տալիս՝ որտեղ են այդ երկու իրականությունները բաժանվում։"
+                : "VETO reconstructs the game, reconstructs the market-implied world, then exposes where those two realities diverge."}
           </p>
 
           <div className="heroLiveNetwork" aria-label="Live sports network">
@@ -570,6 +572,8 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
 
       {activeWorkspace.sport === "football" ? (
         <>
+          <ParallaxCore locale={locale} />
+
           <div id="market-surface">
             <MarketSurfaceExplorer
               current={sandboxFootballSurface}
