@@ -10,6 +10,7 @@ import { runPropagationSelfCheck } from "@/lib/parallax/propagation-selfcheck";
 import { runShockExecutionSelfCheck } from "@/lib/parallax/shock-execution-selfcheck";
 import { runCouncilSelfCheck } from "@/lib/council/selfcheck";
 import { runAlphaMemorySelfCheck } from "@/lib/alpha/selfcheck";
+import { runExperimentLedgerSelfCheck } from "@/lib/research/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +70,10 @@ export function GET() {
     alphaMemory: {
       model: "veto.alpha.memory.v1",
       ...runAlphaMemorySelfCheck(),
+    },
+    experimentLedger: {
+      model: "veto.research.preregistered.v1",
+      ...runExperimentLedgerSelfCheck(),
     },
   };
 
