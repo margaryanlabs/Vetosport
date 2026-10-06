@@ -60,7 +60,7 @@ export function DiscoveryControlPanel({locale}:{locale:Locale}) {
       </div>
 
       <div className="discoveryBudget">
-        <div><span>SEQUENTIAL BUDGET</span><strong>{pct(discoveryControl.sequential.at(-1)?.cumulativeAlphaSpent ?? 0)}</strong></div>
+        <div><span>SEQUENTIAL BUDGET</span><strong>{pct(discoveryControl.sequential[discoveryControl.sequential.length - 1]?.cumulativeAlphaSpent ?? 0)}</strong></div>
         <div className="discoveryBudgetRail">{discoveryControl.sequential.map(x=><i key={x.id} style={{width:`${Math.max(3,x.alphaAllocated/discoveryControl.alphaBudget*100)}%`}} />)}</div>
       </div>
 
