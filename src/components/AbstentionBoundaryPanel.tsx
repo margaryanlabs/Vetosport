@@ -2,6 +2,7 @@
 
 import type { Locale } from "@/lib/domain/types";
 import {
+  conformalBoundary,
   healthyBoundary,
   leakageBoundary,
   semanticBoundary,
@@ -38,6 +39,7 @@ export function AbstentionBoundaryPanel({locale}:{locale:Locale}) {
     ["LEAKAGE + HUGE GAP",leakageBoundary],
     ["SEMANTIC FREEZE",semanticBoundary],
     ["OUT OF DISTRIBUTION",oodBoundary],
+    ["CONFORMAL FAILURE",conformalBoundary],
     ["WEAK EVIDENCE",weakBoundary],
   ] as const;
 
@@ -57,7 +59,7 @@ export function AbstentionBoundaryPanel({locale}:{locale:Locale}) {
         <div>
           <span>ABSTENTION PRINCIPLE</span>
           <strong>HARD GATE &gt; MODEL GAP</strong>
-          <small>leakage · semantics · calibration · censoring · OOD · capacity</small>
+          <small>leakage · semantics · calibration · censoring · conformal · OOD · capacity</small>
         </div>
       </div>
 
