@@ -624,8 +624,8 @@ export function Terminal() {
           <div>
             <span className="panelIndex">11</span>
             <div>
-              <h2>{dictionary.evidence}</h2>
-              <p>Immutable evidence trail behind the probability surface</p>
+              <h2>IMMUTABLE LEDGER</h2>
+              <p>{dictionary.evidence} · proof trail behind every probability move</p>
             </div>
           </div>
           <div className="ledgerIntegrity">
@@ -680,29 +680,40 @@ export function Terminal() {
         <ModelGovernancePanel locale={locale} />
       </div>
 
-      <section className="dataPlane">
-        <div>
-          <span className="miniLabel">{dictionary.provider}</span>
-          <strong>
-            {configuredProviders > 0
-              ? `${configuredProviders}/2 primary adapters configured`
-              : dictionary.disconnected}
-          </strong>
+      <section className="integrationRail">
+        <div className="integrationIdentity">
+          <span className="miniLabel">DATA PLANE</span>
+          <strong>{providerMode}</strong>
         </div>
+
+        <div className="integrationNodes">
+          <div className={providerStatus?.providers.sportmonks.configured ? "online" : "offline"}>
+            <i />
+            <span>SPORTMONKS</span>
+            <b>{providerStatus?.providers.sportmonks.configured ? "CONNECTED" : "AWAITING KEY"}</b>
+          </div>
+          <div className={providerStatus?.providers.theOddsApi.configured ? "online" : "offline"}>
+            <i />
+            <span>THE ODDS API</span>
+            <b>{providerStatus?.providers.theOddsApi.configured ? "CONNECTED" : "AWAITING KEY"}</b>
+          </div>
+          <div className="standby">
+            <i />
+            <span>NEWS / INJURY</span>
+            <b>NEXT</b>
+          </div>
+          <div className="online">
+            <i />
+            <span>REALTIME BRIDGE</span>
+            <b>READY</b>
+          </div>
+        </div>
+
         <p>{dictionary.connectHint}</p>
-        <div className="adapterChips">
-          <span className={providerStatus?.providers.sportmonks.configured ? "configured" : "missing"}>
-            SPORTMONKS <i>{providerStatus?.providers.sportmonks.configured ? "KEY OK" : "KEY MISSING"}</i>
-          </span>
-          <span className={providerStatus?.providers.theOddsApi.configured ? "configured" : "missing"}>
-            THE ODDS API <i>{providerStatus?.providers.theOddsApi.configured ? "KEY OK" : "KEY MISSING"}</i>
-          </span>
-          <span>NEWS / INJURY <i>NEXT</i></span>
-          <span>REALTIME BRIDGE <i>READY</i></span>
-        </div>
       </section>
 
-      <footer>
+      <footer className="signalFooter">
+        <div className="footerSignalLine"><i /><span>VETO / SIGNAL SYSTEM</span></div>
         <div className="footerBrand">
           <VetoMark size={22} />
           <strong>VETO SPORT</strong>
