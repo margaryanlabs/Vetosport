@@ -179,7 +179,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
 
     const rows = quotes.map((quote) => ({
       event_id: eventId,
-      provider: "normalized",
+      provider: quote.sourceProvider ?? "normalized",
       bookmaker: quote.bookmaker,
       market_key: quote.marketId,
       selection_key: quote.selection.id,
@@ -187,7 +187,10 @@ export class SupabaseRestPersistence implements VetoPersistence {
       line: quote.selection.line,
       decimal_odds: quote.decimalOdds,
       captured_at: quote.capturedAt,
+      provider_last_update: quote.providerLastUpdate,
       liquidity: quote.liquidity,
+      suspended: quote.suspended,
+      raw: quote.raw,
     }));
 
     await this.request(
