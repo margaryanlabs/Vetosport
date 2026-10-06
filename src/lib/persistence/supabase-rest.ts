@@ -5,6 +5,12 @@ import type {
   SportEvent,
 } from "@/lib/domain/types";
 import type {
+  DataPlaneReplayQuery,
+  PersistedJournalRecord,
+  PreparedJournalRecord,
+  ProviderRulebookVersion,
+} from "@/lib/data-plane/types";
+import type {
   DecisionOutcomeRecord,
   EventStateSnapshot,
   HistoricalImportRecord,
@@ -377,6 +383,214 @@ export class SupabaseRestPersistence implements VetoPersistence {
       },
       "return=minimal",
     );
+  }
+
+  async appendTruthJournal(
+    records: PreparedJournalRecord[],
+  ): Promise<number> {
+    if (records.length === 0) return 0;
+
+    const rows = records.map((record) => ({
+      event_id: record.eventId,
+      source_provider: record.sourceProvider,
+      source_record_id: record.sourceRecordId,
+      stream: record.stream,
+      schema_version: record.schemaVersion,
+      provider_sequence: record.providerSequence,
+      semantic_key: record.semanticKey,
+      event_occurred_at: record.eventOccurredAt,
+      source_emitted_at: record.sourceEmittedAt,
+      gateway_received_at: record.gatewayReceivedAt,
+      normalized_at: record.normalizedAt,
+      source_clock_offset_ms: record.sourceClockOffsetMs ?? 0,
+      source_time_uncertainty_ms:
+        record.sourceTimeUncertaintyMs ?? 0,
+      late_arrival: record.lateArrival ?? false,
+      correction_of_record_hash: record.correctionOf,
+      payload: record.payload,
+      payload_hash: record.payloadHash,
+      dedupe_key: record.dedupeKey,
+      record_hash: record.recordHash,
+    }));
+
+    const inserted = await this.request<Array<{ id: string }>>(
+      "/truth_journal?on_conflict=dedupe_key",
+      {
+        method: "POST",
+        body: JSON.stringify(rows),
+      },
+      "resolution=ignore-duplicates,return=representation",
+    );
+
+    return inserted.length;
+  }
+
+  async listTruthAsOf(
+    input: DataPlaneReplayQuery,
+  ): Promise<PersistedJournalRecord[]> {
+    const query = new URLSearchParams();
+    query.set("event_id", `eq.${input.eventId}`);
+    query.set(
+      "gateway_received_at",
+      `lte.${new Date(input.asOf).toISOString()}`,
+    );
+    if (input.streams?.length) {
+      query.set("stream", `in.(${input.streams.join(",")})`);
+    }
+    query.set("order", "gateway_received_at.asc");
+    query.set("limit", String(Math.min(5000, input.limit ?? 2000)));
+    query.set(
+      "select",
+      [
+        "id",
+        "event_id",
+        "source_provider",
+        "source_record_id",
+        "stream",
+        "schema_version",
+        "provider_sequence",
+        "semantic_key",
+        "event_occurred_at",
+        "source_emitted_at",
+        "gateway_received_at",
+        "normalized_at",
+        "committed_at",
+        "source_clock_offset_ms",
+        "source_time_uncertainty_ms",
+        "late_arrival",
+        "correction_of_record_hash",
+        "payload",
+        "payload_hash",
+        "dedupe_key",
+        "record_hash",
+      ].join(","),
+    );
+
+    const rows = await this.request<Array<{
+      id: string;
+      event_id?: string | null;
+      source_provider: string;
+      source_record_id: string;
+      stream: PersistedJournalRecord["stream"];
+      schema_version: string;
+      provider_sequence?: string | null;
+      semantic_key?: string | null;
+      event_occurred_at: string;
+      source_emitted_at: string;
+      gateway_received_at: string;
+      normalized_at: string;
+      committed_at: string;
+      source_clock_offset_ms: number;
+      source_time_uncertainty_ms: number;
+      late_arrival: boolean;
+      correction_of_record_hash?: string | null;
+      payload: unknown;
+      payload_hash: string;
+      dedupe_key: string;
+      record_hash: string;
+    }>>(
+      `/truth_journal?${query.toString()}`,
+      { method: "GET" },
+    );
+
+    return rows.map((row) => ({
+      id: row.id,
+      eventId: row.event_id ?? undefined,
+      sourceProvider: row.source_provider,
+      sourceRecordId: row.source_record_id,
+      stream: row.stream,
+      schemaVersion: row.schema_version,
+      providerSequence: row.provider_sequence ?? undefined,
+      semanticKey: row.semantic_key ?? undefined,
+      eventOccurredAt: row.event_occurred_at,
+      sourceEmittedAt: row.source_emitted_at,
+      gatewayReceivedAt: row.gateway_received_at,
+      normalizedAt: row.normalized_at,
+      committedAt: row.committed_at,
+      sourceClockOffsetMs: row.source_clock_offset_ms,
+      sourceTimeUncertaintyMs: row.source_time_uncertainty_ms,
+      lateArrival: row.late_arrival,
+      correctionOf: row.correction_of_record_hash ?? undefined,
+      payload: row.payload,
+      payloadHash: row.payload_hash,
+      dedupeKey: row.dedupe_key,
+      recordHash: row.record_hash,
+    }));
+  }
+
+  async appendRulebookVersion(
+    version: ProviderRulebookVersion,
+  ): Promise<void> {
+    await this.request(
+      "/provider_rulebook_versions?on_conflict=provider_id,version_id",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          provider_id: version.providerId,
+          version_id: version.versionId,
+          sport: version.sport,
+          effective_from: version.effectiveFrom,
+          effective_to: version.effectiveTo,
+          captured_at: version.capturedAt,
+          source_ref: version.sourceRef,
+          content_hash: version.contentHash,
+          rules: version.rules,
+        }),
+      },
+      "resolution=ignore-duplicates,return=minimal",
+    );
+  }
+
+  async findRulebookVersionAt(input: {
+    providerId: string;
+    sport?: string;
+    asOf: string;
+  }): Promise<ProviderRulebookVersion | null> {
+    const asOf = new Date(input.asOf).toISOString();
+    const query = new URLSearchParams();
+    query.set("provider_id", `eq.${input.providerId}`);
+    query.set("effective_from", `lte.${asOf}`);
+    query.set(
+      "or",
+      `(effective_to.is.null,effective_to.gt.${asOf})`,
+    );
+    if (input.sport) query.set("sport", `eq.${input.sport}`);
+    query.set("order", "effective_from.desc");
+    query.set("limit", "1");
+    query.set(
+      "select",
+      "provider_id,version_id,sport,effective_from,effective_to,captured_at,source_ref,content_hash,rules",
+    );
+
+    const rows = await this.request<Array<{
+      provider_id: string;
+      version_id: string;
+      sport?: string | null;
+      effective_from: string;
+      effective_to?: string | null;
+      captured_at: string;
+      source_ref?: string | null;
+      content_hash: string;
+      rules: Record<string, unknown>;
+    }>>(
+      `/provider_rulebook_versions?${query.toString()}`,
+      { method: "GET" },
+    );
+
+    const row = rows[0];
+    return row
+      ? {
+          providerId: row.provider_id,
+          versionId: row.version_id,
+          sport: row.sport ?? undefined,
+          effectiveFrom: row.effective_from,
+          effectiveTo: row.effective_to ?? undefined,
+          capturedAt: row.captured_at,
+          sourceRef: row.source_ref ?? undefined,
+          contentHash: row.content_hash,
+          rules: row.rules,
+        }
+      : null;
   }
 
   async appendProviderHealth(sample: ProviderHealthSample): Promise<void> {
