@@ -21,6 +21,7 @@ import { DiscoveryControlPanel } from "@/components/DiscoveryControlPanel";
 import { CalibrationDriftPanel } from "@/components/CalibrationDriftPanel";
 import { SuspensionCensoringPanel } from "@/components/SuspensionCensoringPanel";
 import { AbstentionBoundaryPanel } from "@/components/AbstentionBoundaryPanel";
+import { RegimeChangePanel } from "@/components/RegimeChangePanel";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) =>
@@ -433,6 +434,7 @@ export function ParallaxCore({ locale }: { locale: Locale }) {
       <CalibrationDriftPanel locale={locale} />
       <SuspensionCensoringPanel locale={locale} />
       <AbstentionBoundaryPanel locale={locale} />
+      <RegimeChangePanel locale={locale} />
 
       <div className="parallaxCounterfactuals">
         <div className="parallaxCounterHead">
