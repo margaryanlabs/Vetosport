@@ -19,6 +19,8 @@ import { ParallaxCore } from "@/components/ParallaxCore";
 import { SpecialistSportSurface } from "@/components/SpecialistSportSurface";
 import { VetoMark } from "@/components/VetoMark";
 import { sandboxFootballBeforeSurface, sandboxFootballSurface } from "@/lib/sandbox/football-model";
+import { analyzeModelCouncil } from "@/lib/council/engine";
+import { buildCouncilInputs } from "@/lib/council/registry";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) => `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)} п.п.`;
@@ -137,13 +139,18 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   const primarySignal = activeWorkspace.opportunities[0];
   const primaryMarketProbability = 1 / primarySignal.marketOdds;
   const primaryGap = primarySignal.fairProbability - primaryMarketProbability;
+  const councilAnalysis = useMemo(
+    () =>
+      analyzeModelCouncil(
+        buildCouncilInputs(
+          activeWorkspace.sport,
+          activeWorkspace.models,
+        ),
+      ),
+    [activeWorkspace.sport, activeWorkspace.models],
+  );
   const councilConsensus = Math.round(
-    activeWorkspace.models.reduce(
-      (sum, model) => sum + model.confidence,
-      0,
-    ) /
-      activeWorkspace.models.length *
-      100,
+    councilAnalysis.consensusConfidence * 100,
   );
   const livePriority =
     activeWorkspace.pulse === "hot"
@@ -619,30 +626,83 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
             </div>
           </div>
           <div className="councilConsensus">
-            <span>CONSENSUS</span>
+            <span>COUNCIL CONF</span>
             <strong>{councilConsensus}</strong>
             <em>/100</em>
           </div>
         </div>
 
         <div className="councilStrip">
-          {activeWorkspace.models.map((model) => (
-            <article className="councilNode" key={model.id}>
-              <div className="councilNodeTop">
-                <span><i className={model.status} />{model.label}</span>
-                <small>{model.latency}</small>
-              </div>
-              <strong>{pct(model.probability)}</strong>
-              <div className="councilLane">
-                <span style={{ width: `${model.probability * 100}%` }} />
-                <i style={{ left: `${model.probability * 100}%` }} />
-              </div>
-              <div className="councilNodeFoot">
-                <span>CONF {Math.round(model.confidence * 100)}</span>
-                <b>{model.status.toUpperCase()}</b>
-              </div>
-            </article>
-          ))}
+          {activeWorkspace.models.map((model) => {
+            const councilModel = councilAnalysis.models.find(
+              (item) => item.id === model.id,
+            );
+            return (
+              <article className="councilNode" key={model.id}>
+                <div className="councilNodeTop">
+                  <span><i className={model.status} />{model.label}</span>
+                  <small>{model.latency}</small>
+                </div>
+                <strong>{pct(model.probability)}</strong>
+                <div className="councilLane">
+                  <span style={{ width: `${model.probability * 100}%` }} />
+                  <i style={{ left: `${model.probability * 100}%` }} />
+                </div>
+                <div className="councilNodeMeta">
+                  <span>
+                    WEIGHT <b>{Math.round((councilModel?.adjustedWeight ?? 0) * 100)}%</b>
+                  </span>
+                  <span>
+                    DEP <b>{Math.round((councilModel?.averageDependency ?? 0) * 100)}%</b>
+                  </span>
+                  <span>
+                    PEN <b>{Math.round((councilModel?.independencePenalty ?? 0) * 100)}%</b>
+                  </span>
+                </div>
+                <div className="councilNodeFoot">
+                  <span>CONF {Math.round(model.confidence * 100)}</span>
+                  <b>{model.status.toUpperCase()}</b>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        <div className="councilLineageRail">
+          <div>
+            <span>CONSENSUS P</span>
+            <strong>{pct(councilAnalysis.consensusProbability)}</strong>
+          </div>
+          <div>
+            <span>EFFECTIVE MODELS</span>
+            <strong>
+              {councilAnalysis.effectiveIndependentModels.toFixed(2)}
+              <em> / {councilAnalysis.modelCount}</em>
+            </strong>
+          </div>
+          <div>
+            <span>INDEPENDENCE</span>
+            <strong>{Math.round(councilAnalysis.independenceRatio * 100)}%</strong>
+          </div>
+          <div>
+            <span>DISPERSION</span>
+            <strong>{(councilAnalysis.dispersion * 100).toFixed(1)} pp</strong>
+          </div>
+          <div className="councilDependency">
+            <span>STRONGEST DEPENDENCY</span>
+            <strong>
+              {councilAnalysis.strongestDependency
+                ? `${councilAnalysis.strongestDependency.a} ↔ ${councilAnalysis.strongestDependency.b}`
+                : "NONE"}
+            </strong>
+            <small>
+              {councilAnalysis.strongestDependency
+                ? `${Math.round(
+                    councilAnalysis.strongestDependency.combinedDependency * 100,
+                  )}% shared dependency`
+                : "independent"}
+            </small>
+          </div>
         </div>
 
         <div className="intelligenceSurfaceBody">
