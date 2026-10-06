@@ -72,7 +72,7 @@ export function BacktestLab({ locale }: { locale: Locale }) {
     <section className="panel backtestLab">
       <div className="panelHeader">
         <div>
-          <span className="panelIndex">09</span>
+          <span className="panelIndex">12</span>
           <div>
             <h2>{copy.title}</h2>
             <p>{copy.subtitle}</p>
