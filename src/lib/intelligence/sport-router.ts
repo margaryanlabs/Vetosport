@@ -5,6 +5,8 @@ import type { BasketballStateInput } from "@/lib/models/basketball/engine";
 import { buildBasketballSurface, priceBasketballMarket } from "@/lib/models/basketball/engine";
 import type { TennisStateInput } from "@/lib/models/tennis/engine";
 import { buildTennisPointState, priceTennisMarket } from "@/lib/models/tennis/engine";
+import type { HockeyStateInput } from "@/lib/models/hockey/engine";
+import { buildHockeySurface, priceHockeyMarket } from "@/lib/models/hockey/engine";
 
 export type SportRepriceRequest =
   | {
@@ -28,6 +30,12 @@ export type SportRepriceRequest =
       state: TennisStateInput;
       matchMarketOdds?: number;
       holdMarketOdds?: number;
+    }
+  | {
+      sport: "hockey";
+      state: HockeyStateInput;
+      marketOdds?: Record<string, number>;
+      totalLines?: number[];
     };
 
 export const repriceSport = (request: SportRepriceRequest) => {
@@ -99,27 +107,69 @@ export const repriceSport = (request: SportRepriceRequest) => {
     };
   }
 
-  const state = buildTennisPointState(request.state);
+  if (request.sport === "tennis") {
+    const state = buildTennisPointState(request.state);
+    return {
+      sport: request.sport,
+      model: "tennis.point-state.v1",
+      version: "0.1.0",
+      generatedAt,
+      researchWarning:
+        "Match surface is a state heuristic until calibrated on point-by-point historical data.",
+      surface: {
+        state,
+        markets: {
+          playerMatchWinner: priceTennisMarket(
+            state.matchWinProbability,
+            request.matchMarketOdds,
+          ),
+          playerNextHold: priceTennisMarket(
+            state.playerHoldProbability,
+            request.holdMarketOdds,
+          ),
+          playerNextBreak: priceTennisMarket(state.playerBreakProbability),
+        },
+      },
+    };
+  }
+
+  const surface = buildHockeySurface(request.state);
+  const totalLines = request.totalLines ?? [5.5, 6.5, 7.5];
+
   return {
     sport: request.sport,
-    model: "tennis.point-state.v1",
+    model: "hockey.shift-goalie.v1",
     version: "0.1.0",
     generatedAt,
     researchWarning:
-      "Match surface is a state heuristic until calibrated on point-by-point historical data.",
+      "Hockey manpower and empty-net modifiers are research priors until calibrated on historical shift-level data.",
     surface: {
-      state,
-      markets: {
-        playerMatchWinner: priceTennisMarket(
-          state.matchWinProbability,
-          request.matchMarketOdds,
+      remainingGoals: surface.remainingGoals,
+      regulation: {
+        home: priceHockeyMarket(
+          surface.regulation.homeWin,
+          request.marketOdds?.["reg-home"],
         ),
-        playerNextHold: priceTennisMarket(
-          state.playerHoldProbability,
-          request.holdMarketOdds,
+        tie: priceHockeyMarket(
+          surface.regulation.tie,
+          request.marketOdds?.["reg-tie"],
         ),
-        playerNextBreak: priceTennisMarket(state.playerBreakProbability),
+        away: priceHockeyMarket(
+          surface.regulation.awayWin,
+          request.marketOdds?.["reg-away"],
+        ),
       },
+      totals: totalLines.map((line) => ({
+        line,
+        under: priceHockeyMarket(
+          surface.totalUnder(line),
+          request.marketOdds?.[`total-under-${line}`],
+        ),
+        over: priceHockeyMarket(
+          surface.totalOver(line),
+          request.marketOdds?.[`total-over-${line}`],
+        ),
+      })),
     },
   };
 };
