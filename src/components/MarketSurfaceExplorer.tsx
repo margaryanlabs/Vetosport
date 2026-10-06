@@ -77,6 +77,19 @@ const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) =>
   `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)} pp`;
 
+const marketState = (probability: number) => {
+  if (probability >= 0.9995) return "guaranteed" as const;
+  if (probability <= 0.0005) return "impossible" as const;
+  return "open" as const;
+};
+
+const fairLabel = (market: FootballMarketProbability) => {
+  const state = marketState(market.probability);
+  if (state === "guaranteed") return "LOCKED";
+  if (state === "impossible") return "—";
+  return market.fairOdds.toFixed(2);
+};
+
 export function MarketSurfaceExplorer({
   current,
   previous,
@@ -98,7 +111,12 @@ export function MarketSurfaceExplorer({
 
   const markets = current.markets
     .filter((market) => familyFor(market) === family)
-    .sort((a, b) => b.probability - a.probability);
+    .sort((a, b) => {
+      const stateRank = (market: FootballMarketProbability) =>
+        marketState(market.probability) === "open" ? 0 : 1;
+      const stateDiff = stateRank(a) - stateRank(b);
+      return stateDiff !== 0 ? stateDiff : b.probability - a.probability;
+    });
 
   const familyLabel = (item: (typeof families)[number]) =>
     locale === "ru" ? item.ru : locale === "hy" ? item.hy : item.en;
@@ -137,8 +155,12 @@ export function MarketSurfaceExplorer({
         {markets.map((market) => {
           const shift =
             shifts.get(`${market.marketId}::${market.selectionId}`) ?? 0;
+          const state = marketState(market.probability);
           return (
-            <article className="surfaceMarketCard" key={`${market.marketId}-${market.selectionId}`}>
+            <article
+              className={`surfaceMarketCard ${state !== "open" ? "lockedMarket" : ""}`}
+              key={`${market.marketId}-${market.selectionId}`}
+            >
               <div className="surfaceMarketTop">
                 <span>{displayLabel(market, locale)}</span>
                 <i className={Math.abs(shift) < 0.001 ? "flat" : shift > 0 ? "up" : "down"}>
@@ -150,8 +172,16 @@ export function MarketSurfaceExplorer({
                 <i style={{ width: `${market.probability * 100}%` }} />
               </div>
               <div className="surfaceMarketBottom">
-                <span>FAIR</span>
-                <b>{market.fairOdds.toFixed(2)}</b>
+                <span>{state === "open" ? "FAIR" : state === "guaranteed" ? "STATE" : "STATE"}</span>
+                <b className={state === "impossible" ? "negative" : state === "guaranteed" ? "positive" : ""}>
+                  {state === "impossible"
+                    ? locale === "ru"
+                      ? "НЕВОЗМОЖНО"
+                      : locale === "hy"
+                        ? "ԱՆՀՆԱՐ"
+                        : "IMPOSSIBLE"
+                    : fairLabel(market)}
+                </b>
               </div>
             </article>
           );
