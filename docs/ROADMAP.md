@@ -23,7 +23,7 @@
 - [x] Model Council, Scenario Engine, Market Pulse and Evidence Tape UI
 - [x] explicit SANDBOX/live-provider status
 
-## P1 — real data spine (next)
+## P1 — real data spine (in progress)
 
 1. Add persistent canonical storage for events, participants, quotes, snapshots, evidence, predictions and outcomes.
 2. Connect one sports-data provider and one odds/exchange provider.
