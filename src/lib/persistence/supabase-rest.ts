@@ -5,11 +5,13 @@ import type {
   SportEvent,
 } from "@/lib/domain/types";
 import type {
+  DecisionOutcomeRecord,
   EventStateSnapshot,
   HistoricalImportRecord,
   PersistedEvent,
   PredictionRecord,
   ProviderHealthSample,
+  UnsettledDecision,
   VetoPersistence,
 } from "./contracts";
 
@@ -292,6 +294,61 @@ export class SupabaseRestPersistence implements VetoPersistence {
           captured_at: entry.capturedAt,
           immutable_fingerprint: entry.immutableFingerprint,
           model_version_set: entry.modelVersionSet,
+        }),
+      },
+      "return=minimal",
+    );
+  }
+
+  async findUnsettledDecisions(eventId: string): Promise<UnsettledDecision[]> {
+    const query = new URLSearchParams();
+    query.set("event_id", `eq.${eventId}`);
+    query.set(
+      "select",
+      "decision_id,event_id,sport,market_key,selection_key,selection_line,selection_side,captured_at,market_odds,fair_probability",
+    );
+
+    const rows = await this.request<Array<{
+      decision_id: string;
+      event_id: string;
+      sport: UnsettledDecision["sport"];
+      market_key: string;
+      selection_key: string;
+      selection_line?: number | null;
+      selection_side?: UnsettledDecision["selectionSide"] | null;
+      captured_at: string;
+      market_odds: number;
+      fair_probability: number;
+    }>>(
+      `/veto_unsettled_decisions?${query.toString()}`,
+      { method: "GET" },
+    );
+
+    return rows.map((row) => ({
+      decisionId: row.decision_id,
+      eventId: row.event_id,
+      sport: row.sport,
+      marketKey: row.market_key,
+      selectionKey: row.selection_key,
+      selectionLine: row.selection_line ?? undefined,
+      selectionSide: row.selection_side ?? undefined,
+      capturedAt: row.captured_at,
+      marketOdds: Number(row.market_odds),
+      fairProbability: Number(row.fair_probability),
+    }));
+  }
+
+  async appendDecisionOutcome(outcome: DecisionOutcomeRecord): Promise<void> {
+    await this.request(
+      "/decision_outcomes",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          decision_id: outcome.decisionId,
+          result: outcome.result,
+          closing_odds: outcome.closingOdds,
+          settled_at: outcome.settledAt,
+          raw_outcome: outcome.rawOutcome,
         }),
       },
       "return=minimal",
