@@ -19,6 +19,7 @@ import { runVoiSelfCheck } from "@/lib/voi/selfcheck";
 import { runCapacitySelfCheck } from "@/lib/capacity/selfcheck";
 import { runSemanticDriftSelfCheck } from "@/lib/drift/selfcheck";
 import { runLeakageSelfCheck } from "@/lib/leakage/selfcheck";
+import { runDiscoveryControlSelfCheck } from "@/lib/discovery/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -114,6 +115,10 @@ export function GET() {
     leakageMonitor: {
       model: "veto.leakage.negative-controls.v1",
       ...runLeakageSelfCheck(),
+    },
+    discoveryControl: {
+      model: "veto.discovery.control.v1",
+      ...runDiscoveryControlSelfCheck(),
     },
   };
 
