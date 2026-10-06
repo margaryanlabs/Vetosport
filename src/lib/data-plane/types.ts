@@ -15,6 +15,8 @@ export interface DataPlaneJournalInput<T = unknown> {
   sourceEmittedAt: string;
   gatewayReceivedAt: string;
   normalizedAt: string;
+  knowledgeAvailableAt?: string;
+  acquisitionMode?: "LIVE" | "HISTORICAL_BACKFILL";
   sourceClockOffsetMs?: number;
   sourceTimeUncertaintyMs?: number;
   lateArrival?: boolean;
@@ -25,7 +27,12 @@ export interface DataPlaneJournalInput<T = unknown> {
 }
 
 export interface PreparedJournalRecord<T = unknown>
-  extends DataPlaneJournalInput<T> {
+  extends Omit<
+    DataPlaneJournalInput<T>,
+    "knowledgeAvailableAt" | "acquisitionMode"
+  > {
+  knowledgeAvailableAt: string;
+  acquisitionMode: "LIVE" | "HISTORICAL_BACKFILL";
   dedupeKey: string;
   payloadHash: string;
   recordHash: string;
