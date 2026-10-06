@@ -8507,3 +8507,494 @@ body::before {
     display: none;
   }
 }
+
+/* =========================================================
+   PARALLAX IV / MARKET SHOCK + EXECUTION GATE
+   ========================================================= */
+
+.shockExecutionSurface {
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  background:
+    radial-gradient(circle at 75% 10%, rgba(91,227,162,.018), transparent 26rem),
+    rgba(255,255,255,.0015);
+}
+
+.shockExecutionHead {
+  min-height: 62px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.shockExecutionHead > div:first-child {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.shockExecutionHead h3 {
+  margin: 0;
+  color: #e1e7e4;
+  font-size: 9px;
+  letter-spacing: .14em;
+}
+
+.shockExecutionHead p {
+  margin: 4px 0 0;
+  color: #4d5853;
+  font-size: 7px;
+}
+
+.shockExecutionHead > span {
+  color: #76694e;
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+
+.shockExecutionSummary {
+  display: grid;
+  grid-template-columns: repeat(5,1fr);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.shockExecutionSummary > div {
+  min-height: 82px;
+  padding: 13px 15px;
+  display: grid;
+  align-content: space-between;
+  border-right: 1px solid var(--line-soft);
+}
+
+.shockExecutionSummary > div:last-child {
+  border-right: 0;
+}
+
+.shockExecutionSummary span {
+  color: #414b47;
+  font-size: 5px;
+  letter-spacing: .1em;
+}
+
+.shockExecutionSummary strong {
+  color: #aeb8b3;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  font-weight: 550;
+}
+
+.shockExecutionMain {
+  display: grid;
+  grid-template-columns: minmax(340px,.9fr) minmax(440px,1.1fr);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.shockAnatomy,
+.executionGate {
+  min-height: 390px;
+  padding: 17px 18px;
+}
+
+.shockAnatomy {
+  border-right: 1px solid var(--line-soft);
+}
+
+.shockSubhead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.shockSubhead > div {
+  display: grid;
+  gap: 5px;
+}
+
+.shockSubhead span {
+  color: #46514c;
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .12em;
+}
+
+.shockSubhead strong {
+  color: #a6b0ab;
+  font-size: 8px;
+}
+
+.shockSubhead small {
+  color: #59655f;
+  font-size: 5px;
+  letter-spacing: .08em;
+}
+
+.shockHypotheses {
+  margin-top: 20px;
+  display: grid;
+  gap: 11px;
+}
+
+.shockHypotheses > div {
+  display: grid;
+  gap: 7px;
+}
+
+.shockHypotheses > div > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.shockHypotheses span {
+  color: #56615c;
+  font-size: 6px;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+
+.shockHypotheses strong {
+  color: #7a8680;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 7px;
+  font-weight: 550;
+}
+
+.shockHypotheses i {
+  height: 2px;
+  overflow: hidden;
+  background: #141b18;
+}
+
+.shockHypotheses i b {
+  display: block;
+  height: 2px;
+  min-width: 3px;
+  background: #4a5751;
+}
+
+.shockHypotheses > div.active span,
+.shockHypotheses > div.active strong {
+  color: var(--edge);
+}
+
+.shockHypotheses > div.active i b {
+  background: linear-gradient(90deg, rgba(91,227,162,.35), var(--edge));
+}
+
+.shockEvidenceGrid {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  border-top: 1px solid var(--line-soft);
+  border-left: 1px solid var(--line-soft);
+}
+
+.shockEvidenceGrid > div {
+  min-height: 60px;
+  padding: 9px;
+  display: grid;
+  align-content: space-between;
+  gap: 7px;
+  border-right: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.shockEvidenceGrid span {
+  color: #3f4944;
+  font-size: 5px;
+  letter-spacing: .08em;
+}
+
+.shockEvidenceGrid strong {
+  color: #89958f;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 8px;
+  font-weight: 550;
+}
+
+.shockReasons {
+  margin-top: 18px;
+  display: grid;
+}
+
+.shockReasons > div {
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 9px;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.shockReasons > div:last-child {
+  border-bottom: 0;
+}
+
+.shockReasons span {
+  color: #3f4944;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 5px;
+}
+
+.shockReasons p {
+  margin: 0;
+  color: #67736d;
+  font-size: 6px;
+  line-height: 1.45;
+}
+
+.executionHero {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid var(--line-soft);
+  border-left: 1px solid var(--line-soft);
+}
+
+.executionHero > div {
+  min-height: 84px;
+  padding: 12px;
+  display: grid;
+  align-content: space-between;
+  border-right: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.executionHero span {
+  color: #414b47;
+  font-size: 5px;
+  letter-spacing: .09em;
+}
+
+.executionHero strong {
+  color: #b6c0bb;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 18px;
+  font-weight: 540;
+}
+
+.executionChecks {
+  margin-top: 18px;
+  display: grid;
+}
+
+.executionChecks > div {
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: 10px minmax(0,1fr) 45px 42px;
+  gap: 9px;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.executionChecks > div:last-child {
+  border-bottom: 0;
+}
+
+.executionChecks > div > i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+.executionChecks > div.passed > i {
+  background: var(--edge);
+}
+
+.executionChecks > div > div {
+  display: grid;
+  gap: 4px;
+}
+
+.executionChecks strong {
+  color: #8e9993;
+  font-size: 6px;
+}
+
+.executionChecks small {
+  color: #49544f;
+  font-size: 5px;
+  line-height: 1.4;
+}
+
+.executionChecks em {
+  color: #59645f;
+  font-size: 5px;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.executionChecks b {
+  color: var(--danger);
+  font-size: 5px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.executionChecks .passed b {
+  color: var(--edge);
+}
+
+.shockComparison {
+  min-height: 150px;
+  padding: 17px 18px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.shockComparison > div:first-child {
+  display: grid;
+  gap: 5px;
+}
+
+.shockComparison > div:first-child span {
+  color: #46514c;
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .11em;
+}
+
+.shockComparison > div:first-child strong {
+  color: #9ca7a1;
+  font-size: 8px;
+}
+
+.shockControlGrid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 8px;
+}
+
+.shockControlGrid article {
+  min-height: 82px;
+  padding: 11px;
+  display: grid;
+  align-content: space-between;
+  gap: 7px;
+  border: 1px solid var(--line-soft);
+  background: rgba(255,255,255,.003);
+}
+
+.shockControlGrid article.blocked {
+  border-color: rgba(227,102,110,.14);
+  background: rgba(227,102,110,.01);
+}
+
+.shockControlGrid span {
+  color: #4a5550;
+  font-size: 5px;
+  letter-spacing: .08em;
+}
+
+.shockControlGrid strong {
+  color: #8b9690;
+  font-size: 7px;
+}
+
+.shockControlGrid article.blocked strong {
+  color: var(--danger);
+}
+
+.shockControlGrid small {
+  color: #55615c;
+  font-size: 5px;
+}
+
+.shockExecutionMethod {
+  min-height: 58px;
+  padding: 11px 18px;
+  display: grid;
+  grid-template-columns: 105px minmax(0,1fr) auto;
+  gap: 18px;
+  align-items: center;
+  background: rgba(191,162,105,.008);
+}
+
+.shockExecutionMethod > span {
+  color: var(--watch);
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+
+.shockExecutionMethod p {
+  margin: 0;
+  color: #56615c;
+  font-size: 6px;
+  line-height: 1.5;
+}
+
+.shockExecutionMethod code {
+  color: #46514c;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 5px;
+}
+
+@media (max-width: 980px) {
+  .shockExecutionSummary {
+    grid-template-columns: repeat(2,1fr);
+  }
+
+  .shockExecutionSummary > div:nth-child(even) {
+    border-right: 0;
+  }
+
+  .shockExecutionSummary > div:last-child {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  .shockExecutionMain {
+    grid-template-columns: 1fr;
+  }
+
+  .shockAnatomy {
+    border-right: 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .shockControlGrid {
+    grid-template-columns: repeat(2,1fr);
+  }
+}
+
+@media (max-width: 620px) {
+  .shockExecutionHead {
+    min-height: auto;
+    padding: 13px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .shockAnatomy,
+  .executionGate,
+  .shockComparison,
+  .shockExecutionMethod {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .shockEvidenceGrid {
+    grid-template-columns: repeat(2,1fr);
+  }
+
+  .shockControlGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .shockExecutionMethod {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .shockExecutionMethod code {
+    display: none;
+  }
+}
