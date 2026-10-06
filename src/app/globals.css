@@ -1266,3 +1266,5 @@ footer p {
   .liveTwinDrivers > div:last-child { border-bottom: 0; }
   .affectedMarkets { align-items: flex-start; flex-direction: column; }
 }
+
+.negative { color: var(--danger) !important; }
