@@ -189,7 +189,21 @@ export class TheOddsApiClient {
             },
             bookmaker: bookmaker.title || bookmaker.key,
             decimalOdds: outcome.price,
-            capturedAt: market.last_update ?? bookmaker.last_update ?? new Date().toISOString(),
+            capturedAt:
+              market.last_update ??
+              bookmaker.last_update ??
+              new Date().toISOString(),
+            sourceProvider: this.id,
+            providerLastUpdate:
+              market.last_update ?? bookmaker.last_update,
+            raw: {
+              providerEventId: event.id,
+              bookmakerKey: bookmaker.key,
+              marketKey: market.key,
+              outcomeName: outcome.name,
+              outcomeDescription: outcome.description,
+              point: outcome.point,
+            },
           });
         }
       }
