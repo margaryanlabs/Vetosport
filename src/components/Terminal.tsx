@@ -134,6 +134,16 @@ export function Terminal() {
         </div>
       </header>
 
+      <nav className="surfaceRailNav" aria-label="VETO surface sections">
+        <a href="#live"><b>01</b><span>LIVE</span></a>
+        <a href="#events"><b>02</b><span>EVENT</span></a>
+        <a href="#market-surface"><b>05</b><span>SURFACE</span></a>
+        <a href="#pricing"><b>06</b><span>PRICING</span></a>
+        <a href="#models"><b>08</b><span>MODELS</span></a>
+        <a href="#ledger"><b>11</b><span>LEDGER</span></a>
+        <a href="#validation"><b>12</b><span>VALIDATE</span></a>
+      </nav>
+
       <section className="hero signalHero" id="terminal">
         <div className="heroCopyBlock">
           <div className="heroMetaRow">
@@ -473,13 +483,15 @@ export function Terminal() {
         </div>
       </section>
 
-      <MarketSurfaceExplorer
-        current={sandboxFootballSurface}
-        previous={sandboxFootballBeforeSurface}
-        locale={locale}
-      />
+      <div id="market-surface">
+        <MarketSurfaceExplorer
+          current={sandboxFootballSurface}
+          previous={sandboxFootballBeforeSurface}
+          locale={locale}
+        />
+      </div>
 
-      <div className="deepMarketGrid">
+      <div className="deepMarketGrid" id="pricing">
         <AsianLinesBoard surface={sandboxFootballSurface} locale={locale} />
         <section className="panel scorelineMatrix">
           <div className="panelHeader">
@@ -611,9 +623,10 @@ export function Terminal() {
         </div>
       </section>
 
-      <BacktestLab locale={locale} />
-
-      <ModelGovernancePanel locale={locale} />
+      <div id="validation">
+        <BacktestLab locale={locale} />
+        <ModelGovernancePanel locale={locale} />
+      </div>
 
       <section className="dataPlane">
         <div>
