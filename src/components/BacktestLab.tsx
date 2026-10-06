@@ -22,55 +22,40 @@ export function BacktestLab({ locale }: { locale: Locale }) {
   const copy =
     locale === "ru"
       ? {
-          title: "BACKTEST LAB",
-          subtitle: "Калибровка, closing line и устойчивость вне выборки",
-          synthetic: "SYNTHETIC BACKTEST",
-          roi: "ROI",
-          clv: "Средний CLV",
-          brier: "Brier",
-          close: "Closing Brier",
-          ece: "Calibration error",
-          drawdown: "Max drawdown",
-          calibration: "Калибровка",
-          equity: "Equity curve",
-          walk: "Walk-forward",
+          title: "VALIDATION LAB",
+          subtitle: "Калибровка · closing line · walk-forward",
+          synthetic: "SYNTHETIC / NOT PROOF",
           rows: "решений",
+          warning: "Результаты ниже — детерминированный sandbox. Они проверяют механику validation pipeline, а не доказывают реальную доходность.",
         }
       : locale === "hy"
         ? {
-            title: "BACKTEST LAB",
-            subtitle: "Կալիբրացիա, closing line և out-of-sample կայունություն",
-            synthetic: "SYNTHETIC BACKTEST",
-            roi: "ROI",
-            clv: "Միջին CLV",
-            brier: "Brier",
-            close: "Closing Brier",
-            ece: "Calibration error",
-            drawdown: "Max drawdown",
-            calibration: "Կալիբրացիա",
-            equity: "Equity curve",
-            walk: "Walk-forward",
+            title: "VALIDATION LAB",
+            subtitle: "Կալիբրացիա · closing line · walk-forward",
+            synthetic: "SYNTHETIC / NOT PROOF",
             rows: "որոշումներ",
+            warning: "Ստորև արդյունքները deterministic sandbox-ից են։ Դրանք ստուգում են validation pipeline-ը, ոչ թե իրական եկամտաբերությունը։",
           }
         : {
-            title: "BACKTEST LAB",
-            subtitle: "Calibration, closing line and out-of-sample stability",
-            synthetic: "SYNTHETIC BACKTEST",
-            roi: "ROI",
-            clv: "Mean CLV",
-            brier: "Brier",
-            close: "Closing Brier",
-            ece: "Calibration error",
-            drawdown: "Max drawdown",
-            calibration: "Calibration",
-            equity: "Equity curve",
-            walk: "Walk-forward",
+            title: "VALIDATION LAB",
+            subtitle: "Calibration · closing line · walk-forward",
+            synthetic: "SYNTHETIC / NOT PROOF",
             rows: "decisions",
+            warning: "Results below come from a deterministic sandbox. They validate the evaluation pipeline, not real profitability.",
           };
 
+  const metricStrip = [
+    { label: "ROI", value: pct(metrics.roi), tone: metrics.roi >= 0 ? "positive" : "negative", note: `${metrics.actionableRows} ${copy.rows}` },
+    { label: "MEAN CLV", value: signed(metrics.meanClvOdds), tone: (metrics.meanClvOdds ?? 0) >= 0 ? "positive" : "negative", note: "vs closing" },
+    { label: "BRIER", value: metrics.brier.toFixed(3), note: `entry Δ +${metrics.brierDeltaVsEntry.toFixed(3)}` },
+    { label: "CLOSE BRIER", value: metrics.closingMarketBrier?.toFixed(3) ?? "—", note: metrics.brierDeltaVsClose == null ? "no close" : `close Δ ${metrics.brierDeltaVsClose >= 0 ? "+" : ""}${metrics.brierDeltaVsClose.toFixed(3)}` },
+    { label: "ECE", value: pct(metrics.expectedCalibrationError), note: "calibration error" },
+    { label: "MAX DD", value: metrics.maxDrawdown.toFixed(2), note: "units" },
+  ];
+
   return (
-    <section className="panel backtestLab">
-      <div className="panelHeader">
+    <section className="validationSurface">
+      <div className="validationHead">
         <div>
           <span className="panelIndex">12</span>
           <div>
@@ -78,50 +63,62 @@ export function BacktestLab({ locale }: { locale: Locale }) {
             <p>{copy.subtitle}</p>
           </div>
         </div>
-        <span className="syntheticBadge">{copy.synthetic}</span>
+        <div className="validationStatus">
+          <span>{copy.synthetic}</span>
+          <i />
+        </div>
       </div>
 
-      <div className="backtestMetrics">
-        <BacktestMetric label={copy.roi} value={pct(metrics.roi)} tone={metrics.roi >= 0 ? "good" : "bad"} />
-        <BacktestMetric label={copy.clv} value={signed(metrics.meanClvOdds)} tone={(metrics.meanClvOdds ?? 0) >= 0 ? "good" : "bad"} />
-        <BacktestMetric label={copy.brier} value={metrics.brier.toFixed(3)} detail={`Δ entry +${metrics.brierDeltaVsEntry.toFixed(3)}`} />
-        <BacktestMetric label={copy.close} value={metrics.closingMarketBrier?.toFixed(3) ?? "—"} detail={metrics.brierDeltaVsClose == null ? "no close" : `Δ close ${metrics.brierDeltaVsClose >= 0 ? "+" : ""}${metrics.brierDeltaVsClose.toFixed(3)}`} />
-        <BacktestMetric label={copy.ece} value={pct(metrics.expectedCalibrationError)} />
-        <BacktestMetric label={copy.drawdown} value={metrics.maxDrawdown.toFixed(2)} detail={`${metrics.actionableRows} ${copy.rows}`} />
-      </div>
-
-      <div className="backtestVisualGrid">
-        <div className="calibrationPanel">
-          <div className="miniSectionHead">
-            <span>{copy.calibration}</span>
-            <small>Observed vs predicted</small>
+      <div className="validationMetricStrip">
+        {metricStrip.map((item) => (
+          <div className="validationMetric" key={item.label}>
+            <span>{item.label}</span>
+            <strong className={item.tone ?? ""}>{item.value}</strong>
+            <small>{item.note}</small>
           </div>
-          <div className="calibrationChart">
-            <div className="perfectCalibration" />
+        ))}
+      </div>
+
+      <div className="validationBody">
+        <section className="validationCalibration">
+          <div className="validationSubhead">
+            <div>
+              <span>CALIBRATION</span>
+              <strong>Observed vs predicted</strong>
+            </div>
+            <small>ECE {pct(metrics.expectedCalibrationError)}</small>
+          </div>
+
+          <div className="validationCalibrationChart">
+            <div className="validationPerfect" />
             {calibration.map((bucket) => (
-              <div className="calibrationBucket" key={`${bucket.from}-${bucket.to}`}>
+              <div className="validationBucket" key={`${bucket.from}-${bucket.to}`}>
                 <div
-                  className="calibrationObserved"
+                  className="validationObserved"
                   style={{ height: `${Math.max(3, bucket.observedRate * 100)}%` }}
                 />
                 <i
-                  className="calibrationPredicted"
+                  className="validationPredicted"
                   style={{ bottom: `${bucket.meanProbability * 100}%` }}
                 />
                 <span>{Math.round(bucket.meanProbability * 100)}</span>
               </div>
             ))}
           </div>
-        </div>
+        </section>
 
-        <div className="equityPanel">
-          <div className="miniSectionHead">
-            <span>{copy.equity}</span>
+        <section className="validationEquity">
+          <div className="validationSubhead">
+            <div>
+              <span>EQUITY</span>
+              <strong>Actionable decisions only</strong>
+            </div>
             <small>{metrics.profit >= 0 ? "+" : ""}{metrics.profit.toFixed(2)} units</small>
           </div>
-          <div className="equityBars">
+
+          <div className="validationEquityBars">
             {curve.map((point) => (
-              <div className="equityBarWrap" key={point.rowId}>
+              <div className="validationEquityBar" key={point.rowId}>
                 <i
                   className={point.cumulative >= 0 ? "positiveBar" : "negativeBar"}
                   style={{
@@ -131,75 +128,59 @@ export function BacktestLab({ locale }: { locale: Locale }) {
               </div>
             ))}
           </div>
-        </div>
+        </section>
 
-        <div className="walkForwardPanel">
-          <div className="miniSectionHead">
-            <span>{copy.walk}</span>
+        <section className="validationWalk">
+          <div className="validationSubhead">
+            <div>
+              <span>WALK-FORWARD</span>
+              <strong>Out-of-sample stability</strong>
+            </div>
             <small>{sandboxWalkForward.summary.count} windows</small>
           </div>
-          <div className="walkStats">
-            <div><span>Mean ROI</span><strong>{pct(sandboxWalkForward.summary.meanRoi)}</strong></div>
-            <div><span>Mean CLV</span><strong>{signed(sandboxWalkForward.summary.meanClvOdds)}</strong></div>
-            <div><span>Positive ROI</span><strong>{sandboxWalkForward.summary.positiveRoiWindows}/{sandboxWalkForward.summary.count}</strong></div>
-            <div><span>Positive CLV</span><strong>{sandboxWalkForward.summary.positiveClvWindows}/{sandboxWalkForward.summary.count}</strong></div>
+
+          <div className="walkSummary">
+            <span>MEAN ROI <b>{pct(sandboxWalkForward.summary.meanRoi)}</b></span>
+            <span>MEAN CLV <b>{signed(sandboxWalkForward.summary.meanClvOdds)}</b></span>
+            <span>ROI+ <b>{sandboxWalkForward.summary.positiveRoiWindows}/{sandboxWalkForward.summary.count}</b></span>
+            <span>CLV+ <b>{sandboxWalkForward.summary.positiveClvWindows}/{sandboxWalkForward.summary.count}</b></span>
           </div>
-          <div className="walkWindows">
+
+          <div className="walkTimeline">
             {sandboxWalkForward.windows.map((window, index) => (
-              <div className="walkWindow" key={window.testFrom}>
-                <span>W{index + 1}</span>
+              <div className="walkTimelineNode" key={window.testFrom}>
+                <span>W{String(index + 1).padStart(2, "0")}</span>
                 <i className={window.report.metrics.roi >= 0 ? "up" : "down"} />
                 <strong>{pct(window.report.metrics.roi)}</strong>
               </div>
             ))}
           </div>
-        </div>
+        </section>
       </div>
 
-      <div className="backtestSegments">
+      <div className="validationSegments">
+        <div className="validationSegmentsHead">
+          <span>MARKET SEGMENTS</span>
+          <span>ROWS</span>
+          <span>ROI</span>
+          <span>CLV</span>
+          <span>BRIER</span>
+        </div>
         {sandboxBacktestReport.segments.byMarket.slice(0, 5).map((segment) => (
-          <div className="segmentRow" key={segment.key}>
-            <div>
-              <strong>{segment.label.replace("football.", "")}</strong>
-              <span>{segment.rows} rows</span>
-            </div>
-            <span>ROI <b className={segment.roi >= 0 ? "positive" : "negative"}>{pct(segment.roi)}</b></span>
-            <span>CLV <b>{signed(segment.meanClvOdds)}</b></span>
-            <span>Brier <b>{segment.brier.toFixed(3)}</b></span>
+          <div className="validationSegmentRow" key={segment.key}>
+            <strong>{segment.label.replace("football.", "")}</strong>
+            <span>{segment.rows}</span>
+            <span className={segment.roi >= 0 ? "positive" : "negative"}>{pct(segment.roi)}</span>
+            <span>{signed(segment.meanClvOdds)}</span>
+            <span>{segment.brier.toFixed(3)}</span>
           </div>
         ))}
       </div>
 
-      <div className="backtestWarning">
+      <div className="validationDisclaimer">
         <strong>{copy.synthetic}</strong>
-        <p>
-          {locale === "ru"
-            ? "Эти результаты генерируются детерминированным sandbox-набором и ничего не доказывают о реальной доходности. Настоящие выводы появятся только после загрузки исторических odds/outcomes и walk-forward проверки."
-            : locale === "hy"
-              ? "Այս արդյունքները սինթետիկ sandbox տվյալներից են և չեն ապացուցում իրական եկամտաբերություն։ Իրական եզրակացությունները կլինեն միայն historical odds/outcomes և walk-forward validation-ից հետո։"
-              : "These results come from a deterministic synthetic sandbox and do not prove real profitability. Real conclusions require historical odds/outcomes and walk-forward validation."}
-        </p>
+        <p>{copy.warning}</p>
       </div>
     </section>
-  );
-}
-
-function BacktestMetric({
-  label,
-  value,
-  detail,
-  tone,
-}: {
-  label: string;
-  value: string;
-  detail?: string;
-  tone?: "good" | "bad";
-}) {
-  return (
-    <div className="backtestMetric">
-      <span>{label}</span>
-      <strong className={tone === "good" ? "positive" : tone === "bad" ? "negative" : ""}>{value}</strong>
-      <small>{detail ?? " "}</small>
-    </div>
   );
 }
