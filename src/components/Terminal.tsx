@@ -3,27 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Locale, Opportunity } from "@/lib/domain/types";
 import { dictionaries } from "@/lib/i18n/dictionaries";
-import { sandboxEvent, sandboxOpportunities } from "@/lib/sandbox/sample";
-import {
-  evidence,
-  liveEvents,
-  marketMoves,
-  modelViews,
-  probabilityHistory,
-  scenarios,
-  stateMetrics,
-} from "@/lib/sandbox/live";
+import { liveWorkspaces, workspaceById } from "@/lib/sandbox/workspaces";
 import { ProbabilityChart } from "@/components/ProbabilityChart";
 import { MarketSurfaceExplorer } from "@/components/MarketSurfaceExplorer";
 import { AsianLinesBoard } from "@/components/AsianLinesBoard";
 import { BacktestLab } from "@/components/BacktestLab";
 import { ModelGovernancePanel } from "@/components/ModelGovernancePanel";
+import { SpecialistSportSurface } from "@/components/SpecialistSportSurface";
 import { VetoMark } from "@/components/VetoMark";
-import { sandboxAffectedMarkets, sandboxLiveDeltas } from "@/lib/sandbox/live-changes";
-import { explainLiveChange } from "@/lib/live-twin/explain";
-import { repricePriority } from "@/lib/live-twin/materiality";
 import { sandboxFootballBeforeSurface, sandboxFootballSurface } from "@/lib/sandbox/football-model";
-import { materialFootballShifts } from "@/lib/models/football/diff";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) => `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)} п.п.`;
@@ -41,7 +29,8 @@ type ProviderStatus = {
 
 export function Terminal() {
   const [locale, setLocale] = useState<Locale>("ru");
-  const [selectedId, setSelectedId] = useState(sandboxOpportunities[0].selection.id);
+  const [selectedEventId, setSelectedEventId] = useState(liveWorkspaces[0].id);
+  const [selectedId, setSelectedId] = useState(liveWorkspaces[0].opportunities[0].selection.id);
   const [marketMode, setMarketMode] = useState<"all" | "edges">("all");
   const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
 
@@ -63,33 +52,48 @@ export function Terminal() {
   }, []);
 
   const dictionary = dictionaries[locale];
+  const activeWorkspace = workspaceById[selectedEventId] ?? liveWorkspaces[0];
+
+  useEffect(() => {
+    setSelectedId(activeWorkspace.opportunities[0].selection.id);
+    setMarketMode("all");
+  }, [activeWorkspace.id]);
+
   const selected = useMemo(
-    () => sandboxOpportunities.find((item) => item.selection.id === selectedId) ?? sandboxOpportunities[0],
-    [selectedId],
+    () =>
+      activeWorkspace.opportunities.find(
+        (item) => item.selection.id === selectedId,
+      ) ?? activeWorkspace.opportunities[0],
+    [activeWorkspace, selectedId],
   );
-  const visibleOpportunities = marketMode === "edges"
-    ? sandboxOpportunities.filter((item) => item.decision !== "PASS")
-    : sandboxOpportunities;
+
+  const visibleOpportunities =
+    marketMode === "edges"
+      ? activeWorkspace.opportunities.filter((item) => item.decision !== "PASS")
+      : activeWorkspace.opportunities;
+
+  const primarySignal = activeWorkspace.opportunities[0];
+  const primaryMarketProbability = 1 / primarySignal.marketOdds;
+  const primaryGap = primarySignal.fairProbability - primaryMarketProbability;
+  const councilConsensus = Math.round(
+    activeWorkspace.models.reduce(
+      (sum, model) => sum + model.confidence,
+      0,
+    ) /
+      activeWorkspace.models.length *
+      100,
+  );
+  const livePriority =
+    activeWorkspace.pulse === "hot"
+      ? "high"
+      : activeWorkspace.pulse === "stable"
+        ? "medium"
+        : "low";
+
   const configuredProviders = providerStatus
     ? Object.values(providerStatus.providers).filter((provider) => provider.configured).length
     : 0;
   const providerMode = configuredProviders > 0 ? "ADAPTERS CONFIGURED" : "SANDBOX";
-  const liveExplanation = explainLiveChange(sandboxLiveDeltas);
-  const livePriority = repricePriority(sandboxLiveDeltas);
-  const under35Model = sandboxFootballSurface.markets.find(
-    (market) =>
-      market.marketId === "football.total_goals" &&
-      market.selectionId === "under-3.5",
-  );
-  const under35Probability = under35Model?.probability ?? 0;
-  const under35FairOdds = under35Model?.fairOdds ?? 0;
-  const under35MarketProbability = 1 / 1.43;
-  const under35Gap = under35Probability - under35MarketProbability;
-  const footballShifts = materialFootballShifts(
-    sandboxFootballBeforeSurface,
-    sandboxFootballSurface,
-    0.008,
-  ).slice(0, 4);
 
   return (
     <main className="appFrame signalSystem">
@@ -144,70 +148,90 @@ export function Terminal() {
         <a href="#validation"><b>12</b><span>VALIDATE</span></a>
       </nav>
 
-      <section className="hero signalHero" id="terminal">
+      <section className="hero signalHero liveHero" id="terminal">
         <div className="heroCopyBlock">
           <div className="heroMetaRow">
-            <span className="signalKicker"><i /> LIVE DECISION SURFACE</span>
+            <span className="signalKicker"><i /> LIVE MULTI-SPORT INTELLIGENCE</span>
             <span className="researchBadge">RESEARCH / SANDBOX</span>
           </div>
 
           <div className="heroIdentity">
             <VetoMark size={54} className="heroMark" />
-            <span>VETO SPORT</span>
+            <span>VETO SPORT / SIGNAL SYSTEM</span>
           </div>
 
           <h1>
             {locale === "ru"
-              ? "Рынок показывает цену. VETO показывает сигнал."
+              ? "Не смотри на коэффициент. Смотри, где рынок опаздывает."
               : locale === "hy"
-                ? "Շուկան ցույց է տալիս գինը։ VETO-ն ցույց է տալիս ազդանշանը։"
-                : "The market shows a price. VETO shows the signal."}
+                ? "Մի նայիր միայն գործակցին։ Տես՝ որտեղ է շուկան ուշանում։"
+                : "Don’t watch the odds. Watch where the market is late."}
           </h1>
 
           <p className="heroCopy">
             {locale === "ru"
-              ? "Одна живая поверхность вероятностей: матч, рынок, модели и изменения состояния — в одном контексте."
+              ? "VETO непрерывно пересчитывает матч, рынок и сценарии. Выбирай событие — и вся система мгновенно перестраивается под его sport-state."
               : locale === "hy"
-                ? "Հավանականությունների մեկ կենդանի մակերես՝ խաղը, շուկան, մոդելները և վիճակի փոփոխությունները մեկ համատեքստում։"
-                : "One live probability surface for the event, market, models and every material state change."}
+                ? "VETO-ն անընդհատ վերագնահատում է խաղը, շուկան և սցենարները։ Ընտրիր իրադարձությունը՝ ամբողջ համակարգը վերակառուցվում է դրա sport-state-ի շուրջ։"
+                : "VETO continuously reprices the event, market and scenario tree. Pick an event and the entire system rebuilds around its sport-state."}
           </p>
 
+          <div className="heroLiveNetwork" aria-label="Live sports network">
+            {liveWorkspaces.map((workspace) => (
+              <button
+                className={activeWorkspace.id === workspace.id ? "active" : ""}
+                key={workspace.id}
+                onClick={() => setSelectedEventId(workspace.id)}
+                type="button"
+              >
+                <span><i className={workspace.pulse} />{workspace.sportLabel}</span>
+                <strong>{workspace.homeCode} {workspace.homeScore}:{workspace.awayScore} {workspace.awayCode}</strong>
+                <small>{workspace.clock}</small>
+              </button>
+            ))}
+          </div>
+
           <div className="heroTelemetry">
-            <span>LIVE 64:18</span>
-            <span>STATE #18429</span>
-            <span>FEED 0.8s</span>
-            <span>MODEL 312ms</span>
+            <span>{activeWorkspace.clock}</span>
+            <span>STATE {activeWorkspace.stateId}</span>
+            <span>FEED {activeWorkspace.feedLatency}</span>
+            <span>MODEL {activeWorkspace.modelLatency}</span>
           </div>
         </div>
 
         <div className="heroSignal">
+          <div className="heroSignalEvent">
+            <span>{activeWorkspace.sportLabel}</span>
+            <strong>{activeWorkspace.homeCode} · {activeWorkspace.awayCode}</strong>
+          </div>
+
           <div className="heroSignalTop">
             <div>
               <span className="miniLabel">PRIMARY SIGNAL</span>
-              <strong>UNDER 3.5</strong>
+              <strong>{primarySignal.selection.label}</strong>
             </div>
-            <em>EDGE</em>
+            <em className={decisionClass(primarySignal.decision)}>{primarySignal.decision}</em>
           </div>
 
           <div className="heroProbability">
-            <strong>{pct(under35Probability)}</strong>
-            <span>VETO probability</span>
+            <strong>{pct(primarySignal.fairProbability)}</strong>
+            <span>Fair probability · {activeWorkspace.modelVersion}</span>
           </div>
 
           <div className="heroSignalLane">
-            <span style={{ width: `${under35Probability * 100}%` }} />
-            <i style={{ left: `${under35Probability * 100}%` }} />
+            <span style={{ width: `${primarySignal.fairProbability * 100}%` }} />
+            <i style={{ left: `${primarySignal.fairProbability * 100}%` }} />
           </div>
 
           <div className="heroSignalMetrics">
-            <div><span>FAIR</span><strong>{under35FairOdds.toFixed(2)}</strong></div>
-            <div><span>MARKET</span><strong>1.43</strong></div>
-            <div><span>GAP</span><strong className="positive">{pp(under35Gap)}</strong></div>
+            <div><span>FAIR</span><strong>{primarySignal.fairOdds.toFixed(2)}</strong></div>
+            <div><span>MARKET</span><strong>{primarySignal.marketOdds.toFixed(2)}</strong></div>
+            <div><span>GAP</span><strong className={primaryGap >= 0 ? "positive" : "negative"}>{pp(primaryGap)}</strong></div>
           </div>
 
           <div className="heroSignalWhy">
             <span>WHY NOW</span>
-            <p>Tempo ↓ 19% · remaining λ {sandboxFootballSurface.remainingGoals.total.toFixed(2)} · council 84%</p>
+            <p>{activeWorkspace.reasonHeadline}</p>
           </div>
         </div>
       </section>
@@ -224,84 +248,90 @@ export function Terminal() {
         <Metric value="9" label={dictionary.validated} detail="3 high-conviction" accent />
       </section>
 
-      <section className="liveRail" id="live">
+      <section className="liveRail liveEventSwitcher" id="live">
         <div className="sectionRailTitle">
           <span className="panelIndex">01</span>
           <div>
             <h2>{dictionary.liveNow}</h2>
-            <p>Event twins currently repricing</p>
+            <p>Choose an event · entire VETO state switches</p>
           </div>
         </div>
         <div className="liveCards">
-          {liveEvents.map((event, index) => (
-            <button className={`liveEventCard ${index === 0 ? "active" : ""}`} key={event.id} type="button">
+          {liveWorkspaces.map((event) => (
+            <button
+              className={`liveEventCard ${activeWorkspace.id === event.id ? "active" : ""}`}
+              key={event.id}
+              onClick={() => setSelectedEventId(event.id)}
+              type="button"
+            >
               <div className="liveEventTop">
                 <span className={`pulseTag ${event.pulse}`}>{event.clock}</span>
                 <span>{event.competition}</span>
               </div>
+              <div className="liveSportTag">{event.sportLabel}</div>
               <div className="liveScore">
-                <span>{event.home}</span>
-                <strong>{event.scoreHome}<em>:</em>{event.scoreAway}</strong>
-                <span>{event.away}</span>
+                <span>{event.homeCode}</span>
+                <strong>{event.homeScore}<em>:</em>{event.awayScore}</strong>
+                <span>{event.awayCode}</span>
               </div>
               <div className="liveEventMeta">
                 <span>{event.markets} markets</span>
                 <span>{event.repriced} repriced</span>
-                <strong>+{event.topEdge.toFixed(1)}% edge</strong>
+                <strong>{event.opportunities[0].decision} · {pp(event.opportunities[0].probabilityEdge)}</strong>
               </div>
             </button>
           ))}
         </div>
       </section>
 
-      <section className="eventDecisionSurface" id="events">
+      <section className={`eventDecisionSurface sport-${activeWorkspace.sport}`} id="events">
         <div className="surfaceCommandHeader">
           <div className="surfaceCommandTitle">
             <span className="panelIndex">02</span>
             <div>
               <h2>EVENT INTELLIGENCE</h2>
-              <p>{sandboxEvent.competition} · Live state + selected market</p>
+              <p>{activeWorkspace.competition} · {activeWorkspace.sportLabel} specialist state</p>
             </div>
           </div>
           <div className="headerTelemetry">
-            <span><i className="hotDot" /> LIVE 64:18</span>
-            <span>STATE #18429</span>
-            <span>FEED 0.8s</span>
-            <span>MODEL 312ms</span>
+            <span><i className="hotDot" /> {activeWorkspace.clock}</span>
+            <span>STATE {activeWorkspace.stateId}</span>
+            <span>FEED {activeWorkspace.feedLatency}</span>
+            <span>MODEL {activeWorkspace.modelLatency}</span>
           </div>
         </div>
 
         <div className="eventDecisionTop">
           <div className="eventMatchPlane">
             <div className="eventLeagueLine">
-              <span>ARS</span>
+              <span>{activeWorkspace.homeCode}</span>
               <i />
-              <span>{sandboxEvent.competition}</span>
+              <span>{activeWorkspace.competition}</span>
               <i />
-              <span>LIV</span>
+              <span>{activeWorkspace.awayCode}</span>
             </div>
 
             <div className="eventScoreLine">
               <div className="eventTeam eventTeamHome">
-                <span>HOME</span>
-                <strong>{sandboxEvent.home?.name}</strong>
-                <small>Control 54 · xG 1.18</small>
+                <span>{activeWorkspace.sportLabel} / HOME</span>
+                <strong>{activeWorkspace.homeName}</strong>
+                <small>{activeWorkspace.specialistMetrics[1]?.label} {activeWorkspace.specialistMetrics[1]?.value}</small>
               </div>
 
               <div className="eventScoreCore">
                 <div className="eventScoreDigits">
-                  <strong>1</strong><i>:</i><strong>1</strong>
+                  <strong>{activeWorkspace.homeScore}</strong><i>:</i><strong>{activeWorkspace.awayScore}</strong>
                 </div>
                 <div className="eventClockLine">
-                  <b>64:18</b>
-                  <span>SECOND HALF</span>
+                  <b>{activeWorkspace.clock}</b>
+                  <span>{activeWorkspace.period}</span>
                 </div>
               </div>
 
               <div className="eventTeam eventTeamAway">
-                <span>AWAY</span>
-                <strong>{sandboxEvent.away?.name}</strong>
-                <small>xG 0.94 · Pressure 41</small>
+                <span>{activeWorkspace.sportLabel} / AWAY</span>
+                <strong>{activeWorkspace.awayName}</strong>
+                <small>{activeWorkspace.specialistMetrics[2]?.label} {activeWorkspace.specialistMetrics[2]?.value}</small>
               </div>
             </div>
           </div>
@@ -334,17 +364,22 @@ export function Terminal() {
             <div className="verdictMetrics">
               <div><span>MARKET</span><strong>{selected.marketOdds.toFixed(2)}</strong></div>
               <div><span>FAIR</span><strong>{selected.fairOdds.toFixed(2)}</strong></div>
-              <div><span>EDGE</span><strong className="positive">{pp(selected.probabilityEdge)}</strong></div>
-              <div><span>EV</span><strong className="positive">{pct(selected.expectedValue)}</strong></div>
+              <div><span>EDGE</span><strong className={selected.probabilityEdge >= 0 ? "positive" : "negative"}>{pp(selected.probabilityEdge)}</strong></div>
+              <div><span>EV</span><strong className={selected.expectedValue >= 0 ? "positive" : "negative"}>{pct(selected.expectedValue)}</strong></div>
             </div>
           </aside>
         </div>
 
         <div className="eventStateRail">
-          <StatePill label={dictionary.regime} value="CONTROLLED" note="low transition" />
-          <StatePill label={dictionary.tempo} value="71/100" note="−19% / 10m" />
-          <StatePill label={dictionary.uncertainty} value="21/100" note="LOW" />
-          <StatePill label={dictionary.marketGap} value={pp(under35Gap)} note="UNDER 3.5" accent />
+          {activeWorkspace.stateMetrics.map((metric) => (
+            <StatePill
+              accent={metric.accent}
+              key={metric.label}
+              label={metric.label}
+              value={metric.value}
+              note={metric.note}
+            />
+          ))}
         </div>
 
         <div className="eventSignalBody">
@@ -352,24 +387,24 @@ export function Terminal() {
             <div className="eventPlaneHead">
               <div>
                 <span className="miniLabel">{dictionary.whatChanged}</span>
-                <strong>{liveExplanation.headline}</strong>
+                <strong>{activeWorkspace.reasonHeadline}</strong>
               </div>
               <span className={`priorityTag ${livePriority}`}>{livePriority.toUpperCase()}</span>
             </div>
 
-            <p>{liveExplanation.summary}</p>
+            <p>{activeWorkspace.reasonSummary}</p>
 
             <div className="changeTimeline">
-              {footballShifts.map((shift, index) => (
-                <div className="changeTimelineRow" key={`${shift.marketId}-${shift.selectionId}`}>
+              {activeWorkspace.changes.map((change, index) => (
+                <div className="changeTimelineRow" key={change.label}>
                   <span>{String(index + 1).padStart(2, "0")}</span>
-                  <i className={shift.direction} />
+                  <i className={change.direction} />
                   <div>
-                    <strong>{shift.label}</strong>
-                    <small>{shift.direction === "up" ? "Probability repriced upward" : "Probability repriced downward"}</small>
+                    <strong>{change.label}</strong>
+                    <small>{change.note}</small>
                   </div>
-                  <b className={shift.direction === "up" ? "positive" : shift.direction === "down" ? "negative" : ""}>
-                    {pp(shift.probabilityShift)}
+                  <b className={change.direction === "up" ? "positive" : change.direction === "down" ? "negative" : ""}>
+                    {pp(change.delta)}
                   </b>
                 </div>
               ))}
@@ -378,8 +413,8 @@ export function Terminal() {
             <div className="affectedMarkets">
               <span>AFFECTED</span>
               <div>
-                {sandboxAffectedMarkets.map((market) => (
-                  <i key={market}>{market.replace("football.", "").replaceAll("_", " ")}</i>
+                {activeWorkspace.affectedMarkets.map((market) => (
+                  <i key={market}>{market}</i>
                 ))}
               </div>
             </div>
@@ -389,20 +424,20 @@ export function Terminal() {
             <div className="eventPlaneHead">
               <div>
                 <span className="miniLabel">{dictionary.probabilitySurface}</span>
-                <strong>Under 3.5 · football.goal-state.v1</strong>
+                <strong>{activeWorkspace.probabilityLabel} · {activeWorkspace.modelVersion}</strong>
               </div>
               <div className="surfaceHeadline">
                 <span>VETO</span>
-                <strong>{pct(under35Probability)}</strong>
+                <strong>{pct(primarySignal.fairProbability)}</strong>
               </div>
             </div>
 
-            <ProbabilityChart points={probabilityHistory} />
+            <ProbabilityChart points={activeWorkspace.probabilityHistory} />
 
             <div className="probabilityFoot">
-              <span>MARKET <b>{pct(under35MarketProbability)}</b></span>
-              <span>FAIR <b>{under35FairOdds.toFixed(2)}</b></span>
-              <span>GAP <b className="positive">{pp(under35Gap)}</b></span>
+              <span>MARKET <b>{pct(primaryMarketProbability)}</b></span>
+              <span>FAIR <b>{primarySignal.fairOdds.toFixed(2)}</b></span>
+              <span>GAP <b className={primaryGap >= 0 ? "positive" : "negative"}>{pp(primaryGap)}</b></span>
               <span>AGREEMENT <b>{selected.modelAgreement}/100</b></span>
             </div>
           </section>
@@ -411,8 +446,8 @@ export function Terminal() {
         <div className="eventReasonBand">
           <div className="reasonNarrative">
             <span className="miniLabel">{dictionary.why}</span>
-            <h3>Цена рынка отстаёт от текущего состояния матча.</h3>
-            <p>VETO видит более медленный темп, меньший хвост сценариев с 4+ голами и устойчивое согласие моделей. Сигнал остаётся валидным, пока live-state не меняет режим.</p>
+            <h3>{activeWorkspace.reasonHeadline}</h3>
+            <p>{activeWorkspace.reasonSummary}</p>
           </div>
 
           <div className="reasonEvidence">
@@ -427,7 +462,7 @@ export function Terminal() {
           <div className="reasonRisk">
             <span className="miniLabel">RISK / INVALIDATION</span>
             <strong>{selected.risk}</strong>
-            <p>Next goal, red card or tempo regime break triggers full reprice.</p>
+            <p>{activeWorkspace.invalidation}</p>
           </div>
         </div>
 
@@ -436,7 +471,7 @@ export function Terminal() {
             <span className="panelIndex">03</span>
             <div>
               <h2>{dictionary.opportunities}</h2>
-              <p>Markets ranked by evidence quality, not payout size</p>
+              <p>{activeWorkspace.sportLabel} markets ranked by evidence quality</p>
             </div>
           </div>
           <div className="segmented">
@@ -466,7 +501,7 @@ export function Terminal() {
                 <i className={decisionClass(item.decision)} />
                 <span>
                   <strong>{item.selection.label}</strong>
-                  <small>{item.marketId.replace("football.", "").replaceAll("_", " ")}</small>
+                  <small>{item.marketId.replace(`${activeWorkspace.sport}.`, "").replaceAll("_", " ")}</small>
                 </span>
               </span>
               <span className="mono">{item.marketOdds.toFixed(2)}</span>
@@ -483,36 +518,42 @@ export function Terminal() {
         </div>
       </section>
 
-      <div id="market-surface">
-        <MarketSurfaceExplorer
-          current={sandboxFootballSurface}
-          previous={sandboxFootballBeforeSurface}
-          locale={locale}
-        />
-      </div>
+      {activeWorkspace.sport === "football" ? (
+        <>
+          <div id="market-surface">
+            <MarketSurfaceExplorer
+              current={sandboxFootballSurface}
+              previous={sandboxFootballBeforeSurface}
+              locale={locale}
+            />
+          </div>
 
-      <div className="deepMarketGrid" id="pricing">
-        <AsianLinesBoard surface={sandboxFootballSurface} locale={locale} />
-        <section className="panel scorelineMatrix">
-          <div className="panelHeader">
-            <div>
-              <span className="panelIndex">07</span>
-              <div>
-                <h2>SCORELINE DISTRIBUTION</h2>
-                <p>Most probable final states</p>
+          <div className="deepMarketGrid" id="pricing">
+            <AsianLinesBoard surface={sandboxFootballSurface} locale={locale} />
+            <section className="panel scorelineMatrix">
+              <div className="panelHeader">
+                <div>
+                  <span className="panelIndex">07</span>
+                  <div>
+                    <h2>SCORELINE DISTRIBUTION</h2>
+                    <p>Most probable final states</p>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          <div className="scorelineGrid">
-            {sandboxFootballSurface.topScorelines.slice(0, 12).map((row) => (
-              <div className="scorelineCell" key={`${row.homeGoals}-${row.awayGoals}`}>
-                <strong>{row.homeGoals}<i>:</i>{row.awayGoals}</strong>
-                <span>{pct(row.probability)}</span>
+              <div className="scorelineGrid">
+                {sandboxFootballSurface.topScorelines.slice(0, 12).map((row) => (
+                  <div className="scorelineCell" key={`${row.homeGoals}-${row.awayGoals}`}>
+                    <strong>{row.homeGoals}<i>:</i>{row.awayGoals}</strong>
+                    <span>{pct(row.probability)}</span>
+                  </div>
+                ))}
               </div>
-            ))}
+            </section>
           </div>
-        </section>
-      </div>
+        </>
+      ) : (
+        <SpecialistSportSurface workspace={activeWorkspace} />
+      )}
 
       <section className="intelligenceSurface" id="models">
         <div className="intelligenceSurfaceHead">
