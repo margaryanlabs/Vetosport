@@ -5,6 +5,7 @@ import { runBasketballSelfCheck } from "@/lib/models/basketball/selfcheck";
 import { runTennisSelfCheck } from "@/lib/models/tennis/selfcheck";
 import { runHockeySelfCheck } from "@/lib/models/hockey/selfcheck";
 import { runParallaxSelfCheck } from "@/lib/parallax/selfcheck";
+import { runTemporalSelfCheck } from "@/lib/parallax/temporal-selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,10 @@ export function GET() {
     parallax: {
       model: "veto.parallax.football.v1",
       ...runParallaxSelfCheck(),
+    },
+    temporalResponse: {
+      model: "veto.parallax.temporal-response.v1",
+      ...runTemporalSelfCheck(),
     },
   };
 
