@@ -276,6 +276,21 @@ export class SportmonksFootballClient {
         capturedAt: row.latest_bookmaker_update
           ? isoFromSportmonks(row.latest_bookmaker_update)
           : new Date().toISOString(),
+        sourceProvider: this.id,
+        providerLastUpdate: row.latest_bookmaker_update
+          ? isoFromSportmonks(row.latest_bookmaker_update)
+          : undefined,
+        suspended: Boolean(row.suspended || row.stopped),
+        raw: {
+          providerQuoteId: row.id,
+          providerMarketId: row.market_id,
+          providerBookmakerId: row.bookmaker_id,
+          providerFixtureId: row.fixture_id,
+          providerProbability: row.probability,
+          providerTotal: row.total,
+          providerHandicap: row.handicap,
+          stopped: row.stopped,
+        },
       }];
     });
   }
