@@ -6074,3 +6074,489 @@ body::before {
     scroll-snap-align: start;
   }
 }
+
+/* =========================================================
+   LIVE COMMAND / CROSS-SPORT SIGNAL RADAR
+   ========================================================= */
+
+.liveCommand {
+  margin-top: 20px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: rgba(5,7,8,.31);
+}
+
+.liveCommandHead {
+  min-height: 63px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.liveCommandHead > div:first-child {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.liveCommandHead h2 {
+  margin: 0;
+  color: #e0e7e3;
+  font-size: 10px;
+  letter-spacing: .14em;
+}
+
+.liveCommandHead p {
+  margin: 4px 0 0;
+  color: #4e5954;
+  font-size: 7px;
+}
+
+.liveCommandStats {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.liveCommandStats span {
+  padding: 0 12px;
+  border-right: 1px solid var(--line-soft);
+  color: #46514c;
+  font-size: 5px;
+  letter-spacing: .09em;
+}
+
+.liveCommandStats span:last-child {
+  border-right: 0;
+  padding-right: 0;
+}
+
+.liveCommandStats b {
+  margin-right: 4px;
+  color: #909c96;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 8px;
+  font-weight: 550;
+}
+
+.liveCommandFilter {
+  min-height: 38px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.liveCommandFilter button {
+  padding: 6px 9px;
+  border: 0;
+  background: transparent;
+  color: #44504a;
+  cursor: pointer;
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+
+.liveCommandFilter button:hover {
+  color: #7d8983;
+}
+
+.liveCommandFilter button.active {
+  color: var(--edge);
+  background: rgba(91,227,162,.035);
+  box-shadow: inset 0 -1px 0 rgba(91,227,162,.5);
+}
+
+.liveCommandBody {
+  display: grid;
+  grid-template-columns: minmax(320px,.72fr) minmax(0,1.28fr);
+}
+
+.liveCommandEvents {
+  border-right: 1px solid var(--line-soft);
+}
+
+.liveCommandEvent {
+  width: 100%;
+  min-height: 145px;
+  padding: 15px 17px;
+  display: grid;
+  align-content: space-between;
+  gap: 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background .16s ease, box-shadow .16s ease;
+}
+
+.liveCommandEvent:last-child {
+  border-bottom: 0;
+}
+
+.liveCommandEvent:hover {
+  background: rgba(255,255,255,.009);
+}
+
+.liveCommandEvent.active {
+  background: linear-gradient(90deg, rgba(91,227,162,.034), transparent 72%);
+  box-shadow: inset 2px 0 0 rgba(91,227,162,.7);
+}
+
+.liveCommandEventTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+}
+
+.liveCommandEventTop > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #59655f;
+  font-size: 6px;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+
+.liveCommandEventTop i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #53605a;
+}
+
+.liveCommandEventTop i.hot { background: var(--edge); }
+.liveCommandEventTop i.stable { background: var(--watch); }
+.liveCommandEventTop i.quiet { background: #69756f; }
+
+.liveCommandEventTop b {
+  color: #627069;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 7px;
+  font-weight: 550;
+}
+
+.liveCommandScore {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  gap: 11px;
+}
+
+.liveCommandScore > div {
+  display: grid;
+  gap: 2px;
+}
+
+.liveCommandScore > div:last-child {
+  text-align: right;
+}
+
+.liveCommandScore span {
+  color: #56615c;
+  font-size: 6px;
+  letter-spacing: .09em;
+}
+
+.liveCommandScore strong {
+  color: #e1e8e4;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 30px;
+  font-weight: 520;
+  line-height: .9;
+  letter-spacing: -.05em;
+}
+
+.liveCommandScore em {
+  color: #313a36;
+  font-style: normal;
+  font-size: 18px;
+}
+
+.liveCommandEvent > small {
+  color: #424d48;
+  font-size: 6px;
+}
+
+.liveCommandPrimary {
+  min-height: 42px;
+  padding-top: 10px;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 12px;
+  align-items: end;
+  border-top: 1px solid var(--line-soft);
+}
+
+.liveCommandPrimary > div {
+  display: grid;
+  gap: 5px;
+}
+
+.liveCommandPrimary > div:last-child {
+  justify-items: end;
+}
+
+.liveCommandPrimary span {
+  color: #414b47;
+  font-size: 5px;
+  letter-spacing: .09em;
+}
+
+.liveCommandPrimary strong {
+  overflow: hidden;
+  color: #9ca7a2;
+  font-size: 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.liveCommandPrimary b {
+  font-size: 6px;
+  letter-spacing: .1em;
+}
+
+.liveCommandPrimary b.edge { color: var(--edge); }
+.liveCommandPrimary b.watch { color: var(--watch); }
+.liveCommandPrimary b.pass { color: #59645f; }
+
+.liveCommandPrimary em {
+  color: #77847e;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 7px;
+  font-style: normal;
+}
+
+.signalRadar {
+  min-width: 0;
+}
+
+.signalRadarHead {
+  min-height: 55px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.signalRadarHead > div {
+  display: grid;
+  gap: 5px;
+}
+
+.signalRadarHead span {
+  color: #4c5752;
+  font-size: 6px;
+  font-weight: 850;
+  letter-spacing: .12em;
+}
+
+.signalRadarHead strong {
+  color: #98a49e;
+  font-size: 8px;
+}
+
+.signalRadarHead small {
+  color: #3f4944;
+  font-size: 5px;
+  letter-spacing: .09em;
+}
+
+.signalRadarList {
+  display: grid;
+}
+
+.signalRadarRow {
+  min-height: 61px;
+  padding: 0 15px;
+  display: grid;
+  grid-template-columns: 30px minmax(190px,1.6fr) 70px 78px 58px 38px;
+  gap: 10px;
+  align-items: center;
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background .14s ease;
+}
+
+.signalRadarRow:last-child {
+  border-bottom: 0;
+}
+
+.signalRadarRow:hover {
+  background: rgba(255,255,255,.009);
+}
+
+.signalRadarRow.sameEvent {
+  background: linear-gradient(90deg, rgba(91,227,162,.014), transparent 58%);
+}
+
+.signalRadarRank {
+  color: #3c4642;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 6px;
+}
+
+.signalRadarIdentity {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.signalRadarIdentity span {
+  color: #46514c;
+  font-size: 5px;
+  letter-spacing: .07em;
+}
+
+.signalRadarIdentity strong {
+  overflow: hidden;
+  color: #aab4af;
+  font-size: 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.signalRadarProbability,
+.signalRadarEdge {
+  display: grid;
+  gap: 4px;
+}
+
+.signalRadarProbability b,
+.signalRadarEdge b,
+.signalRadarScore {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 8px;
+  font-weight: 550;
+}
+
+.signalRadarProbability small,
+.signalRadarEdge small {
+  color: #3f4944;
+  font-size: 4px;
+  letter-spacing: .09em;
+}
+
+.signalRadarRow > em {
+  font-size: 5px;
+  font-style: normal;
+  font-weight: 850;
+  letter-spacing: .09em;
+}
+
+.signalRadarRow > em.edge { color: var(--edge); }
+.signalRadarRow > em.watch { color: var(--watch); }
+.signalRadarRow > em.pass { color: #55605b; }
+
+.signalRadarScore {
+  color: #aeb8b3;
+  text-align: right;
+}
+
+@media (max-width: 1000px) {
+  .liveCommandBody {
+    grid-template-columns: 1fr;
+  }
+
+  .liveCommandEvents {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(240px,1fr));
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line-soft);
+    scroll-snap-type: x mandatory;
+  }
+
+  .liveCommandEvent {
+    min-width: 240px;
+    border-right: 1px solid var(--line-soft);
+    border-bottom: 0;
+    scroll-snap-align: start;
+  }
+
+  .liveCommandEvent:last-child {
+    border-right: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .liveCommandHead {
+    min-height: auto;
+    padding: 13px 14px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .liveCommandStats {
+    width: 100%;
+  }
+
+  .liveCommandStats span:first-child {
+    padding-left: 0;
+  }
+
+  .liveCommandFilter {
+    padding: 0 10px;
+    overflow-x: auto;
+  }
+
+  .liveCommandFilter button {
+    flex: 0 0 auto;
+  }
+
+  .liveCommandEvents {
+    grid-template-columns: repeat(3, 80vw);
+  }
+
+  .signalRadarHead {
+    padding: 11px 13px;
+  }
+
+  .signalRadarHead small {
+    display: none;
+  }
+
+  .signalRadarRow {
+    min-height: 64px;
+    padding: 0 12px;
+    grid-template-columns: 24px minmax(0,1fr) 60px 52px;
+    gap: 8px;
+  }
+
+  .signalRadarProbability {
+    display: none;
+  }
+
+  .signalRadarRow > em {
+    display: none;
+  }
+
+  .signalRadarScore {
+    font-size: 7px;
+  }
+}
+
+@media (max-width: 430px) {
+  .signalRadarEdge {
+    display: none;
+  }
+
+  .signalRadarRow {
+    grid-template-columns: 22px minmax(0,1fr) 38px;
+  }
+}
