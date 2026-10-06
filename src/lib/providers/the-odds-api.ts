@@ -32,6 +32,13 @@ export type OddsApiEvent = {
   bookmakers: OddsApiBookmaker[];
 };
 
+export interface HistoricalOddsSnapshot {
+  timestamp: string;
+  previous_timestamp?: string;
+  next_timestamp?: string;
+  data: OddsApiEvent[];
+}
+
 export interface OddsApiClientOptions {
   apiKey: string;
   regions?: string[];
@@ -91,6 +98,53 @@ export class TheOddsApiClient {
       latencyMs: receivedAt.getTime() - requestedAt.getTime(),
       quotaRemaining: quotaRemainingRaw == null ? undefined : Number(quotaRemainingRaw),
       data,
+    };
+  }
+
+  estimateHistoricalOddsCost(markets: string[]) {
+    return 10 * Math.max(1, markets.length) * Math.max(1, this.regions.length);
+  }
+
+  async getHistoricalOdds(input: {
+    sportKey: string;
+    date: string;
+    markets?: string[];
+  }): Promise<ProviderEnvelope<HistoricalOddsSnapshot>> {
+    const requestedAt = new Date();
+    const markets = input.markets ?? ["h2h", "spreads", "totals"];
+    const url = new URL(
+      `${this.baseUrl}/historical/sports/${encodeURIComponent(input.sportKey)}/odds`,
+    );
+
+    url.searchParams.set("apiKey", this.apiKey);
+    url.searchParams.set("regions", this.regions.join(","));
+    url.searchParams.set("markets", markets.join(","));
+    url.searchParams.set("date", new Date(input.date).toISOString());
+    url.searchParams.set("oddsFormat", "decimal");
+    url.searchParams.set("dateFormat", "iso");
+
+    const response = await fetch(url, {
+      headers: { accept: "application/json" },
+      cache: "no-store",
+    });
+    const receivedAt = new Date();
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(
+        `The Odds API historical ${response.status}: ${body.slice(0, 300)}`,
+      );
+    }
+
+    const quotaRemainingRaw = response.headers.get("x-requests-remaining");
+    return {
+      provider: this.id,
+      requestedAt: requestedAt.toISOString(),
+      receivedAt: receivedAt.toISOString(),
+      latencyMs: receivedAt.getTime() - requestedAt.getTime(),
+      quotaRemaining:
+        quotaRemainingRaw == null ? undefined : Number(quotaRemainingRaw),
+      data: (await response.json()) as HistoricalOddsSnapshot,
     };
   }
 
