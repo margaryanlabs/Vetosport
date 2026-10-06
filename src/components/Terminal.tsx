@@ -244,231 +244,233 @@ export function Terminal() {
         </div>
       </section>
 
-      <section className="commandGrid">
-        <div className="commandMain">
-          <section className="panel matchCommand">
-            <div className="panelHeader commandHeader">
-              <div>
-                <span className="panelIndex">02</span>
-                <div>
-                  <h2>EVENT COMMAND</h2>
-                  <p>{sandboxEvent.competition} · Live twin</p>
-                </div>
-              </div>
-              <div className="headerTelemetry">
-                <span><i className="hotDot" /> LIVE 64:18</span>
-                <span>STATE #18429</span>
-                <span>Δ 820ms</span>
-              </div>
+      <section className="eventDecisionSurface" id="events">
+        <div className="surfaceCommandHeader">
+          <div className="surfaceCommandTitle">
+            <span className="panelIndex">02</span>
+            <div>
+              <h2>EVENT INTELLIGENCE</h2>
+              <p>{sandboxEvent.competition} · Live state + selected market</p>
+            </div>
+          </div>
+          <div className="headerTelemetry">
+            <span><i className="hotDot" /> LIVE 64:18</span>
+            <span>STATE #18429</span>
+            <span>FEED 0.8s</span>
+            <span>MODEL 312ms</span>
+          </div>
+        </div>
+
+        <div className="eventDecisionTop">
+          <div className="eventMatchPlane">
+            <div className="eventLeagueLine">
+              <span>ARS</span>
+              <i />
+              <span>{sandboxEvent.competition}</span>
+              <i />
+              <span>LIV</span>
             </div>
 
-            <div className="scoreboard">
-              <div className="team teamHome">
-                <span className="teamCode">ARS</span>
+            <div className="eventScoreLine">
+              <div className="eventTeam eventTeamHome">
+                <span>HOME</span>
                 <strong>{sandboxEvent.home?.name}</strong>
-                <small>Home · Sandbox</small>
+                <small>Control 54 · xG 1.18</small>
               </div>
-              <div className="scoreCore">
-                <div className="scoreDigits"><span>1</span><i>:</i><span>1</span></div>
-                <div className="scoreClock"><b>64:18</b><span>SECOND HALF</span></div>
+
+              <div className="eventScoreCore">
+                <div className="eventScoreDigits">
+                  <strong>1</strong><i>:</i><strong>1</strong>
+                </div>
+                <div className="eventClockLine">
+                  <b>64:18</b>
+                  <span>SECOND HALF</span>
+                </div>
               </div>
-              <div className="team teamAway">
-                <span className="teamCode">LIV</span>
+
+              <div className="eventTeam eventTeamAway">
+                <span>AWAY</span>
                 <strong>{sandboxEvent.away?.name}</strong>
-                <small>Away · Sandbox</small>
+                <small>xG 0.94 · Pressure 41</small>
+              </div>
+            </div>
+          </div>
+
+          <aside className="eventVerdictPlane">
+            <div className="verdictTop">
+              <div>
+                <span className="miniLabel">SELECTED SIGNAL</span>
+                <strong>{selected.selection.label}</strong>
+              </div>
+              <em className={decisionClass(selected.decision)}>{selected.decision}</em>
+            </div>
+
+            <div className="verdictPrimary">
+              <div>
+                <strong>{pct(selected.fairProbability)}</strong>
+                <span>FAIR PROBABILITY</span>
+              </div>
+              <div className="verdictScore">
+                <span>SCORE</span>
+                <b>{selected.opportunityScore}</b>
               </div>
             </div>
 
-            <div className="stateStrip">
-              <StatePill label={dictionary.regime} value="CONTROLLED" note="low transition" />
-              <StatePill label={dictionary.tempo} value="71/100" note="−19% / 10m" />
-              <StatePill label={dictionary.uncertainty} value="21/100" note="LOW" />
-              <StatePill label={dictionary.marketGap} value={pp(under35Gap)} note="UNDER 3.5" accent />
+            <div className="verdictLane">
+              <span style={{ width: `${selected.fairProbability * 100}%` }} />
+              <i style={{ left: `${selected.fairProbability * 100}%` }} />
             </div>
 
-            <div className="liveTwinChange">
-              <div className="liveTwinChangeHead">
-                <div>
-                  <span className="miniLabel">{dictionary.whatChanged}</span>
-                  <strong>{liveExplanation.headline}</strong>
-                </div>
-                <span className={`priorityTag ${livePriority}`}>{livePriority.toUpperCase()}</span>
+            <div className="verdictMetrics">
+              <div><span>MARKET</span><strong>{selected.marketOdds.toFixed(2)}</strong></div>
+              <div><span>FAIR</span><strong>{selected.fairOdds.toFixed(2)}</strong></div>
+              <div><span>EDGE</span><strong className="positive">{pp(selected.probabilityEdge)}</strong></div>
+              <div><span>EV</span><strong className="positive">{pct(selected.expectedValue)}</strong></div>
+            </div>
+          </aside>
+        </div>
+
+        <div className="eventStateRail">
+          <StatePill label={dictionary.regime} value="CONTROLLED" note="low transition" />
+          <StatePill label={dictionary.tempo} value="71/100" note="−19% / 10m" />
+          <StatePill label={dictionary.uncertainty} value="21/100" note="LOW" />
+          <StatePill label={dictionary.marketGap} value={pp(under35Gap)} note="UNDER 3.5" accent />
+        </div>
+
+        <div className="eventSignalBody">
+          <section className="eventChangePlane">
+            <div className="eventPlaneHead">
+              <div>
+                <span className="miniLabel">{dictionary.whatChanged}</span>
+                <strong>{liveExplanation.headline}</strong>
               </div>
-              <p>{liveExplanation.summary}</p>
-              <div className="liveTwinDrivers">
-                {footballShifts.map((shift) => (
-                  <div key={`${shift.marketId}-${shift.selectionId}`}>
-                    <span>{shift.label}</span>
-                    <strong className={shift.direction === "up" ? "positive" : shift.direction === "down" ? "negative" : ""}>
-                      {pp(shift.probabilityShift)}
-                    </strong>
+              <span className={`priorityTag ${livePriority}`}>{livePriority.toUpperCase()}</span>
+            </div>
+
+            <p>{liveExplanation.summary}</p>
+
+            <div className="changeTimeline">
+              {footballShifts.map((shift, index) => (
+                <div className="changeTimelineRow" key={`${shift.marketId}-${shift.selectionId}`}>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <i className={shift.direction} />
+                  <div>
+                    <strong>{shift.label}</strong>
+                    <small>{shift.direction === "up" ? "Probability repriced upward" : "Probability repriced downward"}</small>
                   </div>
+                  <b className={shift.direction === "up" ? "positive" : shift.direction === "down" ? "negative" : ""}>
+                    {pp(shift.probabilityShift)}
+                  </b>
+                </div>
+              ))}
+            </div>
+
+            <div className="affectedMarkets">
+              <span>AFFECTED</span>
+              <div>
+                {sandboxAffectedMarkets.map((market) => (
+                  <i key={market}>{market.replace("football.", "").replaceAll("_", " ")}</i>
                 ))}
-              </div>
-              <div className="affectedMarkets">
-                <span>AFFECTED MARKETS</span>
-                <div>
-                  {sandboxAffectedMarkets.map((market) => (
-                    <i key={market}>{market.replace("football.", "").replaceAll("_", " ")}</i>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="stateGrid">
-              <div className="surfaceCard">
-                <div className="subhead">
-                  <div>
-                    <span className="miniLabel">{dictionary.probabilitySurface}</span>
-                    <strong>Under 3.5 · football.goal-state.v1</strong>
-                  </div>
-                  <div className="surfaceHeadline">
-                    <span>VETO</span>
-                    <strong>{pct(under35Probability)}</strong>
-                  </div>
-                </div>
-                <ProbabilityChart points={probabilityHistory} />
-                <div className="surfaceFooter">
-                  <span>Market implied <b>{pct(under35MarketProbability)}</b></span>
-                  <span>Fair price <b>{under35FairOdds.toFixed(2)}</b></span>
-                  <span className="positive">Gap <b>{pp(under35Gap)}</b></span>
-                </div>
-              </div>
-
-              <div className="gameStateCard">
-                <div className="subhead">
-                  <div>
-                    <span className="miniLabel">{dictionary.gameState}</span>
-                    <strong>Live feature state</strong>
-                  </div>
-                  <span className="freshness">FRESH · 0.8s</span>
-                </div>
-                <div className="stateMetricList">
-                  {stateMetrics.map((metric) => (
-                    <div className="stateMetric" key={metric.label}>
-                      <div className="stateMetricTop">
-                        <span>{metric.label}</span>
-                        <strong>{metric.value}</strong>
-                      </div>
-                      <div className="microTrack"><i style={{ width: `${metric.strength}%` }} /></div>
-                      <small className={metric.tone ?? "neutral"}>{metric.delta ?? "—"}</small>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           </section>
 
-          <section className="panel opportunities" id="events">
-            <div className="panelHeader">
+          <section className="eventProbabilityPlane">
+            <div className="eventPlaneHead">
               <div>
-                <span className="panelIndex">03</span>
-                <div>
-                  <h2>{dictionary.opportunities}</h2>
-                  <p>Markets ranked by evidence quality, not payout size</p>
-                </div>
+                <span className="miniLabel">{dictionary.probabilitySurface}</span>
+                <strong>Under 3.5 · football.goal-state.v1</strong>
               </div>
-              <div className="segmented">
-                <button className={marketMode === "all" ? "active" : ""} onClick={() => setMarketMode("all")} type="button">{dictionary.allMarkets}</button>
-                <button className={marketMode === "edges" ? "active" : ""} onClick={() => setMarketMode("edges")} type="button">{dictionary.topEdges}</button>
+              <div className="surfaceHeadline">
+                <span>VETO</span>
+                <strong>{pct(under35Probability)}</strong>
               </div>
             </div>
 
-            <div className="marketTable">
-              <div className="marketRow tableHead">
-                <span>{dictionary.market}</span>
-                <span>{dictionary.price}</span>
-                <span>{dictionary.fair}</span>
-                <span>{dictionary.edge}</span>
-                <span>{dictionary.agreement}</span>
-                <span>{dictionary.score}</span>
-                <span>{dictionary.decision}</span>
-              </div>
-              {visibleOpportunities.map((item) => (
-                <button
-                  type="button"
-                  key={item.selection.id}
-                  className={`marketRow dataRow ${selected.selection.id === item.selection.id ? "rowSelected" : ""}`}
-                  onClick={() => setSelectedId(item.selection.id)}
-                >
-                  <span className="marketIdentity">
-                    <i className={decisionClass(item.decision)} />
-                    <span>
-                      <strong>{item.selection.label}</strong>
-                      <small>{item.marketId.replace("football.", "").replaceAll("_", " ")}</small>
-                    </span>
-                  </span>
-                  <span className="mono">{item.marketOdds.toFixed(2)}</span>
-                  <span className="mono">{item.fairOdds.toFixed(2)}</span>
-                  <span className={item.probabilityEdge > 0 ? "positive mono" : "muted mono"}>{pp(item.probabilityEdge)}</span>
-                  <span className="agreementCell">
-                    <span>{item.modelAgreement}</span>
-                    <i><b style={{ width: `${item.modelAgreement}%` }} /></i>
-                  </span>
-                  <span className="vetoScore">{item.opportunityScore}</span>
-                  <span className={`decision ${decisionClass(item.decision)}`}>{item.decision}</span>
-                </button>
-              ))}
+            <ProbabilityChart points={probabilityHistory} />
+
+            <div className="probabilityFoot">
+              <span>MARKET <b>{pct(under35MarketProbability)}</b></span>
+              <span>FAIR <b>{under35FairOdds.toFixed(2)}</b></span>
+              <span>GAP <b className="positive">{pp(under35Gap)}</b></span>
+              <span>AGREEMENT <b>{selected.modelAgreement}/100</b></span>
             </div>
           </section>
         </div>
 
-        <aside className="panel decisionCore">
-          <div className="panelHeader">
-            <div>
-              <span className="panelIndex">04</span>
-              <div>
-                <h2>{dictionary.eventRoom}</h2>
-                <p>Selected market</p>
-              </div>
-            </div>
-            <span className="freshness">8s old</span>
-          </div>
-
-          <div className="decisionHero">
-            <div className="decisionLabel">
-              <span>{selected.selection.label}</span>
-              <em className={decisionClass(selected.decision)}>{selected.decision}</em>
-            </div>
-            <div className="vetoDial">
-              <div className="dialRing" style={{ "--score": selected.opportunityScore } as React.CSSProperties}>
-                <div>
-                  <span>SCORE</span>
-                  <strong>{selected.opportunityScore}</strong>
-                </div>
-              </div>
-            </div>
-            <div className="decisionProbability">
-              <strong>{pct(selected.fairProbability)}</strong>
-              <span>Fair probability</span>
-            </div>
-          </div>
-
-          <div className="decisionMatrix">
-            <Signal label="Market price" value={selected.marketOdds.toFixed(2)} />
-            <Signal label="Fair price" value={selected.fairOdds.toFixed(2)} />
-            <Signal label="Pricing edge" value={pp(selected.probabilityEdge)} positive />
-            <Signal label="Expected value" value={pct(selected.expectedValue)} positive />
-            <Signal label="Model agreement" value={`${selected.modelAgreement}/100`} />
-            <Signal label="Risk band" value={selected.risk} />
-          </div>
-
-          <div className="decisionWhy">
+        <div className="eventReasonBand">
+          <div className="reasonNarrative">
             <span className="miniLabel">{dictionary.why}</span>
-            <h3>Цена рынка отстаёт от текущего game state.</h3>
-            <p>VETO видит более медленный темп и меньший хвост сценариев с 4+ голами. Модели согласованы, а неопределённость остаётся низкой.</p>
-            <div className="reasonList">
-              {selected.rationale.map((line, index) => (
-                <div key={line}><span>0{index + 1}</span><p>{line}</p></div>
-              ))}
-            </div>
+            <h3>Цена рынка отстаёт от текущего состояния матча.</h3>
+            <p>VETO видит более медленный темп, меньший хвост сценариев с 4+ голами и устойчивое согласие моделей. Сигнал остаётся валидным, пока live-state не меняет режим.</p>
           </div>
 
-          <button className="explainButton" type="button">
-            <span>{dictionary.explain}</span>
-            <i>↗</i>
-          </button>
-        </aside>
+          <div className="reasonEvidence">
+            {selected.rationale.slice(0, 3).map((line, index) => (
+              <div key={line}>
+                <span>0{index + 1}</span>
+                <p>{line}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="reasonRisk">
+            <span className="miniLabel">RISK / INVALIDATION</span>
+            <strong>{selected.risk}</strong>
+            <p>Next goal, red card or tempo regime break triggers full reprice.</p>
+          </div>
+        </div>
+
+        <div className="marketSurfaceHeader">
+          <div>
+            <span className="panelIndex">03</span>
+            <div>
+              <h2>{dictionary.opportunities}</h2>
+              <p>Markets ranked by evidence quality, not payout size</p>
+            </div>
+          </div>
+          <div className="segmented">
+            <button className={marketMode === "all" ? "active" : ""} onClick={() => setMarketMode("all")} type="button">{dictionary.allMarkets}</button>
+            <button className={marketMode === "edges" ? "active" : ""} onClick={() => setMarketMode("edges")} type="button">{dictionary.topEdges}</button>
+          </div>
+        </div>
+
+        <div className="marketTable eventMarketTable">
+          <div className="marketRow tableHead">
+            <span>{dictionary.market}</span>
+            <span>{dictionary.price}</span>
+            <span>{dictionary.fair}</span>
+            <span>{dictionary.edge}</span>
+            <span>{dictionary.agreement}</span>
+            <span>{dictionary.score}</span>
+            <span>{dictionary.decision}</span>
+          </div>
+          {visibleOpportunities.map((item) => (
+            <button
+              type="button"
+              key={item.selection.id}
+              className={`marketRow dataRow ${selected.selection.id === item.selection.id ? "rowSelected" : ""}`}
+              onClick={() => setSelectedId(item.selection.id)}
+            >
+              <span className="marketIdentity">
+                <i className={decisionClass(item.decision)} />
+                <span>
+                  <strong>{item.selection.label}</strong>
+                  <small>{item.marketId.replace("football.", "").replaceAll("_", " ")}</small>
+                </span>
+              </span>
+              <span className="mono">{item.marketOdds.toFixed(2)}</span>
+              <span className="mono">{item.fairOdds.toFixed(2)}</span>
+              <span className={item.probabilityEdge > 0 ? "positive mono" : "muted mono"}>{pp(item.probabilityEdge)}</span>
+              <span className="agreementCell">
+                <span>{item.modelAgreement}</span>
+                <i><b style={{ width: `${item.modelAgreement}%` }} /></i>
+              </span>
+              <span className="vetoScore">{item.opportunityScore}</span>
+              <span className={`decision ${decisionClass(item.decision)}`}>{item.decision}</span>
+            </button>
+          ))}
+        </div>
       </section>
 
       <MarketSurfaceExplorer
