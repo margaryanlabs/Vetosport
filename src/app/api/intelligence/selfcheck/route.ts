@@ -23,6 +23,7 @@ import { runDiscoveryControlSelfCheck } from "@/lib/discovery/selfcheck";
 import { runCalibrationDriftSelfCheck } from "@/lib/calibration/selfcheck";
 import { runSuspensionCensoringSelfCheck } from "@/lib/censoring/selfcheck";
 import { runAbstentionSelfCheck } from "@/lib/abstention/selfcheck";
+import { runRegimeChangeSelfCheck } from "@/lib/regime/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -134,6 +135,10 @@ export function GET() {
     abstentionBoundary: {
       model: "veto.abstention.boundary.v1",
       ...runAbstentionSelfCheck(),
+    },
+    regimeChange: {
+      model: "veto.regime.change-point.v1",
+      ...runRegimeChangeSelfCheck(),
     },
   };
 
