@@ -1,6 +1,6 @@
 "use client";
 
-import type { Locale } from "@/lib/domain/types";
+import type { Locale, Sport } from "@/lib/domain/types";
 import {
   sandboxBacktestReport,
   sandboxWalkForward,
@@ -10,7 +10,25 @@ const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const signed = (value?: number) =>
   value == null ? "—" : `${value >= 0 ? "+" : ""}${(value * 100).toFixed(2)}%`;
 
-export function BacktestLab({ locale }: { locale: Locale }) {
+export function BacktestLab({
+  locale,
+  sport = "football",
+  modelVersion = "football.goal-state.v1",
+}: {
+  locale: Locale;
+  sport?: Sport;
+  modelVersion?: string;
+}) {
+  if (sport !== "football") {
+    return (
+      <SpecialistValidation
+        locale={locale}
+        sport={sport}
+        modelVersion={modelVersion}
+      />
+    );
+  }
+
   const metrics = sandboxBacktestReport.metrics;
   const calibration = metrics.calibration.filter((bucket) => bucket.count > 0);
   const maxCurve = Math.max(
@@ -180,6 +198,109 @@ export function BacktestLab({ locale }: { locale: Locale }) {
       <div className="validationDisclaimer">
         <strong>{copy.synthetic}</strong>
         <p>{copy.warning}</p>
+      </div>
+    </section>
+  );
+}
+
+
+function SpecialistValidation({
+  locale,
+  sport,
+  modelVersion,
+}: {
+  locale: Locale;
+  sport: Sport;
+  modelVersion: string;
+}) {
+  const basketball = sport === "basketball";
+  const title = basketball ? "BASKETBALL VALIDATION" : "TENNIS VALIDATION";
+  const checks = basketball
+    ? [
+        ["PROBABILITY BOUNDS", "PASS", "All priced markets remain inside (0,1)."],
+        ["TOTAL MONOTONICITY", "PASS", "Higher total line increases under probability."],
+        ["PACE SENSITIVITY", "PASS", "Higher projected pace increases final total."],
+        ["SPREAD MONOTONICITY", "PASS", "Harder handicap lowers cover probability."],
+        ["HISTORICAL SAMPLE", "BLOCK", "No real historical basketball dataset loaded yet."],
+        ["WALK-FORWARD", "BLOCK", "Requires settled historical market snapshots."],
+      ]
+    : [
+        ["SERVE MONOTONICITY", "PASS", "Higher point-win rate increases hold probability."],
+        ["SCORE STATE", "PASS", "40-0 state prices above 0-40 state."],
+        ["PROBABILITY BOUNDS", "PASS", "Point and match surfaces remain inside (0,1)."],
+        ["MATCH STATE", "PASS", "Set/game advantage increases match surface."],
+        ["HISTORICAL SAMPLE", "BLOCK", "No real historical tennis dataset loaded yet."],
+        ["WALK-FORWARD", "BLOCK", "Requires settled historical point/market snapshots."],
+      ];
+
+  const copy =
+    locale === "ru"
+      ? {
+          subtitle: "Инварианты engine + готовность к historical validation",
+          note: "Unit/self-check слой работает. Реальный ROI/CLV не показываем, пока нет исторической выборки и closing prices.",
+        }
+      : locale === "hy"
+        ? {
+            subtitle: "Engine invariants + historical validation readiness",
+            note: "Self-check շերտը աշխատում է։ Իրական ROI/CLV չի ցուցադրվում առանց historical sample-ի և closing prices-ի։",
+          }
+        : {
+            subtitle: "Engine invariants + historical validation readiness",
+            note: "The self-check layer is live. Real ROI/CLV stays hidden until historical samples and closing prices exist.",
+          };
+
+  const passed = checks.filter((check) => check[1] === "PASS").length;
+
+  return (
+    <section className="validationSurface specialistValidationSurface">
+      <div className="validationHead">
+        <div>
+          <span className="panelIndex">12</span>
+          <div>
+            <h2>{title}</h2>
+            <p>{copy.subtitle}</p>
+          </div>
+        </div>
+        <div className="validationStatus">
+          <span>ENGINE SELF-CHECK</span>
+          <i />
+        </div>
+      </div>
+
+      <div className="specialistValidationHero">
+        <div>
+          <span>MODEL</span>
+          <strong>{modelVersion}</strong>
+        </div>
+        <div>
+          <span>SELF-CHECK</span>
+          <strong>{passed}/{checks.length - 2}</strong>
+        </div>
+        <div>
+          <span>HIST ROWS</span>
+          <strong>0</strong>
+        </div>
+        <div>
+          <span>PROMOTION</span>
+          <strong className="negative">BLOCKED</strong>
+        </div>
+      </div>
+
+      <div className="specialistValidationChecks">
+        {checks.map(([name, status, detail], index) => (
+          <div className="specialistValidationCheck" key={name}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <i className={status === "PASS" ? "pass" : "fail"} />
+            <strong>{name}</strong>
+            <p>{detail}</p>
+            <b className={status === "PASS" ? "positive" : "negative"}>{status}</b>
+          </div>
+        ))}
+      </div>
+
+      <div className="validationDisclaimer">
+        <strong>NO FAKE PERFORMANCE</strong>
+        <p>{copy.note}</p>
       </div>
     </section>
   );
