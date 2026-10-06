@@ -14,6 +14,7 @@ import { AsianLinesBoard } from "@/components/AsianLinesBoard";
 import { BacktestLab } from "@/components/BacktestLab";
 import { ModelGovernancePanel } from "@/components/ModelGovernancePanel";
 import { EngineUniverse } from "@/components/EngineUniverse";
+import { LiveCommandCenter } from "@/components/LiveCommandCenter";
 import { SpecialistSportSurface } from "@/components/SpecialistSportSurface";
 import { VetoMark } from "@/components/VetoMark";
 import { sandboxFootballBeforeSurface, sandboxFootballSurface } from "@/lib/sandbox/football-model";
@@ -110,7 +111,12 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
     remoteWorkspace?.id === selectedEventId ? remoteWorkspace : staticWorkspace;
 
   useEffect(() => {
-    setSelectedId(activeWorkspace.opportunities[0].selection.id);
+    const selectionStillExists = activeWorkspace.opportunities.some(
+      (item) => item.selection.id === selectedId,
+    );
+    if (!selectionStillExists) {
+      setSelectedId(activeWorkspace.opportunities[0].selection.id);
+    }
     setMarketMode("all");
   }, [activeWorkspace.id]);
 
@@ -152,6 +158,15 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   const selectSport = (sport: Sport) => {
     const workspace = liveWorkspaces.find((item) => item.sport === sport);
     if (workspace) setSelectedEventId(workspace.id);
+  };
+  const selectEvent = (eventId: string) => {
+    if (workspaceById[eventId]) setSelectedEventId(eventId);
+  };
+  const selectSignal = (eventId: string, selectionId: string) => {
+    if (!workspaceById[eventId]) return;
+    setSelectedEventId(eventId);
+    setSelectedId(selectionId);
+    setMarketMode("all");
   };
 
   return (
@@ -312,41 +327,12 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
         <Metric value="9" label={dictionary.validated} detail="3 high-conviction" accent />
       </section>
 
-      <section className="liveRail liveEventSwitcher" id="live">
-        <div className="sectionRailTitle">
-          <span className="panelIndex">01</span>
-          <div>
-            <h2>{dictionary.liveNow}</h2>
-            <p>Choose an event · entire VETO state switches</p>
-          </div>
-        </div>
-        <div className="liveCards">
-          {liveWorkspaces.map((event) => (
-            <button
-              className={`liveEventCard ${activeWorkspace.id === event.id ? "active" : ""}`}
-              key={event.id}
-              onClick={() => setSelectedEventId(event.id)}
-              type="button"
-            >
-              <div className="liveEventTop">
-                <span className={`pulseTag ${event.pulse}`}>{event.clock}</span>
-                <span>{event.competition}</span>
-              </div>
-              <div className="liveSportTag">{event.sportLabel}</div>
-              <div className="liveScore">
-                <span>{event.homeCode}</span>
-                <strong>{event.homeScore}<em>:</em>{event.awayScore}</strong>
-                <span>{event.awayCode}</span>
-              </div>
-              <div className="liveEventMeta">
-                <span>{event.markets} markets</span>
-                <span>{event.repriced} repriced</span>
-                <strong>{event.opportunities[0].decision} · {pp(event.opportunities[0].probabilityEdge)}</strong>
-              </div>
-            </button>
-          ))}
-        </div>
-      </section>
+      <LiveCommandCenter
+        workspaces={liveWorkspaces}
+        activeWorkspaceId={activeWorkspace.id}
+        onSelectEvent={selectEvent}
+        onSelectSignal={selectSignal}
+      />
 
       <section className={`eventDecisionSurface sport-${activeWorkspace.sport}`} id="events">
         <div className="surfaceCommandHeader">
