@@ -18,6 +18,7 @@ export const healthyDecisionEvidence:DecisionEvidence={
   leakageBlock:false,
   calibrationKill:false,
   censoringBlock:false,
+  conformalBlock:false,
   outOfDistribution:false,
 };
 
@@ -25,6 +26,7 @@ export const healthyBoundary=evaluateDecisionBoundary(healthyDecisionEvidence);
 export const leakageBoundary=evaluateDecisionBoundary({...healthyDecisionEvidence,robustGapPp:12.8,leakageBlock:true});
 export const semanticBoundary=evaluateDecisionBoundary({...healthyDecisionEvidence,semanticFreeze:true});
 export const oodBoundary=evaluateDecisionBoundary({...healthyDecisionEvidence,outOfDistribution:true});
+export const conformalBoundary=evaluateDecisionBoundary({...healthyDecisionEvidence,robustGapPp:9.4,conformalBlock:true});
 export const weakBoundary=evaluateDecisionBoundary({
   ...healthyDecisionEvidence,
   robustGapPp:1.7,
