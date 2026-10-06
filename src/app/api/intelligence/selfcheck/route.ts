@@ -11,6 +11,7 @@ import { runShockExecutionSelfCheck } from "@/lib/parallax/shock-execution-selfc
 import { runCouncilSelfCheck } from "@/lib/council/selfcheck";
 import { runAlphaMemorySelfCheck } from "@/lib/alpha/selfcheck";
 import { runExperimentLedgerSelfCheck } from "@/lib/research/selfcheck";
+import { runTruthPlaneSelfCheck } from "@/lib/truth/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +75,10 @@ export function GET() {
     experimentLedger: {
       model: "veto.research.preregistered.v1",
       ...runExperimentLedgerSelfCheck(),
+    },
+    truthPlane: {
+      model: "veto.truth.bitemporal.v1",
+      ...runTruthPlaneSelfCheck(),
     },
   };
 
