@@ -37,6 +37,26 @@ export const attributeRegimeDrivers=(
     };
   }
 
+  if(full.changePoints.length===0&&full.transitionConfidence<.35){
+    return{
+      fullRegime:"STABLE_CONTROL",
+      fullConfidence:full.transitionConfidence,
+      fullEvidenceStrength:fullStrength,
+      primaryDriver:null,
+      concentration:0,
+      drivers:features.map((feature,index)=>({
+        feature,
+        contribution:0,
+        share:0,
+        ablatedConfidence:full.transitionConfidence,
+        ablatedRegime:"STABLE_CONTROL",
+        flipsRegime:false,
+        rank:index+1,
+      })),
+      reasons:["no structural shift strong enough to attribute"],
+    };
+  }
+
   const raw=features.map(feature=>{
     const baselineMean=full.baseline[feature].mean;
     const ablatedRows=rows.map((row,index)=>
