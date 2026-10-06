@@ -514,85 +514,109 @@ export function Terminal() {
         </section>
       </div>
 
-      <section className="intelligenceGrid" id="models">
-        <section className="panel modelCouncil">
-          <div className="panelHeader">
+      <section className="intelligenceSurface" id="models">
+        <div className="intelligenceSurfaceHead">
+          <div>
+            <span className="panelIndex">08</span>
             <div>
-              <span className="panelIndex">08</span>
-              <div>
-                <h2>{dictionary.council}</h2>
-                <p>Independent model votes</p>
-              </div>
+              <h2>{dictionary.council}</h2>
+              <p>Independent models · one consensus surface</p>
             </div>
-            <strong className="consensusValue">94 <span>/ 100</span></strong>
           </div>
-          <div className="modelList">
-            {modelViews.map((model) => (
-              <div className="modelRow" key={model.id}>
-                <div className="modelName">
-                  <i className={model.status} />
-                  <div><strong>{model.label}</strong><span>{model.latency}</span></div>
-                </div>
-                <div className="modelBar"><i style={{ width: `${model.probability * 100}%` }} /></div>
-                <strong className="mono">{pct(model.probability)}</strong>
-                <span className="modelConfidence">{Math.round(model.confidence * 100)} conf</span>
-              </div>
-            ))}
+          <div className="councilConsensus">
+            <span>CONSENSUS</span>
+            <strong>94</strong>
+            <em>/100</em>
           </div>
-        </section>
+        </div>
 
-        <section className="panel scenarioEngine">
-          <div className="panelHeader">
-            <div>
-              <span className="panelIndex">09</span>
-              <div>
-                <h2>{dictionary.scenarios}</h2>
-                <p>Counterfactual market response</p>
+        <div className="councilStrip">
+          {modelViews.map((model) => (
+            <article className="councilNode" key={model.id}>
+              <div className="councilNodeTop">
+                <span><i className={model.status} />{model.label}</span>
+                <small>{model.latency}</small>
               </div>
-            </div>
-          </div>
-          <div className="scenarioTable">
-            <div className="scenarioRow scenarioHead">
-              <span>Сценарий</span><span>P</span><span>U3.5</span><span>ARS W</span><span>Next G</span>
-            </div>
-            {scenarios.map((scenario) => (
-              <div className="scenarioRow" key={scenario.label}>
-                <strong>{scenario.label}</strong>
-                <span>{pct(scenario.probability)}</span>
-                <span>{pct(scenario.under35)}</span>
-                <span>{pct(scenario.homeWin)}</span>
-                <span>{pct(scenario.nextGoal)}</span>
+              <strong>{pct(model.probability)}</strong>
+              <div className="councilLane">
+                <span style={{ width: `${model.probability * 100}%` }} />
+                <i style={{ left: `${model.probability * 100}%` }} />
               </div>
-            ))}
-          </div>
-        </section>
+              <footer>
+                <span>CONF {Math.round(model.confidence * 100)}</span>
+                <b>{model.status.toUpperCase()}</b>
+              </footer>
+            </article>
+          ))}
+        </div>
 
-        <section className="panel marketPulse">
-          <div className="panelHeader">
-            <div>
-              <span className="panelIndex">10</span>
+        <div className="intelligenceSurfaceBody">
+          <section className="scenarioBranches">
+            <div className="intelligenceSubhead">
               <div>
-                <h2>{dictionary.marketPulse}</h2>
-                <p>Price velocity & anomalies</p>
+                <span className="panelIndex">09</span>
+                <div>
+                  <h2>{dictionary.scenarios}</h2>
+                  <p>Counterfactual branches</p>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="pulseList">
-            {marketMoves.map((move) => (
-              <div className="pulseRow" key={`${move.time}-${move.label}`}>
-                <span className="pulseTime">{move.time}</span>
-                <div className="pulseMove">
-                  <strong>{move.label}</strong>
-                  <span>{move.from.toFixed(2)} <i>→</i> {move.to.toFixed(2)}</span>
+
+            <div className="scenarioBranchList">
+              {scenarios.map((scenario, index) => (
+                <div className="scenarioBranch" key={scenario.label}>
+                  <div className="scenarioBranchLead">
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                    <i />
+                    <strong>{scenario.label}</strong>
+                  </div>
+                  <div className="scenarioBranchProbability">
+                    <span>P</span>
+                    <strong>{pct(scenario.probability)}</strong>
+                    <i><b style={{ width: `${scenario.probability * 100}%` }} /></i>
+                  </div>
+                  <div className="scenarioBranchOutcomes">
+                    <span>U3.5 <b>{pct(scenario.under35)}</b></span>
+                    <span>ARS W <b>{pct(scenario.homeWin)}</b></span>
+                    <span>NEXT G <b>{pct(scenario.nextGoal)}</b></span>
+                  </div>
                 </div>
-                <div className="pulseReason">
-                  <span className={move.explained ? "explained" : "unexplained"}>{move.explained ? "EXPLAINED" : "ANOMALY"}</span>
-                  <small>{move.reason}</small>
+              ))}
+            </div>
+          </section>
+
+          <section className="marketTape">
+            <div className="intelligenceSubhead">
+              <div>
+                <span className="panelIndex">10</span>
+                <div>
+                  <h2>{dictionary.marketPulse}</h2>
+                  <p>Price velocity · anomaly tape</p>
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
+            </div>
+
+            <div className="marketTapeList">
+              {marketMoves.map((move) => (
+                <div className="marketTapeRow" key={`${move.time}-${move.label}`}>
+                  <span className="marketTapeTime">{move.time}</span>
+                  <div className="marketTapeAsset">
+                    <strong>{move.label}</strong>
+                    <small>{move.reason}</small>
+                  </div>
+                  <div className="marketTapePrice">
+                    <span>{move.from.toFixed(2)}</span>
+                    <i>→</i>
+                    <strong>{move.to.toFixed(2)}</strong>
+                  </div>
+                  <em className={move.explained ? "explained" : "unexplained"}>
+                    {move.explained ? "EXPLAINED" : "ANOMALY"}
+                  </em>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
       </section>
 
       <section className="panel evidencePanel" id="ledger">
