@@ -20,6 +20,7 @@ import { runCapacitySelfCheck } from "@/lib/capacity/selfcheck";
 import { runSemanticDriftSelfCheck } from "@/lib/drift/selfcheck";
 import { runLeakageSelfCheck } from "@/lib/leakage/selfcheck";
 import { runDiscoveryControlSelfCheck } from "@/lib/discovery/selfcheck";
+import { runCalibrationDriftSelfCheck } from "@/lib/calibration/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -119,6 +120,10 @@ export function GET() {
     discoveryControl: {
       model: "veto.discovery.control.v1",
       ...runDiscoveryControlSelfCheck(),
+    },
+    calibrationDrift: {
+      model: "veto.calibration.drift.v1",
+      ...runCalibrationDriftSelfCheck(),
     },
   };
 
