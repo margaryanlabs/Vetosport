@@ -104,17 +104,24 @@ const opportunity = (input: {
   rationale: string[];
 }): Opportunity => {
   const implied = 1 / input.odds;
+  const probabilityEdge = input.probability - implied;
+  const expectedValue = input.probability * input.odds - 1;
+  const guardedDecision =
+    probabilityEdge <= 0 || expectedValue <= 0
+      ? "PASS"
+      : input.decision;
+
   return {
     eventId: input.eventId,
     marketId: input.marketId,
     selection: { id: input.selectionId, label: input.label },
-    decision: input.decision,
+    decision: guardedDecision,
     marketOdds: input.odds,
     marketImpliedProbability: implied,
     fairProbability: input.probability,
     fairOdds: 1 / input.probability,
-    expectedValue: input.probability * input.odds - 1,
-    probabilityEdge: input.probability - implied,
+    expectedValue,
+    probabilityEdge,
     opportunityScore: input.score,
     risk: input.risk ?? "MEDIUM",
     dataConfidence: "HIGH",
