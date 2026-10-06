@@ -6,6 +6,7 @@ import { runTennisSelfCheck } from "@/lib/models/tennis/selfcheck";
 import { runHockeySelfCheck } from "@/lib/models/hockey/selfcheck";
 import { runParallaxSelfCheck } from "@/lib/parallax/selfcheck";
 import { runTemporalSelfCheck } from "@/lib/parallax/temporal-selfcheck";
+import { runPropagationSelfCheck } from "@/lib/parallax/propagation-selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,10 @@ export function GET() {
     temporalResponse: {
       model: "veto.parallax.temporal-response.v1",
       ...runTemporalSelfCheck(),
+    },
+    crossMarketPropagation: {
+      model: "veto.parallax.cross-market.v1",
+      ...runPropagationSelfCheck(),
     },
   };
 
