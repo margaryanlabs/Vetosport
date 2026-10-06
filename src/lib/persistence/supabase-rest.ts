@@ -282,6 +282,8 @@ export class SupabaseRestPersistence implements VetoPersistence {
           prediction_snapshot_id: entry.predictionSnapshotId,
           market_key: entry.marketId,
           selection_key: entry.selectionId,
+          selection_line: entry.selectionLine,
+          selection_side: entry.selectionSide,
           decision: entry.decision,
           decision_mode: entry.decisionMode,
           market_odds: entry.marketOdds,
