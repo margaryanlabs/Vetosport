@@ -21,6 +21,9 @@ export interface DecisionEvidence {
   calibrationKill:boolean;
   censoringBlock:boolean;
   conformalBlock:boolean;
+  regimeCoherent:boolean;
+  transitionHazard:number;
+  modelAdaptationSpeed:number;
   outOfDistribution:boolean;
 }
 
