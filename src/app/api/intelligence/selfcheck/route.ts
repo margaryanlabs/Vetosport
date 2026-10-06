@@ -18,6 +18,7 @@ import { runSensorIntegritySelfCheck } from "@/lib/integrity/selfcheck";
 import { runVoiSelfCheck } from "@/lib/voi/selfcheck";
 import { runCapacitySelfCheck } from "@/lib/capacity/selfcheck";
 import { runSemanticDriftSelfCheck } from "@/lib/drift/selfcheck";
+import { runLeakageSelfCheck } from "@/lib/leakage/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -109,6 +110,10 @@ export function GET() {
     semanticDrift: {
       model: "veto.semantic-drift.v1",
       ...runSemanticDriftSelfCheck(),
+    },
+    leakageMonitor: {
+      model: "veto.leakage.negative-controls.v1",
+      ...runLeakageSelfCheck(),
     },
   };
 
