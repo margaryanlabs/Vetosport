@@ -1,6 +1,7 @@
 import type { MarketQuote, ModelSignal, SportEvent } from "@/lib/domain/types";
 import { aggregateCouncil } from "@/lib/intelligence/council";
 import { evaluateOpportunity } from "@/lib/intelligence/opportunity";
+import { sandboxMarketProbability } from "@/lib/sandbox/football-model";
 
 const at = "2026-10-06T08:00:00.000Z";
 
@@ -47,7 +48,12 @@ const quote = (
 const candidates = [
   {
     quote: quote("football.total_goals", "under-3.5", "Тотал меньше 3.5", 1.43),
-    estimate: aggregateCouncil(council([0.79, 0.77, 0.8, 0.74])),
+    estimate: aggregateCouncil(council([
+      sandboxMarketProbability("football.total_goals", "under-3.5") ?? 0.82,
+      0.82,
+      0.81,
+      0.78,
+    ])),
     context: { dataConfidence: "HIGH" as const, freshnessSeconds: 8, liquidityScore: 0.9, correlationRisk: 0.16, marketEfficiency: 0.52 },
   },
   {
