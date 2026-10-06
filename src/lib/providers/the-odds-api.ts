@@ -1,4 +1,4 @@
-import type { MarketQuote } from "@/lib/domain/types";
+import type { MarketQuote, Sport, SportEvent } from "@/lib/domain/types";
 import type { ProviderEnvelope } from "@/lib/ingestion/types";
 import { canonicalSelectionKey } from "@/lib/canonical/id";
 
@@ -22,7 +22,7 @@ type OddsApiBookmaker = {
   markets: OddsApiMarket[];
 };
 
-type OddsApiEvent = {
+export type OddsApiEvent = {
   id: string;
   sport_key: string;
   sport_title?: string;
@@ -91,6 +91,21 @@ export class TheOddsApiClient {
       latencyMs: receivedAt.getTime() - requestedAt.getTime(),
       quotaRemaining: quotaRemainingRaw == null ? undefined : Number(quotaRemainingRaw),
       data,
+    };
+  }
+
+  normalizeEvent(event: OddsApiEvent, sport: Sport): SportEvent {
+    return {
+      id: event.id,
+      sport,
+      competition: event.sport_title ?? event.sport_key,
+      startsAt: new Date(event.commence_time).toISOString(),
+      status:
+        new Date(event.commence_time).getTime() <= Date.now()
+          ? "live"
+          : "scheduled",
+      home: { id: event.home_team, name: event.home_team },
+      away: { id: event.away_team, name: event.away_team },
     };
   }
 
