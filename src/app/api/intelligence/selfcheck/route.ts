@@ -13,6 +13,7 @@ import { runAlphaMemorySelfCheck } from "@/lib/alpha/selfcheck";
 import { runExperimentLedgerSelfCheck } from "@/lib/research/selfcheck";
 import { runTruthPlaneSelfCheck } from "@/lib/truth/selfcheck";
 import { runContractSemanticsSelfCheck } from "@/lib/contracts/selfcheck";
+import { runDataPlaneSelfCheck } from "@/lib/data-plane/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +85,10 @@ export function GET() {
     contractSemantics: {
       model: "veto.contracts.semantics.v1",
       ...runContractSemanticsSelfCheck(),
+    },
+    dataPlane: {
+      model: "veto.data-plane.v1",
+      ...runDataPlaneSelfCheck(),
     },
   };
 
