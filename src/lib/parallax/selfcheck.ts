@@ -43,7 +43,10 @@ export const runParallaxSelfCheck = () => {
   };
 
   const coherentContracts =
-    buildFootballParallaxContracts(coherentSnapshot);
+    buildFootballParallaxContracts(
+      coherentSnapshot,
+      sandboxFootballInputs,
+    );
   const projection = projectMarketWorld(
     sandboxFootballSurface.scorelines,
     coherentContracts,
@@ -91,6 +94,16 @@ export const runParallaxSelfCheck = () => {
       passed: sandboxParallaxAnalysis.counterfactuals.every(
         (item) => item.probability > 0 && item.probability < 1,
       ),
+    },
+    {
+      name: "settled contracts are excluded from live graph",
+      passed:
+        !sandboxParallaxAnalysis.contracts.some(
+          (contract) =>
+            contract.id === "btts-yes" ||
+            contract.id === "home-over-0.5" ||
+            contract.id === "away-over-0.5",
+        ),
     },
     {
       name: "synthetic inconsistency is detectable",
