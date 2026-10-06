@@ -110,7 +110,17 @@ export const analyzeRegimeChange=(
     const cusumNorm=clamp(cusum/5);
     const rawLogit=-3.2+1.25*ewma+1.15*cusumNorm+1.05*persistent+.28*Math.max(0,surprise-1);
     const changeProbability=clamp(logistic(rawLogit));
-    const {regime,scores}=classify(obs,b,surprise);
+    let {regime,scores}=classify(obs,b,surprise);
+    if(changeProbability<.35&&persistence===0){
+      regime="STABLE_CONTROL";
+      scores={
+        STABLE_CONTROL:.82,
+        OPEN_TRANSITION:.05,
+        PRESSURE_SIEGE:.05,
+        FRAGILE_LIQUIDITY:.04,
+        DISLOCATED:.04,
+      };
+    }
     const hardChange=changeProbability>=.72&&persistence>=3&&ewma>=1.05&&surprise>=1.25;
 
     return{
