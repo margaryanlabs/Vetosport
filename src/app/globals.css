@@ -1268,3 +1268,120 @@ footer p {
 }
 
 .negative { color: var(--danger) !important; }
+
+.surfaceExplorer { margin-top: 12px; }
+.surfaceFamilyTabs {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+}
+.surfaceFamilyTabs button {
+  border: 0;
+  padding: 6px 8px;
+  background: transparent;
+  color: var(--muted-2);
+  cursor: pointer;
+  font-size: 7px;
+  transition: background .15s ease, color .15s ease;
+}
+.surfaceFamilyTabs button:hover { color: var(--text-soft); }
+.surfaceFamilyTabs button.active {
+  background: #171d24;
+  color: var(--text);
+}
+.surfaceMarketGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.surfaceMarketCard {
+  min-height: 148px;
+  padding: 15px;
+  border-right: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  background: linear-gradient(180deg, rgba(255,255,255,.01), transparent);
+}
+.surfaceMarketCard:nth-child(5n) { border-right: 0; }
+.surfaceMarketTop,
+.surfaceMarketBottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.surfaceMarketTop > span {
+  color: var(--text-soft);
+  font-size: 8px;
+  font-weight: 650;
+}
+.surfaceMarketTop i {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 6px;
+  font-style: normal;
+}
+.surfaceMarketTop i.up { color: var(--edge); }
+.surfaceMarketTop i.down { color: var(--danger); }
+.surfaceMarketTop i.flat { color: var(--muted-2); }
+.surfaceMarketCard > strong {
+  display: block;
+  margin-top: 20px;
+  font-size: 28px;
+  letter-spacing: -.055em;
+}
+.surfaceProbTrack {
+  height: 2px;
+  margin: 10px 0 14px;
+  background: #1a222a;
+  overflow: hidden;
+}
+.surfaceProbTrack i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #6d857a, var(--edge));
+}
+.surfaceMarketBottom span {
+  color: var(--muted-2);
+  font-size: 6px;
+  letter-spacing: .1em;
+}
+.surfaceMarketBottom b {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 9px;
+}
+.surfaceExplorerFooter {
+  min-height: 47px;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  color: var(--muted-2);
+  font-size: 6px;
+  letter-spacing: .08em;
+}
+.surfaceExplorerFooter b {
+  margin-left: 4px;
+  color: var(--text-soft);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 8px;
+}
+@media (max-width: 1100px) {
+  .surfaceMarketGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .surfaceMarketCard:nth-child(5n) { border-right: 1px solid var(--line-soft); }
+  .surfaceMarketCard:nth-child(3n) { border-right: 0; }
+  .surfaceFamilyTabs { max-width: 48vw; overflow-x: auto; }
+  .surfaceFamilyTabs button { flex: 0 0 auto; }
+}
+@media (max-width: 760px) {
+  .surfaceExplorer .panelHeader {
+    min-height: auto;
+    padding-top: 13px;
+    padding-bottom: 13px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .surfaceFamilyTabs { width: 100%; max-width: none; }
+  .surfaceMarketGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .surfaceMarketCard:nth-child(3n) { border-right: 1px solid var(--line-soft); }
+  .surfaceMarketCard:nth-child(2n) { border-right: 0; }
+  .surfaceExplorerFooter { flex-wrap: wrap; gap: 8px 16px; padding: 12px 15px; }
+}
