@@ -2,10 +2,12 @@
 
 import type { Locale } from "@/lib/domain/types";
 import {
-  healthyBoundary,
-  staleRegimeBoundary,
-  transitionCappedBoundary,
-} from "@/lib/abstention/sandbox";
+  coherentRegimeGate,
+  fastImminentGate,
+  preRegimeGate,
+  slowImminentGate,
+  staleSnapshotGate,
+} from "@/lib/regime-coherence/sandbox";
 
 const pct=(v:number)=>`${(v*100).toFixed(0)}%`;
 
@@ -34,27 +36,23 @@ export function RegimeCoherenceGatePanel({locale}:{locale:Locale}) {
   const scenarios=[
     {
       title:"COHERENT SNAPSHOT",
-      regime:"OPEN_TRANSITION",
-      snapshot:"OPEN_TRANSITION",
-      hazard:.28,
-      adaptation:.82,
-      result:healthyBoundary,
+      gate:coherentRegimeGate,
     },
     {
       title:"STALE SNAPSHOT",
-      regime:"PRESSURE_SIEGE",
-      snapshot:"OPEN_TRANSITION",
-      hazard:.91,
-      adaptation:.82,
-      result:staleRegimeBoundary,
+      gate:staleSnapshotGate,
+    },
+    {
+      title:"PRE-REGIME SIGNAL",
+      gate:preRegimeGate,
     },
     {
       title:"IMMINENT / SLOW",
-      regime:"OPEN_TRANSITION",
-      snapshot:"OPEN_TRANSITION",
-      hazard:.88,
-      adaptation:.31,
-      result:transitionCappedBoundary,
+      gate:slowImminentGate,
+    },
+    {
+      title:"IMMINENT / FAST",
+      gate:fastImminentGate,
     },
   ] as const;
 
@@ -67,13 +65,13 @@ export function RegimeCoherenceGatePanel({locale}:{locale:Locale}) {
 
       <div className="regimeCoherenceGrid">
         {scenarios.map(item=>(
-          <article key={item.title} className={item.result.decision.toLowerCase().replaceAll("_","-")}>
+          <article key={item.title} className={item.gate.action.toLowerCase().replaceAll("_","-")}>
             <span>{item.title}</span>
-            <div><small>GOVERNED REGIME</small><strong>{item.regime}</strong></div>
-            <div><small>SIGNAL SNAPSHOT</small><strong>{item.snapshot}</strong></div>
-            <div className="regimeCoherencePair"><b>HAZARD {pct(item.hazard)}</b><b>ADAPT {pct(item.adaptation)}</b></div>
-            <em>{item.result.decision}</em>
-            <p>{item.result.abstentionReason ?? item.result.warnings[0] ?? "authority preserved"}</p>
+            <div><small>GOVERNED REGIME</small><strong>{item.gate.governedRegime}</strong></div>
+            <div><small>SIGNAL SNAPSHOT</small><strong>{item.gate.signalRegimeSnapshot}</strong></div>
+            <div className="regimeCoherencePair"><b>HAZARD {pct(item.gate.transitionHazard)}</b><b>ADAPT {pct(item.gate.modelAdaptationSpeed)}</b></div>
+            <em>{item.gate.action}</em>
+            <p>{item.gate.reasons[0] ?? "authority preserved"}</p>
           </article>
         ))}
       </div>
@@ -93,7 +91,7 @@ export function RegimeCoherenceGatePanel({locale}:{locale:Locale}) {
         <i>+</i>
         <div><span>STALE REGIME</span><strong className="negative">MISMATCH</strong></div>
         <i>→</i>
-        <div><span>DECISION</span><strong className="negative">{staleRegimeBoundary.decision}</strong></div>
+        <div><span>DECISION</span><strong className="negative">{staleSnapshotGate.action}</strong></div>
       </div>
 
       <div className="regimeCoherenceMethod"><span>METHOD / LIMITS</span><p>{copy.note}</p><code>veto.regime.coherence-gate.v1</code></div>
