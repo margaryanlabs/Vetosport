@@ -44,6 +44,18 @@ export interface ProviderHealthSample {
   metadata?: Record<string, unknown>;
 }
 
+export interface HistoricalImportRecord {
+  provider: string;
+  datasetKind: string;
+  sport: string;
+  competition?: string;
+  fromAt?: string;
+  toAt?: string;
+  rowsImported: number;
+  checksum?: string;
+  metadata?: Record<string, unknown>;
+}
+
 export interface VetoPersistence {
   upsertEvent(event: SportEvent, canonicalKey: string, providerRef?: {
     provider: string;
@@ -78,4 +90,6 @@ export interface VetoPersistence {
   }): Promise<void>;
 
   appendProviderHealth(sample: ProviderHealthSample): Promise<void>;
+
+  recordHistoricalImport(record: HistoricalImportRecord): Promise<void>;
 }
