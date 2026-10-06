@@ -433,14 +433,14 @@ export function Terminal() {
             <div className="vetoDial">
               <div className="dialRing" style={{ "--score": selected.opportunityScore } as React.CSSProperties}>
                 <div>
-                  <span>VETO</span>
+                  <span>SCORE</span>
                   <strong>{selected.opportunityScore}</strong>
                 </div>
               </div>
             </div>
             <div className="decisionProbability">
               <strong>{pct(selected.fairProbability)}</strong>
-              <span>VETO probability</span>
+              <span>Fair probability</span>
             </div>
           </div>
 
