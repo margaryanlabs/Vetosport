@@ -1,4 +1,4 @@
-export interface TruthJournalRecord<T = Record<string, unknown>> {
+export interface TruthJournalRecord<T = unknown> {
   id: string;
   source: string;
   sourceEventId: string;
@@ -28,7 +28,7 @@ export interface TruthRecordValidation {
   correctedEventOccurredAtMs: number;
 }
 
-export interface PointInTimeTruth<T = Record<string, unknown>> {
+export interface PointInTimeTruth<T = unknown> {
   asOfMs: number;
   visibleRecords: TruthJournalRecord<T>[];
   activeRecords: TruthJournalRecord<T>[];
