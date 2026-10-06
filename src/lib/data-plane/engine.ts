@@ -5,6 +5,7 @@ import type {
   DataPlaneRuntimeStatus,
   PersistedJournalRecord,
   PreparedJournalRecord,
+  ProviderRulebookVersion,
 } from "@/lib/data-plane/types";
 
 const canonicalize = (value: unknown): string => {
@@ -101,6 +102,21 @@ const correctionMap = <T>(
 
   return map;
 };
+
+export const prepareRulebookVersion = (
+  input: Omit<ProviderRulebookVersion, "contentHash"> & {
+    contentHash?: string;
+  },
+): ProviderRulebookVersion => ({
+  ...input,
+  effectiveFrom: normalizedIso(input.effectiveFrom),
+  effectiveTo: input.effectiveTo
+    ? normalizedIso(input.effectiveTo)
+    : undefined,
+  capturedAt: normalizedIso(input.capturedAt),
+  contentHash:
+    input.contentHash ?? sha256(canonicalize(input.rules)),
+});
 
 export const buildDataPlaneReplay = <T>(
   allRecords: PersistedJournalRecord<T>[],
