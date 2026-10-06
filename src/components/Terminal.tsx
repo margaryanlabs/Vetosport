@@ -14,6 +14,9 @@ import {
   stateMetrics,
 } from "@/lib/sandbox/live";
 import { ProbabilityChart } from "@/components/ProbabilityChart";
+import { sandboxAffectedMarkets, sandboxLiveDeltas } from "@/lib/sandbox/live-changes";
+import { explainLiveChange } from "@/lib/live-twin/explain";
+import { repricePriority } from "@/lib/live-twin/materiality";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) => `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)} п.п.`;
@@ -64,6 +67,8 @@ export function Terminal() {
     ? Object.values(providerStatus.providers).filter((provider) => provider.configured).length
     : 0;
   const providerMode = configuredProviders > 0 ? "ADAPTERS CONFIGURED" : "SANDBOX";
+  const liveExplanation = explainLiveChange(sandboxLiveDeltas);
+  const livePriority = repricePriority(sandboxLiveDeltas);
 
   return (
     <main className="appFrame">
@@ -214,6 +219,33 @@ export function Terminal() {
               <StatePill label={dictionary.tempo} value="71/100" note="−19% / 10m" />
               <StatePill label={dictionary.uncertainty} value="21/100" note="LOW" />
               <StatePill label={dictionary.marketGap} value="+8.5 п.п." note="UNDER 3.5" accent />
+            </div>
+
+            <div className="liveTwinChange">
+              <div className="liveTwinChangeHead">
+                <div>
+                  <span className="miniLabel">{dictionary.whatChanged}</span>
+                  <strong>{liveExplanation.headline}</strong>
+                </div>
+                <span className={`priorityTag ${livePriority}`}>{livePriority.toUpperCase()}</span>
+              </div>
+              <p>{liveExplanation.summary}</p>
+              <div className="liveTwinDrivers">
+                {liveExplanation.drivers.map((driver) => (
+                  <div key={driver.label}>
+                    <span>{driver.label}</span>
+                    <strong>{driver.impact}</strong>
+                  </div>
+                ))}
+              </div>
+              <div className="affectedMarkets">
+                <span>AFFECTED MARKETS</span>
+                <div>
+                  {sandboxAffectedMarkets.map((market) => (
+                    <i key={market}>{market.replace("football.", "").replaceAll("_", " ")}</i>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="stateGrid">
