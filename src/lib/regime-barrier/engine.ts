@@ -66,6 +66,32 @@ export const findRegimeBarrier=(
 ):RegimeBarrierResult=>{
   const initial=analyzeRegimeChange(rows,{baselineCount});
   const candidates:RegimeBarrierCandidate[]=[];
+  const initialConfirmed=
+    initial.regime===targetRegime&&
+    Boolean(initial.current?.hardChange)&&
+    (initial.current?.changeProbability??0)>=.72;
+
+  if(initialConfirmed){
+    const zero:RegimeBarrierCandidate={
+      features:[],
+      sigma:0,
+      cost:0,
+      achieved:true,
+      resultingRegime:initial.regime,
+      changeProbability:initial.current?.changeProbability??0,
+      hardChange:true,
+    };
+    return{
+      fromRegime:initial.changePoints.length?initial.regime:"STABLE_CONTROL",
+      targetRegime,
+      sustainFrames,
+      best:zero,
+      candidates:[zero],
+      barrierCost:0,
+      fragile:true,
+      reasons:["target structural regime is already confirmed; counterfactual barrier is zero"],
+    };
+  }
 
   for(const plan of plans[targetRegime]){
     let bestForPlan:RegimeBarrierCandidate|null=null;
