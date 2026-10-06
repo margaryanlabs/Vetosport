@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { Locale, Opportunity } from "@/lib/domain/types";
+import type { Locale, Opportunity, Sport } from "@/lib/domain/types";
 import { dictionaries } from "@/lib/i18n/dictionaries";
 import { liveWorkspaces, workspaceById } from "@/lib/sandbox/workspaces";
 import { ProbabilityChart } from "@/components/ProbabilityChart";
@@ -9,6 +9,7 @@ import { MarketSurfaceExplorer } from "@/components/MarketSurfaceExplorer";
 import { AsianLinesBoard } from "@/components/AsianLinesBoard";
 import { BacktestLab } from "@/components/BacktestLab";
 import { ModelGovernancePanel } from "@/components/ModelGovernancePanel";
+import { EngineUniverse } from "@/components/EngineUniverse";
 import { SpecialistSportSurface } from "@/components/SpecialistSportSurface";
 import { VetoMark } from "@/components/VetoMark";
 import { sandboxFootballBeforeSurface, sandboxFootballSurface } from "@/lib/sandbox/football-model";
@@ -106,6 +107,10 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
     ? Object.values(providerStatus.providers).filter((provider) => provider.configured).length
     : 0;
   const providerMode = configuredProviders > 0 ? "ADAPTERS CONFIGURED" : "SANDBOX";
+  const selectSport = (sport: Sport) => {
+    const workspace = liveWorkspaces.find((item) => item.sport === sport);
+    if (workspace) setSelectedEventId(workspace.id);
+  };
 
   return (
     <main className="appFrame signalSystem">
@@ -252,6 +257,11 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
         <span><i /> {dictionary.sandbox}</span>
         <span>{configuredProviders > 0 ? `${configuredProviders}/2 PRIMARY ADAPTERS CONFIGURED · SANDBOX VIEW STILL ACTIVE` : "LIVE ADAPTERS AWAIT KEYS · UI NEVER LABELS SYNTHETIC DATA AS REAL"}</span>
       </div>
+
+      <EngineUniverse
+        activeSport={activeWorkspace.sport}
+        onSelect={selectSport}
+      />
 
       <section className="statGrid">
         <Metric value="2,481" label={dictionary.scanned} detail="7 sports / 31 families" />
