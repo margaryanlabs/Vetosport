@@ -32,6 +32,7 @@ import { runTransitionHazardSelfCheck } from "@/lib/transition-hazard/selfcheck"
 import { runRegimeCoherenceSelfCheck } from "@/lib/regime-coherence/selfcheck";
 import { runHazardCalibrationSelfCheck } from "@/lib/hazard-calibration/selfcheck";
 import { runTransitionAuthoritySelfCheck } from "@/lib/transition-authority/selfcheck";
+import { runAuthorityFrontierSelfCheck } from "@/lib/authority-frontier/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -179,6 +180,10 @@ export function GET() {
     transitionAuthority: {
       model: "veto.regime.transition-authority.v1",
       ...runTransitionAuthoritySelfCheck(),
+    },
+    authorityFrontier: {
+      model: "veto.regime.authority-frontier.v1",
+      ...runAuthorityFrontierSelfCheck(),
     },
   };
 
