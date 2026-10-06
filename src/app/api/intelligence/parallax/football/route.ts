@@ -27,7 +27,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const invalidContract = footballParallaxContractIds.find((id) => {
+    const providedContracts = footballParallaxContractIds.filter(
+      (id) => body.market[id] != null,
+    );
+
+    const invalidContract = providedContracts.find((id) => {
       const value = body.market[id];
       return (
         typeof value !== "number" ||
@@ -46,11 +50,25 @@ export async function POST(request: Request) {
       );
     }
 
-    const oneXTwoMass =
-      body.market["home-win"] +
-      body.market.draw +
-      body.market["away-win"];
+    const home = body.market["home-win"];
+    const draw = body.market.draw;
+    const away = body.market["away-win"];
 
+    if (
+      typeof home !== "number" ||
+      typeof draw !== "number" ||
+      typeof away !== "number"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "a complete de-vigged 1X2 snapshot is required for football PARALLAX",
+        },
+        { status: 400 },
+      );
+    }
+
+    const oneXTwoMass = home + draw + away;
     if (Math.abs(oneXTwoMass - 1) > 0.03) {
       return NextResponse.json(
         {
@@ -63,7 +81,21 @@ export async function POST(request: Request) {
     }
 
     const surface = buildFootballProbabilitySurface(body.state);
-    const contracts = buildFootballParallaxContracts(body.market);
+    const contracts = buildFootballParallaxContracts(
+      body.market,
+      body.state,
+    );
+
+    if (contracts.length < 5) {
+      return NextResponse.json(
+        {
+          error:
+            "at least five synchronized unresolved contracts are required for PARALLAX",
+          activeContracts: contracts.map((contract) => contract.id),
+        },
+        { status: 400 },
+      );
+    }
     const analysis = analyzeFootballParallax({
       scorelines: surface.scorelines,
       inputs: body.state,
