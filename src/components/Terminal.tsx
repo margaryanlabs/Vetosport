@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Locale, Opportunity } from "@/lib/domain/types";
 import { dictionaries } from "@/lib/i18n/dictionaries";
 import { sandboxEvent, sandboxOpportunities } from "@/lib/sandbox/sample";
@@ -21,10 +21,36 @@ const pp = (value: number) => `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1
 const decisionClass = (decision: Opportunity["decision"]) =>
   decision === "EDGE" ? "edge" : decision === "WATCH" ? "watch" : "pass";
 
+type ProviderStatus = {
+  mode: "sandbox" | "partially-configured";
+  providers: {
+    sportmonks: { role: string; configured: boolean };
+    theOddsApi: { role: string; configured: boolean };
+  };
+};
+
 export function Terminal() {
   const [locale, setLocale] = useState<Locale>("ru");
   const [selectedId, setSelectedId] = useState(sandboxOpportunities[0].selection.id);
   const [marketMode, setMarketMode] = useState<"all" | "edges">("all");
+  const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    fetch("/api/providers", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload: ProviderStatus | null) => {
+        if (active && payload) setProviderStatus(payload);
+      })
+      .catch(() => {
+        // The terminal remains in explicit SANDBOX mode if provider health cannot load.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const dictionary = dictionaries[locale];
   const selected = useMemo(
@@ -34,6 +60,10 @@ export function Terminal() {
   const visibleOpportunities = marketMode === "edges"
     ? sandboxOpportunities.filter((item) => item.decision !== "PASS")
     : sandboxOpportunities;
+  const configuredProviders = providerStatus
+    ? Object.values(providerStatus.providers).filter((provider) => provider.configured).length
+    : 0;
+  const providerMode = configuredProviders > 0 ? "ADAPTERS CONFIGURED" : "SANDBOX";
 
   return (
     <main className="appFrame">
@@ -97,14 +127,14 @@ export function Terminal() {
             <span>Model agreement</span>
             <strong>HIGH</strong>
             <span>Provider mode</span>
-            <strong>SANDBOX</strong>
+            <strong>{providerMode}</strong>
           </div>
         </div>
       </section>
 
       <div className="sandboxBanner">
         <span><i /> {dictionary.sandbox}</span>
-        <span>LIVE ADAPTERS OFFLINE · UI NEVER LABELS SYNTHETIC DATA AS REAL</span>
+        <span>{configuredProviders > 0 ? `${configuredProviders}/2 PRIMARY ADAPTERS CONFIGURED · SANDBOX VIEW STILL ACTIVE` : "LIVE ADAPTERS AWAIT KEYS · UI NEVER LABELS SYNTHETIC DATA AS REAL"}</span>
       </div>
 
       <section className="statGrid">
@@ -454,14 +484,22 @@ export function Terminal() {
       <section className="dataPlane">
         <div>
           <span className="miniLabel">{dictionary.provider}</span>
-          <strong>{dictionary.disconnected}</strong>
+          <strong>
+            {configuredProviders > 0
+              ? `${configuredProviders}/2 primary adapters configured`
+              : dictionary.disconnected}
+          </strong>
         </div>
         <p>{dictionary.connectHint}</p>
         <div className="adapterChips">
-          <span>SPORTS FEED <i>READY</i></span>
-          <span>ODDS / EXCHANGE <i>READY</i></span>
-          <span>NEWS / INJURY <i>READY</i></span>
-          <span>REALTIME STREAM <i>READY</i></span>
+          <span className={providerStatus?.providers.sportmonks.configured ? "configured" : "missing"}>
+            SPORTMONKS <i>{providerStatus?.providers.sportmonks.configured ? "KEY OK" : "KEY MISSING"}</i>
+          </span>
+          <span className={providerStatus?.providers.theOddsApi.configured ? "configured" : "missing"}>
+            THE ODDS API <i>{providerStatus?.providers.theOddsApi.configured ? "KEY OK" : "KEY MISSING"}</i>
+          </span>
+          <span>NEWS / INJURY <i>NEXT</i></span>
+          <span>REALTIME BRIDGE <i>READY</i></span>
         </div>
       </section>
 
