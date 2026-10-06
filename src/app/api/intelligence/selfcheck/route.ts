@@ -4,6 +4,7 @@ import { runAsianSelfCheck } from "@/lib/models/football/asian-selfcheck";
 import { runBasketballSelfCheck } from "@/lib/models/basketball/selfcheck";
 import { runTennisSelfCheck } from "@/lib/models/tennis/selfcheck";
 import { runHockeySelfCheck } from "@/lib/models/hockey/selfcheck";
+import { runParallaxSelfCheck } from "@/lib/parallax/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -39,15 +40,23 @@ export function GET() {
     },
   };
 
-  const passed = Object.values(engines).every(
-    (engine) => engine.passed,
-  );
+  const researchLayers = {
+    parallax: {
+      model: "veto.parallax.football.v1",
+      ...runParallaxSelfCheck(),
+    },
+  };
+
+  const passed =
+    Object.values(engines).every((engine) => engine.passed) &&
+    Object.values(researchLayers).every((layer) => layer.passed);
 
   return NextResponse.json(
     {
       passed,
       generatedAt: new Date().toISOString(),
       engines,
+      researchLayers,
     },
     { status: passed ? 200 : 500 },
   );
