@@ -459,7 +459,7 @@ export function Terminal() {
         <section className="panel modelCouncil">
           <div className="panelHeader">
             <div>
-              <span className="panelIndex">05</span>
+              <span className="panelIndex">08</span>
               <div>
                 <h2>{dictionary.council}</h2>
                 <p>Independent model votes</p>
@@ -485,7 +485,7 @@ export function Terminal() {
         <section className="panel scenarioEngine">
           <div className="panelHeader">
             <div>
-              <span className="panelIndex">06</span>
+              <span className="panelIndex">09</span>
               <div>
                 <h2>{dictionary.scenarios}</h2>
                 <p>Counterfactual market response</p>
@@ -511,7 +511,7 @@ export function Terminal() {
         <section className="panel marketPulse">
           <div className="panelHeader">
             <div>
-              <span className="panelIndex">07</span>
+              <span className="panelIndex">10</span>
               <div>
                 <h2>{dictionary.marketPulse}</h2>
                 <p>Price velocity & anomalies</p>
@@ -539,7 +539,7 @@ export function Terminal() {
       <section className="panel evidencePanel" id="ledger">
         <div className="panelHeader">
           <div>
-            <span className="panelIndex">08</span>
+            <span className="panelIndex">11</span>
             <div>
               <h2>{dictionary.evidence}</h2>
               <p>Why the probability surface moved</p>
