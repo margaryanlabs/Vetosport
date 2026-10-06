@@ -1883,3 +1883,16 @@ footer p {
   .governanceCheck,
   .governanceCheck:nth-child(3n) { border-right: 0; }
 }
+
+.lockedMarket {
+  opacity: .72;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.006), transparent),
+    rgba(255,255,255,.003);
+}
+.lockedMarket .surfaceProbTrack i {
+  background: #43505b;
+}
+.lockedMarket .surfaceMarketTop > span {
+  color: var(--muted);
+}
