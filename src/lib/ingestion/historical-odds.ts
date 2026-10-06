@@ -3,6 +3,7 @@ import { chooseBestEventMatch } from "@/lib/canonical/match";
 import { getPersistence } from "@/lib/persistence/factory";
 import { getTheOddsApiClient } from "@/lib/providers/factory";
 import { sportFromOddsApiKey } from "@/lib/providers/sport-map";
+import { journalizeMarketQuotes } from "@/lib/data-plane/journalize";
 
 export interface HistoricalOddsImportPlan {
   sportKey: string;
@@ -82,9 +83,20 @@ export const importHistoricalOddsSnapshot = async (input: {
       );
     }
 
+    const quotes = client.normalizeQuotes(externalEvent);
+    await persistence.appendTruthJournal(
+      journalizeMarketQuotes({
+        canonicalEventId: eventId,
+        sourceProvider: client.id,
+        gatewayReceivedAt: envelope.receivedAt,
+        acquisitionMode: "HISTORICAL_BACKFILL",
+        historicalKnowledgeAt: envelope.data.timestamp,
+        quotes,
+      }),
+    );
     quotesImported += await persistence.appendQuotes(
       eventId,
-      client.normalizeQuotes(externalEvent),
+      quotes,
     );
   }
 
