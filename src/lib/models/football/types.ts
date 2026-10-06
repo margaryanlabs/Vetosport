@@ -56,6 +56,7 @@ export interface FootballProbabilitySurface {
   inputs: FootballLiveInputs;
   remainingGoals: RemainingGoalsEstimate;
   scorelines: ScorelineProbability[];
+  topScorelines: ScorelineProbability[];
   markets: FootballMarketProbability[];
   matrixMass: number;
   truncationMaxAdditionalGoals: number;
