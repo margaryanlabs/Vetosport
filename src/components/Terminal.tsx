@@ -14,6 +14,7 @@ import {
   stateMetrics,
 } from "@/lib/sandbox/live";
 import { ProbabilityChart } from "@/components/ProbabilityChart";
+import { MarketSurfaceExplorer } from "@/components/MarketSurfaceExplorer";
 import { sandboxAffectedMarkets, sandboxLiveDeltas } from "@/lib/sandbox/live-changes";
 import { explainLiveChange } from "@/lib/live-twin/explain";
 import { repricePriority } from "@/lib/live-twin/materiality";
@@ -421,6 +422,12 @@ export function Terminal() {
           </button>
         </aside>
       </section>
+
+      <MarketSurfaceExplorer
+        current={sandboxFootballSurface}
+        previous={sandboxFootballBeforeSurface}
+        locale={locale}
+      />
 
       <section className="intelligenceGrid" id="models">
         <section className="panel modelCouncil">
