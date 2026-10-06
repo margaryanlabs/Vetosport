@@ -7,6 +7,7 @@ import {
   sandboxFootballInputs,
   sandboxFootballSurface,
 } from "@/lib/sandbox/football-model";
+import { sandboxTemporalAnalysis } from "@/lib/parallax/temporal-sandbox";
 
 export const sandboxParallaxSnapshot: FootballParallaxMarketSnapshot = {
   "home-win": 0.32,
@@ -32,6 +33,7 @@ export const sandboxParallaxAnalysis = analyzeFootballParallax({
   inputs: sandboxFootballInputs,
   contracts: sandboxParallaxContracts,
   primaryContractId: "total-under-3.5",
-  halfLifeSeconds: 21,
+  halfLifeSeconds:
+    (sandboxTemporalAnalysis.consensusHalfLifeMs ?? 21000) / 1000,
   ageSeconds: 8,
 });
