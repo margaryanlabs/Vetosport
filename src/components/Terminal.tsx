@@ -15,6 +15,7 @@ import {
 } from "@/lib/sandbox/live";
 import { ProbabilityChart } from "@/components/ProbabilityChart";
 import { MarketSurfaceExplorer } from "@/components/MarketSurfaceExplorer";
+import { AsianLinesBoard } from "@/components/AsianLinesBoard";
 import { sandboxAffectedMarkets, sandboxLiveDeltas } from "@/lib/sandbox/live-changes";
 import { explainLiveChange } from "@/lib/live-twin/explain";
 import { repricePriority } from "@/lib/live-twin/materiality";
@@ -428,6 +429,29 @@ export function Terminal() {
         previous={sandboxFootballBeforeSurface}
         locale={locale}
       />
+
+      <div className="deepMarketGrid">
+        <AsianLinesBoard surface={sandboxFootballSurface} locale={locale} />
+        <section className="panel scorelineMatrix">
+          <div className="panelHeader">
+            <div>
+              <span className="panelIndex">07</span>
+              <div>
+                <h2>SCORELINE DISTRIBUTION</h2>
+                <p>Most probable final states</p>
+              </div>
+            </div>
+          </div>
+          <div className="scorelineGrid">
+            {sandboxFootballSurface.topScorelines.slice(0, 12).map((row) => (
+              <div className="scorelineCell" key={`${row.homeGoals}-${row.awayGoals}`}>
+                <strong>{row.homeGoals}<i>:</i>{row.awayGoals}</strong>
+                <span>{pct(row.probability)}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
 
       <section className="intelligenceGrid" id="models">
         <section className="panel modelCouncil">
