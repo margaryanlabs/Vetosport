@@ -27,6 +27,19 @@ const normalizeScores=(scores:Record<RegimeLabel,number>)=>{
 };
 
 const classify=(obs:RegimeObservation,b:RegimeBaseline,surprise:number)=>{
+  if(surprise<1){
+    return{
+      regime:"STABLE_CONTROL" as RegimeLabel,
+      scores:{
+        STABLE_CONTROL:.86,
+        OPEN_TRANSITION:.04,
+        PRESSURE_SIEGE:.04,
+        FRAGILE_LIQUIDITY:.03,
+        DISLOCATED:.03,
+      } as Record<RegimeLabel,number>,
+    };
+  }
+
   const tempo=z(obs.tempo,b.tempo);
   const pressure=z(obs.shotPressure,b.shotPressure);
   const transition=z(obs.transitionRate,b.transitionRate);
@@ -91,14 +104,14 @@ export const analyzeRegimeChange=(
     const surprise=Math.sqrt(zs.reduce((s,x)=>s+x*x,0)/zs.length);
     ewma=ewmaAlpha*surprise+(1-ewmaAlpha)*ewma;
     cusum=Math.max(0,cusum+surprise-cusumDrift);
-    persistence=surprise>=1.25||ewma>=1.15?persistence+1:Math.max(0,persistence-1);
+    persistence=surprise>=1.25?persistence+1:Math.max(0,persistence-1);
 
     const persistent=clamp(persistence/4);
     const cusumNorm=clamp(cusum/5);
     const rawLogit=-3.2+1.25*ewma+1.15*cusumNorm+1.05*persistent+.28*Math.max(0,surprise-1);
     const changeProbability=clamp(logistic(rawLogit));
     const {regime,scores}=classify(obs,b,surprise);
-    const hardChange=changeProbability>=.72&&persistence>=3&&ewma>=1.05;
+    const hardChange=changeProbability>=.72&&persistence>=3&&ewma>=1.05&&surprise>=1.25;
 
     return{
       timeMs:obs.timeMs,
