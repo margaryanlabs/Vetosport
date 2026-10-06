@@ -7,6 +7,7 @@ import { runHockeySelfCheck } from "@/lib/models/hockey/selfcheck";
 import { runParallaxSelfCheck } from "@/lib/parallax/selfcheck";
 import { runTemporalSelfCheck } from "@/lib/parallax/temporal-selfcheck";
 import { runPropagationSelfCheck } from "@/lib/parallax/propagation-selfcheck";
+import { runShockExecutionSelfCheck } from "@/lib/parallax/shock-execution-selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,10 @@ export function GET() {
     crossMarketPropagation: {
       model: "veto.parallax.cross-market.v1",
       ...runPropagationSelfCheck(),
+    },
+    shockExecution: {
+      model: "veto.parallax.shock-execution.v1",
+      ...runShockExecutionSelfCheck(),
     },
   };
 
