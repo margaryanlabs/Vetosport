@@ -93,6 +93,8 @@ const buildFamily = (
     quoteCoverage * 0.3 +
       executableCoverage * 0.35 +
       directionConsistency * 0.35,
+    0,
+    0.98,
   );
 
   return {
