@@ -14,6 +14,7 @@ import { runExperimentLedgerSelfCheck } from "@/lib/research/selfcheck";
 import { runTruthPlaneSelfCheck } from "@/lib/truth/selfcheck";
 import { runContractSemanticsSelfCheck } from "@/lib/contracts/selfcheck";
 import { runDataPlaneSelfCheck } from "@/lib/data-plane/selfcheck";
+import { runSensorIntegritySelfCheck } from "@/lib/integrity/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -89,6 +90,10 @@ export function GET() {
     dataPlane: {
       model: "veto.data-plane.v1",
       ...runDataPlaneSelfCheck(),
+    },
+    sensorIntegrity: {
+      model: "veto.integrity.identifiability.v1",
+      ...runSensorIntegritySelfCheck(),
     },
   };
 
