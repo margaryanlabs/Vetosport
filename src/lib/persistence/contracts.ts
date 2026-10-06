@@ -5,6 +5,12 @@ import type {
   MarketSelection,
   SportEvent,
 } from "@/lib/domain/types";
+import type {
+  DataPlaneReplayQuery,
+  PersistedJournalRecord,
+  PreparedJournalRecord,
+  ProviderRulebookVersion,
+} from "@/lib/data-plane/types";
 
 export interface PersistedEvent {
   id: string;
@@ -118,4 +124,22 @@ export interface VetoPersistence {
   findUnsettledDecisions(eventId: string): Promise<UnsettledDecision[]>;
 
   appendDecisionOutcome(outcome: DecisionOutcomeRecord): Promise<void>;
+
+  appendTruthJournal(
+    records: PreparedJournalRecord[],
+  ): Promise<number>;
+
+  listTruthAsOf(
+    input: DataPlaneReplayQuery,
+  ): Promise<PersistedJournalRecord[]>;
+
+  appendRulebookVersion(
+    version: ProviderRulebookVersion,
+  ): Promise<void>;
+
+  findRulebookVersionAt(input: {
+    providerId: string;
+    sport?: string;
+    asOf: string;
+  }): Promise<ProviderRulebookVersion | null>;
 }
