@@ -14,14 +14,18 @@ export const sandboxParallaxSnapshot: FootballParallaxMarketSnapshot = {
   "away-win": 0.3,
   "total-under-2.5": 0.46,
   "total-under-3.5": 0.699,
-  "btts-yes": 0.69,
-  "home-over-0.5": 0.66,
-  "away-over-0.5": 0.68,
-  "home-over-1.5": 0.41,
+  "total-under-4.5": 0.86,
+  "home-over-1.5": 0.47,
+  "away-over-1.5": 0.4,
+  "home-over-2.5": 0.19,
+  "away-over-2.5": 0.15,
 };
 
 export const sandboxParallaxContracts =
-  buildFootballParallaxContracts(sandboxParallaxSnapshot);
+  buildFootballParallaxContracts(
+    sandboxParallaxSnapshot,
+    sandboxFootballInputs,
+  );
 
 export const sandboxParallaxAnalysis = analyzeFootballParallax({
   scorelines: sandboxFootballSurface.scorelines,
