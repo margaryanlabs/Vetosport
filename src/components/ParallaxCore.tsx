@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { Locale } from "@/lib/domain/types";
 import { sandboxFootballSurface } from "@/lib/sandbox/football-model";
 import { sandboxParallaxAnalysis } from "@/lib/parallax/sandbox";
+import { TemporalResponseLab } from "@/components/TemporalResponseLab";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) =>
@@ -398,6 +399,8 @@ export function ParallaxCore({ locale }: { locale: Locale }) {
           </div>
         </section>
       </div>
+
+      <TemporalResponseLab locale={locale} />
 
       <div className="parallaxCounterfactuals">
         <div className="parallaxCounterHead">
