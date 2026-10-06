@@ -8,8 +8,8 @@ import type {
 const clamp = (value: number, min = 0, max = 1) =>
   Math.min(max, Math.max(min, value));
 
-export const validateTruthRecord = (
-  record: TruthJournalRecord,
+export const validateTruthRecord = <T>(
+  record: TruthJournalRecord<T>,
 ): TruthRecordValidation => {
   const errors: string[] = [];
   const warnings: string[] = [];
