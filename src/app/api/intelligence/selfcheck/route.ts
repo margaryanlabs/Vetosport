@@ -9,6 +9,7 @@ import { runTemporalSelfCheck } from "@/lib/parallax/temporal-selfcheck";
 import { runPropagationSelfCheck } from "@/lib/parallax/propagation-selfcheck";
 import { runShockExecutionSelfCheck } from "@/lib/parallax/shock-execution-selfcheck";
 import { runCouncilSelfCheck } from "@/lib/council/selfcheck";
+import { runAlphaMemorySelfCheck } from "@/lib/alpha/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +65,10 @@ export function GET() {
     modelCouncil: {
       model: "veto.council.lineage.v2",
       ...runCouncilSelfCheck(),
+    },
+    alphaMemory: {
+      model: "veto.alpha.memory.v1",
+      ...runAlphaMemorySelfCheck(),
     },
   };
 
