@@ -170,6 +170,10 @@ export function MarketSurfaceExplorer({
               <strong>{pct(market.probability)}</strong>
               <div className="surfaceProbTrack">
                 <i style={{ width: `${market.probability * 100}%` }} />
+                <span
+                  className="surfaceProbDot"
+                  style={{ left: `${market.probability * 100}%` }}
+                />
               </div>
               <div className="surfaceMarketBottom">
                 <span>{state === "open" ? "FAIR" : state === "guaranteed" ? "STATE" : "STATE"}</span>
