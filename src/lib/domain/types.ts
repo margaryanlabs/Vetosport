@@ -64,7 +64,11 @@ export interface MarketQuote {
   bookmaker: string;
   decimalOdds: number;
   capturedAt: string;
+  sourceProvider?: string;
+  providerLastUpdate?: string;
+  suspended?: boolean;
   liquidity?: number;
+  raw?: Record<string, unknown>;
 }
 
 export interface MarketDefinition {
