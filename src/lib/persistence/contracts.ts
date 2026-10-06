@@ -2,6 +2,7 @@ import type {
   DecisionLedgerEntry,
   Evidence,
   MarketQuote,
+  MarketSelection,
   SportEvent,
 } from "@/lib/domain/types";
 
@@ -42,6 +43,27 @@ export interface ProviderHealthSample {
   quotaRemaining?: number;
   message?: string;
   metadata?: Record<string, unknown>;
+}
+
+export interface UnsettledDecision {
+  decisionId: string;
+  eventId: string;
+  sport: SportEvent["sport"];
+  marketKey: string;
+  selectionKey: string;
+  selectionLine?: number;
+  selectionSide?: MarketSelection["side"];
+  capturedAt: string;
+  marketOdds: number;
+  fairProbability: number;
+}
+
+export interface DecisionOutcomeRecord {
+  decisionId: string;
+  result: "win" | "half_win" | "push" | "half_loss" | "loss" | "void";
+  closingOdds?: number;
+  settledAt: string;
+  rawOutcome?: Record<string, unknown>;
 }
 
 export interface HistoricalImportRecord {
@@ -92,4 +114,8 @@ export interface VetoPersistence {
   appendProviderHealth(sample: ProviderHealthSample): Promise<void>;
 
   recordHistoricalImport(record: HistoricalImportRecord): Promise<void>;
+
+  findUnsettledDecisions(eventId: string): Promise<UnsettledDecision[]>;
+
+  appendDecisionOutcome(outcome: DecisionOutcomeRecord): Promise<void>;
 }
