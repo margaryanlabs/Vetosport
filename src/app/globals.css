@@ -5727,3 +5727,162 @@ body::before {
     min-height: 160px;
   }
 }
+
+/* Sport-aware validation / governance */
+.specialistValidationHero {
+  display: grid;
+  grid-template-columns: 1.6fr repeat(3, .7fr);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.specialistValidationHero > div {
+  min-height: 108px;
+  padding: 16px 18px;
+  display: grid;
+  align-content: center;
+  gap: 9px;
+  border-right: 1px solid var(--line-soft);
+}
+
+.specialistValidationHero > div:last-child {
+  border-right: 0;
+}
+
+.specialistValidationHero span,
+.specialistGovernanceHero > div > span {
+  color: #46514c;
+  font-size: 6px;
+  letter-spacing: .11em;
+}
+
+.specialistValidationHero strong {
+  color: #c5cec9;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 16px;
+  font-weight: 540;
+}
+
+.specialistValidationHero > div:first-child strong {
+  font-size: 11px;
+}
+
+.specialistValidationChecks {
+  display: grid;
+}
+
+.specialistValidationCheck {
+  min-height: 54px;
+  padding: 0 18px;
+  display: grid;
+  grid-template-columns: 28px 10px 160px minmax(0,1fr) 58px;
+  gap: 10px;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.specialistValidationCheck > span {
+  color: #3f4944;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 6px;
+}
+
+.specialistValidationCheck > i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.specialistValidationCheck > i.pass { background: var(--edge); }
+.specialistValidationCheck > i.fail { background: var(--danger); }
+
+.specialistValidationCheck > strong {
+  color: #85918b;
+  font-size: 6px;
+  letter-spacing: .08em;
+}
+
+.specialistValidationCheck > p {
+  margin: 0;
+  color: #505b56;
+  font-size: 6px;
+}
+
+.specialistValidationCheck > b {
+  font-size: 5px;
+  letter-spacing: .1em;
+}
+
+.specialistGovernanceHero {
+  display: grid;
+  grid-template-columns: 1fr 210px 1fr;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.specialistGovernanceHero > div:not(.governanceGate) {
+  min-height: 154px;
+  padding: 20px;
+  display: grid;
+  align-content: center;
+  gap: 14px;
+}
+
+.specialistGovernanceHero > div:first-child {
+  border-right: 1px solid var(--line-soft);
+  background: linear-gradient(90deg, rgba(91,227,162,.018), transparent);
+}
+
+.specialistGovernanceHero > div:last-child {
+  border-left: 1px solid var(--line-soft);
+}
+
+.specialistGovernanceHero > div > strong {
+  color: #aab5af;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  font-weight: 550;
+}
+
+@media (max-width: 900px) {
+  .specialistValidationHero {
+    grid-template-columns: repeat(2,1fr);
+  }
+
+  .specialistValidationHero > div:nth-child(2) {
+    border-right: 0;
+  }
+
+  .specialistValidationHero > div:nth-child(-n+2) {
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .specialistGovernanceHero {
+    grid-template-columns: 1fr;
+  }
+
+  .specialistGovernanceHero > div,
+  .specialistGovernanceHero > div:first-child,
+  .specialistGovernanceHero > div:last-child {
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+}
+
+@media (max-width: 600px) {
+  .specialistValidationCheck {
+    grid-template-columns: 22px 8px 115px minmax(0,1fr);
+    padding: 10px 14px;
+  }
+
+  .specialistValidationCheck > b {
+    display: none;
+  }
+
+  .specialistValidationCheck > p {
+    line-height: 1.4;
+  }
+
+  .specialistValidationHero {
+    grid-template-columns: 1fr 1fr;
+  }
+}
