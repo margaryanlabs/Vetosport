@@ -8,6 +8,7 @@ import type {
 import { sandboxOpportunities } from "@/lib/sandbox/sample";
 import { buildBasketballSurface } from "@/lib/models/basketball/engine";
 import { buildTennisPointState } from "@/lib/models/tennis/engine";
+import { buildHockeySurface } from "@/lib/models/hockey/engine";
 import {
   evidence as footballEvidence,
   marketMoves as footballMoves,
@@ -143,6 +144,90 @@ const tennisModel = buildTennisPointState({
   serverPoints: 0,
   returnerPoints: 0,
 });
+
+const hockeyModel = buildHockeySurface({
+  homeScore: 2,
+  awayScore: 2,
+  elapsedSeconds: 47 * 60 + 24,
+  prematchExpectedHomeGoals: 3.25,
+  prematchExpectedAwayGoals: 2.85,
+  tempoIndex: 0.94,
+  homeAttackIndex: 1.08,
+  awayAttackIndex: 0.94,
+});
+
+const hockeyNextGoalHome =
+  hockeyModel.remainingGoals.total > 0
+    ? hockeyModel.remainingGoals.home / hockeyModel.remainingGoals.total
+    : 0.5;
+
+const hockeyOpportunities: Opportunity[] = [
+  opportunity({
+    eventId: "sandbox-edm-vgk",
+    marketId: "hockey.total_goals",
+    selectionId: "under-6.5",
+    label: "Тотал меньше 6.5",
+    probability: hockeyModel.totalUnder(6.5),
+    odds: 1.28,
+    score: 86,
+    agreement: 89,
+    decision: "EDGE",
+    risk: "MEDIUM",
+    rationale: [
+      "Remaining goal hazard is below the opening game-state baseline.",
+      "Current five-on-five pace is compressed.",
+      "Market total has not fully absorbed the lower remaining-goal distribution.",
+    ],
+  }),
+  opportunity({
+    eventId: "sandbox-edm-vgk",
+    marketId: "hockey.team_total",
+    selectionId: "vgk-under-3.5",
+    label: "Vegas · тотал меньше 3.5",
+    probability: hockeyModel.awayTeamUnder(3.5),
+    odds: 1.22,
+    score: 79,
+    agreement: 85,
+    decision: "EDGE",
+    rationale: [
+      "Vegas attack-state index is below baseline.",
+      "Current even-strength pressure favors Edmonton.",
+      "Away scoring tail is narrow without a manpower advantage.",
+    ],
+  }),
+  opportunity({
+    eventId: "sandbox-edm-vgk",
+    marketId: "hockey.regulation",
+    selectionId: "edm-reg",
+    label: "Edmonton победит в основное",
+    probability: hockeyModel.regulation.homeWin,
+    odds: 2.62,
+    score: 68,
+    agreement: 76,
+    decision: "WATCH",
+    rationale: [
+      "Home goal hazard is stronger than away hazard.",
+      "Regulation tie mass remains significant.",
+      "Price edge is sensitive to the next penalty state.",
+    ],
+  }),
+  opportunity({
+    eventId: "sandbox-edm-vgk",
+    marketId: "hockey.next_goal",
+    selectionId: "edm-next",
+    label: "Следующий гол · Edmonton",
+    probability: hockeyNextGoalHome,
+    odds: 1.93,
+    score: 72,
+    agreement: 78,
+    decision: "WATCH",
+    rationale: [
+      "Edmonton owns the stronger current attack index.",
+      "Shot pressure is skewed toward the home side.",
+      "Next-goal pricing is highly sensitive to special teams.",
+    ],
+  }),
+];
 
 const basketballOpportunities: Opportunity[] = [
   opportunity({
@@ -510,7 +595,95 @@ export const liveWorkspaces: LiveWorkspace[] = [
       { label: "Sinner next hold", probability: tennisOpportunities[2].fairProbability, fairOdds: tennisOpportunities[2].fairOdds, marketOdds: 1.34, decision: tennisOpportunities[2].decision },
       { label: "Alcaraz set 2", probability: tennisOpportunities[3].fairProbability, fairOdds: tennisOpportunities[3].fairOdds, marketOdds: 2.12, decision: tennisOpportunities[3].decision },
     ],
+  },,
+  {
+    id: "edm-vgk",
+    sport: "hockey",
+    sportLabel: "HOCKEY",
+    competition: "NHL · Sandbox",
+    clock: "P3 12:36",
+    period: "3RD PERIOD",
+    homeCode: "EDM",
+    awayCode: "VGK",
+    homeName: "Edmonton Oilers",
+    awayName: "Vegas Golden Knights",
+    homeScore: "2",
+    awayScore: "2",
+    pulse: "hot",
+    markets: 72,
+    repriced: 14,
+    stateId: "#54218",
+    feedLatency: "0.9s",
+    modelLatency: "206ms",
+    opportunities: hockeyOpportunities,
+    stateMetrics: [
+      { label: "GOAL HAZARD", value: hockeyModel.remainingGoals.total.toFixed(2), note: "remaining λ" },
+      { label: "MANPOWER", value: "5v5", note: "even strength" },
+      { label: "UNCERTAINTY", value: "31/100", note: "MEDIUM" },
+      { label: "MARKET GAP", value: `+${((hockeyOpportunities[0].fairProbability - 1 / hockeyOpportunities[0].marketOdds) * 100).toFixed(1)} п.п.`, note: "U6.5", accent: true },
+    ],
+    changes: [
+      { label: "Total U6.5", note: "Remaining goal hazard compressed", delta: 0.038, direction: "up" },
+      { label: "VGK team total U3.5", note: "Away attack state softened", delta: 0.026, direction: "up" },
+      { label: "EDM regulation", note: "Home pressure edge widened", delta: 0.017, direction: "up" },
+      { label: "Next goal EDM", note: "Special-teams sensitivity increased", delta: -0.009, direction: "down" },
+    ],
+    affectedMarkets: ["game total", "team total", "regulation", "next goal"],
+    probabilityHistory: [
+      { label: "P2 15", market: 0.73, veto: 0.75 },
+      { label: "P2 05", market: 0.75, veto: 0.78 },
+      { label: "INT", market: 0.76, veto: 0.81 },
+      { label: "P3 17", market: 0.77, veto: 0.83 },
+      { label: "P3 14", market: 0.78, veto: 0.85 },
+      { label: "P3 12", market: 1 / 1.28, veto: hockeyOpportunities[0].fairProbability },
+    ],
+    probabilityLabel: "Under 6.5",
+    modelVersion: "hockey.shift-goalie.v1",
+    models: [
+      { id: "hazard", label: "Goal Hazard", probability: hockeyOpportunities[0].fairProbability, confidence: 0.9, latency: "13ms", status: "aligned" },
+      { id: "shift", label: "Shift State", probability: 0.84, confidence: 0.83, latency: "22ms", status: "aligned" },
+      { id: "goalie", label: "Goalie State", probability: 0.86, confidence: 0.8, latency: "18ms", status: "aligned" },
+      { id: "manpower", label: "Manpower", probability: 0.82, confidence: 0.78, latency: "9ms", status: "aligned" },
+      { id: "market", label: "Market Context", probability: 0.8, confidence: 0.75, latency: "11ms", status: "aligned" },
+    ],
+    scenarios: [
+      { label: "5v5 сохраняется", probability: 0.58, outcomes: [{ label: "U6.5", value: 0.88 }, { label: "EDM REG", value: 0.4 }, { label: "VGK U3.5", value: 0.9 }] },
+      { label: "EDM power play", probability: 0.14, outcomes: [{ label: "U6.5", value: 0.72 }, { label: "EDM REG", value: 0.57 }, { label: "VGK U3.5", value: 0.92 }] },
+      { label: "VGK power play", probability: 0.12, outcomes: [{ label: "U6.5", value: 0.7 }, { label: "EDM REG", value: 0.28 }, { label: "VGK U3.5", value: 0.73 }] },
+      { label: "Empty-net phase", probability: 0.09, outcomes: [{ label: "U6.5", value: 0.52 }, { label: "EDM REG", value: 0.49 }, { label: "VGK U3.5", value: 0.67 }] },
+    ],
+    marketMoves: [
+      { time: "P3 12:31", label: "Under 6.5", from: 1.33, to: 1.28, reason: "Goal-hazard compression", explained: true },
+      { time: "P3 11:58", label: "VGK U3.5", from: 1.26, to: 1.22, reason: "Away attack state", explained: true },
+      { time: "P3 11:44", label: "EDM regulation", from: 2.71, to: 2.62, reason: "Home pressure edge", explained: true },
+      { time: "P3 11:20", label: "Next goal EDM", from: 1.99, to: 1.93, reason: "Market ahead of current special-teams state", explained: false },
+    ],
+    evidence: [
+      { time: "P3 12:29", kind: "STATE", title: "Five-on-five goal hazard compressed", impact: "U6.5 +3.8 п.п.", reliability: 0.92 },
+      { time: "P3 12:03", kind: "SHIFT", title: "Vegas offensive-zone shift quality declined", impact: "VGK TT −2.6 п.п.", reliability: 0.84 },
+      { time: "P3 11:47", kind: "GOALIE", title: "Both goalies remain in stable state", impact: "TOTAL ↓", reliability: 0.81 },
+      { time: "P3 11:22", kind: "MARKET", title: "Under price trails VETO remaining-goal model", impact: "EDGE ↑", reliability: 0.9 },
+    ],
+    reasonHeadline: "Goal hazard fell faster than the total market repriced.",
+    reasonSummary: "VETO sees compressed five-on-five pace, a softer Vegas attack state and no current manpower boost.",
+    invalidation: "Penalty, goalie pull, major shift-pressure spike or next goal triggers a full hockey hazard reprice.",
+    specialistTitle: "HOCKEY SHIFT / GOALIE ENGINE",
+    specialistSubtitle: "Goal hazard · manpower · goalie · empty-net state",
+    specialistMetrics: [
+      { label: "Remaining λ", value: hockeyModel.remainingGoals.total.toFixed(2), note: "goals", strength: 48 },
+      { label: "EDM attack", value: "1.08", note: "+8%", strength: 68 },
+      { label: "VGK attack", value: "0.94", note: "−6%", strength: 49 },
+      { label: "Manpower", value: "5v5", note: "even", strength: 50 },
+    ],
+    specialistMarkets: hockeyOpportunities.map((item) => ({
+      label: item.selection.label,
+      probability: item.fairProbability,
+      fairOdds: item.fairOdds,
+      marketOdds: item.marketOdds,
+      decision: item.decision,
+    })),
   },
+
 ];
 
 export const workspaceById = Object.fromEntries(
