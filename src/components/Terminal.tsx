@@ -566,13 +566,13 @@ export function Terminal() {
           </div>
           <div className="councilConsensus">
             <span>CONSENSUS</span>
-            <strong>94</strong>
+            <strong>{councilConsensus}</strong>
             <em>/100</em>
           </div>
         </div>
 
         <div className="councilStrip">
-          {modelViews.map((model) => (
+          {activeWorkspace.models.map((model) => (
             <article className="councilNode" key={model.id}>
               <div className="councilNodeTop">
                 <span><i className={model.status} />{model.label}</span>
@@ -604,7 +604,7 @@ export function Terminal() {
             </div>
 
             <div className="scenarioBranchList">
-              {scenarios.map((scenario, index) => (
+              {activeWorkspace.scenarios.map((scenario, index) => (
                 <div className="scenarioBranch" key={scenario.label}>
                   <div className="scenarioBranchLead">
                     <span>{String(index + 1).padStart(2, "0")}</span>
@@ -617,9 +617,9 @@ export function Terminal() {
                     <i><b style={{ width: `${scenario.probability * 100}%` }} /></i>
                   </div>
                   <div className="scenarioBranchOutcomes">
-                    <span>U3.5 <b>{pct(scenario.under35)}</b></span>
-                    <span>ARS W <b>{pct(scenario.homeWin)}</b></span>
-                    <span>NEXT G <b>{pct(scenario.nextGoal)}</b></span>
+                    {scenario.outcomes.slice(0, 3).map((outcome) => (
+                      <span key={outcome.label}>{outcome.label} <b>{pct(outcome.value)}</b></span>
+                    ))}
                   </div>
                 </div>
               ))}
@@ -638,7 +638,7 @@ export function Terminal() {
             </div>
 
             <div className="marketTapeList">
-              {marketMoves.map((move) => (
+              {activeWorkspace.marketMoves.map((move) => (
                 <div className="marketTapeRow" key={`${move.time}-${move.label}`}>
                   <span className="marketTapeTime">{move.time}</span>
                   <div className="marketTapeAsset">
@@ -677,15 +677,15 @@ export function Terminal() {
         </div>
 
         <div className="ledgerMetaRail">
-          <span>EVENT <b>ARS-LIV-2026-10-06</b></span>
-          <span>STATE <b>#18429</b></span>
-          <span>MODEL SET <b>football.goal-state.v1</b></span>
-          <span>CAPTURE <b>64:18.820</b></span>
+          <span>EVENT <b>{activeWorkspace.id.toUpperCase()}-2026-10-06</b></span>
+          <span>STATE <b>{activeWorkspace.stateId}</b></span>
+          <span>MODEL SET <b>{activeWorkspace.modelVersion}</b></span>
+          <span>CAPTURE <b>{activeWorkspace.clock}</b></span>
           <span>MODE <b>RESEARCH</b></span>
         </div>
 
         <div className="ledgerTimeline">
-          {evidence.map((item, index) => (
+          {activeWorkspace.evidence.map((item, index) => (
             <article className="ledgerEntry" key={`${item.time}-${item.title}`}>
               <div className="ledgerEntryIndex">
                 <span>{String(index + 1).padStart(2, "0")}</span>
