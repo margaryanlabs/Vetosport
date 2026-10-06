@@ -3,7 +3,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "VETO Sport — Sports Decision Intelligence",
-  description: "Intelligence layer between the game and the odds.",
+  description: "Live sports decision intelligence between the game and the market.",
+  icons: { icon: "/veto-mark.svg", shortcut: "/veto-mark.svg", apple: "/veto-mark.svg" },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
