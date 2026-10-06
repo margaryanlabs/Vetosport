@@ -170,7 +170,12 @@ function SpecialistModelControl({
   sport: Sport;
   modelVersion: string;
 }) {
-  const label = sport === "basketball" ? "BASKETBALL" : "TENNIS";
+  const label =
+    sport === "basketball"
+      ? "BASKETBALL"
+      : sport === "hockey"
+        ? "HOCKEY"
+        : "TENNIS";
   const checks = [
     { label: "engine invariants", status: "PASS", detail: "Core mathematical self-check is green." },
     { label: "historical sample", status: "BLOCK", detail: "No production-grade settled sample loaded." },
