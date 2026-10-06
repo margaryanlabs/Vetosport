@@ -8,6 +8,14 @@ type SportmonksParticipant = {
   meta?: { location?: "home" | "away" };
 };
 
+type SportmonksState = {
+  id: number;
+  state: string;
+  name: string;
+  short_name?: string;
+  developer_name?: string;
+};
+
 type SportmonksFixture = {
   id: number;
   league_id?: number;
@@ -15,6 +23,7 @@ type SportmonksFixture = {
   name: string;
   starting_at: string;
   participants?: SportmonksParticipant[];
+  state?: SportmonksState;
 };
 
 type SportmonksInplayOdd = {
@@ -42,7 +51,21 @@ export interface SportmonksOptions {
 }
 
 const isoFromSportmonks = (value: string) =>
-  value.includes("T") ? new Date(value).toISOString() : new Date(value.replace(" ", "T") + "Z").toISOString();
+  value.includes("T")
+    ? new Date(value).toISOString()
+    : new Date(value.replace(" ", "T") + "Z").toISOString();
+
+const liveStateIds = new Set([2, 3, 4, 6, 7, 22]);
+const finishedStateIds = new Set([5, 8]);
+const suspendedStateIds = new Set([12, 15, 16, 17, 18]);
+
+const normalizeStatus = (fixture: SportmonksFixture): SportEvent["status"] => {
+  const stateId = fixture.state?.id ?? fixture.state_id;
+  if (stateId != null && finishedStateIds.has(stateId)) return "finished";
+  if (stateId != null && suspendedStateIds.has(stateId)) return "suspended";
+  if (stateId != null && liveStateIds.has(stateId)) return "live";
+  return "scheduled";
+};
 
 export class SportmonksFootballClient {
   readonly id = "sportmonks-football";
@@ -54,10 +77,14 @@ export class SportmonksFootballClient {
     this.baseUrl = options.baseUrl ?? "https://api.sportmonks.com/v3/football";
   }
 
-  private async request<T>(path: string, params?: Record<string, string>): Promise<ProviderEnvelope<T>> {
+  private async request<T>(
+    path: string,
+    params?: Record<string, string>,
+  ): Promise<ProviderEnvelope<T>> {
     const requestedAt = new Date();
     const url = new URL(`${this.baseUrl}${path}`);
     url.searchParams.set("api_token", this.apiToken);
+
     for (const [key, value] of Object.entries(params ?? {})) {
       url.searchParams.set(key, value);
     }
@@ -85,14 +112,21 @@ export class SportmonksFootballClient {
   getFixturesByDate(date: string) {
     return this.request<Paged<SportmonksFixture>>(
       `/fixtures/date/${encodeURIComponent(date)}`,
-      { include: "participants" },
+      { include: "participants;state" },
     );
   }
 
   getFixturesBetween(startDate: string, endDate: string) {
     return this.request<Paged<SportmonksFixture>>(
       `/fixtures/between/${encodeURIComponent(startDate)}/${encodeURIComponent(endDate)}`,
-      { include: "participants" },
+      { include: "participants;state" },
+    );
+  }
+
+  getLatestUpdatedFixtures() {
+    return this.request<Paged<SportmonksFixture>>(
+      "/fixtures/latest",
+      { include: "participants;state;scores;periods" },
     );
   }
 
@@ -114,9 +148,11 @@ export class SportmonksFootballClient {
     return {
       id: String(fixture.id),
       sport: "football",
-      competition: fixture.league_id ? `Sportmonks league ${fixture.league_id}` : "Football",
+      competition: fixture.league_id
+        ? `Sportmonks league ${fixture.league_id}`
+        : "Football",
       startsAt: isoFromSportmonks(fixture.starting_at),
-      status: fixture.state_id === 5 ? "finished" : "scheduled",
+      status: normalizeStatus(fixture),
       home: home ? { id: String(home.id), name: home.name } : undefined,
       away: away ? { id: String(away.id), name: away.name } : undefined,
     };
