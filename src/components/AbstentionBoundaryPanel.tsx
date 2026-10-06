@@ -6,6 +6,8 @@ import {
   healthyBoundary,
   leakageBoundary,
   semanticBoundary,
+  staleRegimeBoundary,
+  transitionCappedBoundary,
   oodBoundary,
   weakBoundary,
 } from "@/lib/abstention/sandbox";
@@ -40,6 +42,8 @@ export function AbstentionBoundaryPanel({locale}:{locale:Locale}) {
     ["SEMANTIC FREEZE",semanticBoundary],
     ["OUT OF DISTRIBUTION",oodBoundary],
     ["CONFORMAL FAILURE",conformalBoundary],
+    ["STALE REGIME SNAPSHOT",staleRegimeBoundary],
+    ["IMMINENT + SLOW MODEL",transitionCappedBoundary],
     ["WEAK EVIDENCE",weakBoundary],
   ] as const;
 
@@ -59,7 +63,7 @@ export function AbstentionBoundaryPanel({locale}:{locale:Locale}) {
         <div>
           <span>ABSTENTION PRINCIPLE</span>
           <strong>HARD GATE &gt; MODEL GAP</strong>
-          <small>leakage · semantics · calibration · censoring · conformal · OOD · capacity</small>
+          <small>leakage · semantics · calibration · censoring · conformal · regime coherence · OOD · capacity</small>
         </div>
       </div>
 
