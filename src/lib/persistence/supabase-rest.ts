@@ -402,6 +402,8 @@ export class SupabaseRestPersistence implements VetoPersistence {
       source_emitted_at: record.sourceEmittedAt,
       gateway_received_at: record.gatewayReceivedAt,
       normalized_at: record.normalizedAt,
+      knowledge_available_at: record.knowledgeAvailableAt,
+      acquisition_mode: record.acquisitionMode,
       source_clock_offset_ms: record.sourceClockOffsetMs ?? 0,
       source_time_uncertainty_ms:
         record.sourceTimeUncertaintyMs ?? 0,
@@ -431,13 +433,13 @@ export class SupabaseRestPersistence implements VetoPersistence {
     const query = new URLSearchParams();
     query.set("event_id", `eq.${input.eventId}`);
     query.set(
-      "gateway_received_at",
+      "knowledge_available_at",
       `lte.${new Date(input.asOf).toISOString()}`,
     );
     if (input.streams?.length) {
       query.set("stream", `in.(${input.streams.join(",")})`);
     }
-    query.set("order", "gateway_received_at.asc");
+    query.set("order", "knowledge_available_at.asc");
     query.set("limit", String(Math.min(5000, input.limit ?? 2000)));
     query.set(
       "select",
@@ -454,6 +456,8 @@ export class SupabaseRestPersistence implements VetoPersistence {
         "source_emitted_at",
         "gateway_received_at",
         "normalized_at",
+        "knowledge_available_at",
+        "acquisition_mode",
         "committed_at",
         "source_clock_offset_ms",
         "source_time_uncertainty_ms",
@@ -479,6 +483,8 @@ export class SupabaseRestPersistence implements VetoPersistence {
       source_emitted_at: string;
       gateway_received_at: string;
       normalized_at: string;
+      knowledge_available_at: string;
+      acquisition_mode: PersistedJournalRecord["acquisitionMode"];
       committed_at: string;
       source_clock_offset_ms: number;
       source_time_uncertainty_ms: number;
@@ -506,6 +512,8 @@ export class SupabaseRestPersistence implements VetoPersistence {
       sourceEmittedAt: row.source_emitted_at,
       gatewayReceivedAt: row.gateway_received_at,
       normalizedAt: row.normalized_at,
+      knowledgeAvailableAt: row.knowledge_available_at,
+      acquisitionMode: row.acquisition_mode,
       committedAt: row.committed_at,
       sourceClockOffsetMs: row.source_clock_offset_ms,
       sourceTimeUncertaintyMs: row.source_time_uncertainty_ms,
