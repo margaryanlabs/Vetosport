@@ -1050,6 +1050,17 @@ button { color: inherit; }
   letter-spacing: .07em;
 }
 .adapterChips i { margin-left: 5px; color: var(--ice); font-style: normal; }
+.adapterChips span.configured {
+  border-color: rgba(142,227,188,.28);
+  background: rgba(142,227,188,.045);
+  color: #b8c7c0;
+}
+.adapterChips span.configured i { color: var(--edge); }
+.adapterChips span.missing {
+  border-color: rgba(201,169,107,.22);
+  background: rgba(201,169,107,.035);
+}
+.adapterChips span.missing i { color: var(--watch); }
 
 footer {
   min-height: 92px;
