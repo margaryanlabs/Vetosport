@@ -9,6 +9,7 @@ export const evaluateDecisionBoundary=(e:DecisionEvidence):DecisionBoundaryResul
     {id:"leakage",label:"No leakage block",passed:!e.leakageBlock,hard:true,detail:e.leakageBlock?"Negative control detected leakage.":"Negative controls clean enough."},
     {id:"calibration",label:"Calibration family active",passed:!e.calibrationKill,hard:true,detail:e.calibrationKill?"Family calibration kill-switch is active.":"Calibration family is active."},
     {id:"censoring",label:"Availability bias acceptable",passed:!e.censoringBlock,hard:true,detail:e.censoringBlock?"Suspension censoring invalidates tradability evidence.":"No censoring hard block."},
+    {id:"conformal",label:"Conformal uncertainty acceptable",passed:!e.conformalBlock,hard:true,detail:e.conformalBlock?"Adaptive conformal envelope requires abstention.":"Conformal uncertainty is within authority bounds."},
     {id:"ood",label:"In distribution",passed:!e.outOfDistribution,hard:true,detail:e.outOfDistribution?"State is out-of-distribution.":"State is within monitored support."},
     {id:"capacity",label:"Non-zero market capacity",passed:e.capacityClass!=="ZERO"&&e.capacityScore>=.38,hard:true,detail:`${e.capacityClass} · capacity ${(e.capacityScore*100).toFixed(0)}%`},
     {id:"gap",label:"Robust gap survives",passed:e.robustGapPp>=1.25,hard:false,detail:`${e.robustGapPp.toFixed(2)} pp robust gap.`},
