@@ -37,7 +37,7 @@ export const healthyRecent=makeRows(
 export const driftRecent=makeRows(
   32,
   "OPEN_TRANSITION",
-  i=>.055+(i%10)*.006,
+  i=>i%4===0 ? .075+(i%4)*.004 : .020+(i%6)*.003,
   "open-drift"
 );
 
