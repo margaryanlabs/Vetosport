@@ -39,7 +39,7 @@ export const sportEngineRegistry: SportEngineDefinition[] = [
     label: "HOCKEY",
     engine: "SHIFT / GOALIE",
     families: 6,
-    status: "next",
+    status: "active",
     descriptor: "shifts · goalie · manpower",
   },
   {
