@@ -34,9 +34,17 @@
 7. Add provider health, latency, freshness and coverage observability.
 8. Remove synthetic metrics from the live surface once provider data is verified.
 
-## P2 — football intelligence v1
+## P2 — football intelligence v1 (started)
 
-- Dixon-Coles / score-distribution baseline.
+- [x] football.goal-state.v1 live remaining-goals estimator
+- [x] full scoreline probability matrix
+- [x] coherent 1X2 / totals / BTTS / team totals / half-line handicap surface
+- [x] football surface before/after diff
+- [x] Asian totals and handicaps with push / half-win / half-loss fair pricing
+- [x] football mathematical self-check endpoint
+- [x] Probability Surface Explorer UI
+- [x] Asian Lines Board + scoreline distribution UI
+- [ ] Dixon-Coles / score-distribution baseline calibration from historical data.
 - Expected-goals and shot-state model.
 - Live remaining-goals hazard.
 - 1X2, double chance, Asian handicap, totals, team totals and BTTS.
