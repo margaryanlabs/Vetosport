@@ -21,6 +21,7 @@ import { runSemanticDriftSelfCheck } from "@/lib/drift/selfcheck";
 import { runLeakageSelfCheck } from "@/lib/leakage/selfcheck";
 import { runDiscoveryControlSelfCheck } from "@/lib/discovery/selfcheck";
 import { runCalibrationDriftSelfCheck } from "@/lib/calibration/selfcheck";
+import { runSuspensionCensoringSelfCheck } from "@/lib/censoring/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -124,6 +125,10 @@ export function GET() {
     calibrationDrift: {
       model: "veto.calibration.drift.v1",
       ...runCalibrationDriftSelfCheck(),
+    },
+    suspensionCensoring: {
+      model: "veto.suspension.censoring.v1",
+      ...runSuspensionCensoringSelfCheck(),
     },
   };
 
