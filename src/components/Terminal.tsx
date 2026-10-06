@@ -16,6 +16,7 @@ import {
 import { ProbabilityChart } from "@/components/ProbabilityChart";
 import { MarketSurfaceExplorer } from "@/components/MarketSurfaceExplorer";
 import { AsianLinesBoard } from "@/components/AsianLinesBoard";
+import { BacktestLab } from "@/components/BacktestLab";
 import { sandboxAffectedMarkets, sandboxLiveDeltas } from "@/lib/sandbox/live-changes";
 import { explainLiveChange } from "@/lib/live-twin/explain";
 import { repricePriority } from "@/lib/live-twin/materiality";
@@ -561,6 +562,8 @@ export function Terminal() {
           ))}
         </div>
       </section>
+
+      <BacktestLab locale={locale} />
 
       <section className="dataPlane">
         <div>
