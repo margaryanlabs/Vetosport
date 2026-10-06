@@ -16,6 +16,7 @@ import { SensorIntegrityPanel } from "@/components/SensorIntegrityPanel";
 import { ValueOfInformationPanel } from "@/components/ValueOfInformationPanel";
 import { MarketCapacityPanel } from "@/components/MarketCapacityPanel";
 import { SemanticDriftPanel } from "@/components/SemanticDriftPanel";
+import { LeakageMonitorPanel } from "@/components/LeakageMonitorPanel";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) =>
@@ -423,6 +424,7 @@ export function ParallaxCore({ locale }: { locale: Locale }) {
       <ValueOfInformationPanel locale={locale} />
       <MarketCapacityPanel locale={locale} />
       <SemanticDriftPanel locale={locale} />
+      <LeakageMonitorPanel locale={locale} />
 
       <div className="parallaxCounterfactuals">
         <div className="parallaxCounterHead">
