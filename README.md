@@ -65,6 +65,7 @@ Read:
 - [Architecture](docs/ARCHITECTURE.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Specialist sport engines](docs/SPORT_ENGINES.md)
+- [Backtesting](docs/BACKTESTING.md)
 
 ## APIs
 
@@ -75,6 +76,20 @@ Read:
 `POST /api/intelligence/evaluate` — aggregate model signals and evaluate one market quote.
 
 `POST /api/intelligence/surface` — rank multiple opportunities under a VETO decision mode.
+
+`POST /api/intelligence/football/reprice` — build a live football probability surface.
+
+`GET /api/intelligence/football/selfcheck` — validate football probability and Asian-pricing invariants.
+
+`POST /api/backtest/run` — run leakage-guarded historical evaluation.
+
+`GET /api/backtest/selfcheck` — validate Backtest Lab plumbing.
+
+`POST /api/ingest/historical/odds` — dry-run/cost-gated historical odds snapshot import.
+
+`POST /api/ingest/historical/football-results` — guarded historical football result import.
+
+`POST /api/settlement/football` — guarded deterministic decision settlement.
 
 ## Next engineering phase
 
