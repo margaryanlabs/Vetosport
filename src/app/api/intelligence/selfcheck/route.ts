@@ -17,6 +17,7 @@ import { runDataPlaneSelfCheck } from "@/lib/data-plane/selfcheck";
 import { runSensorIntegritySelfCheck } from "@/lib/integrity/selfcheck";
 import { runVoiSelfCheck } from "@/lib/voi/selfcheck";
 import { runCapacitySelfCheck } from "@/lib/capacity/selfcheck";
+import { runSemanticDriftSelfCheck } from "@/lib/drift/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -104,6 +105,10 @@ export function GET() {
     marketCapacity: {
       model: "veto.capacity.tradability.v1",
       ...runCapacitySelfCheck(),
+    },
+    semanticDrift: {
+      model: "veto.semantic-drift.v1",
+      ...runSemanticDriftSelfCheck(),
     },
   };
 
