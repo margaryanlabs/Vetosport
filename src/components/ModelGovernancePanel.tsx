@@ -81,7 +81,7 @@ export function ModelGovernancePanel({ locale }: { locale: Locale }) {
     <section className="panel governancePanel">
       <div className="panelHeader">
         <div>
-          <span className="panelIndex">10</span>
+          <span className="panelIndex">13</span>
           <div>
             <h2>{copy.title}</h2>
             <p>{copy.subtitle}</p>
