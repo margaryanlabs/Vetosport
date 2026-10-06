@@ -6560,3 +6560,21 @@ body::before {
     grid-template-columns: 22px minmax(0,1fr) 38px;
   }
 }
+
+.engineUniverseNode.health-verified > div i {
+  background: var(--edge);
+  box-shadow: 0 0 7px rgba(91,227,162,.22);
+}
+.engineUniverseNode.health-verified > div em {
+  color: #69877a;
+}
+.engineUniverseNode.health-checking > div i {
+  background: var(--watch);
+  animation: breathe 1.8s ease-in-out infinite;
+}
+.engineUniverseNode.health-failed > div i {
+  background: var(--danger);
+}
+.engineUniverseNode.health-failed > div em {
+  color: var(--danger);
+}
