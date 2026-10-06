@@ -93,6 +93,66 @@ export class SupabaseRestPersistence implements VetoPersistence {
     };
   }
 
+  async findEventsAround(input: {
+    sport: SportEvent["sport"];
+    startsAt: string;
+    toleranceMinutes?: number;
+  }): Promise<PersistedEvent[]> {
+    const toleranceMinutes = input.toleranceMinutes ?? 20;
+    const center = new Date(input.startsAt).getTime();
+    const from = new Date(center - toleranceMinutes * 60000).toISOString();
+    const to = new Date(center + toleranceMinutes * 60000).toISOString();
+
+    const query = new URLSearchParams();
+    query.set("sport", `eq.${input.sport}`);
+    query.set("starts_at", `gte.${from}`);
+    query.append("starts_at", `lte.${to}`);
+    query.set(
+      "select",
+      "id,canonical_key,sport,competition_name,starts_at,status,home_participant_id,home_participant_name,away_participant_id,away_participant_name",
+    );
+
+    const rows = await this.request<Array<{
+      id: string;
+      canonical_key: string;
+      sport: SportEvent["sport"];
+      competition_name: string;
+      starts_at: string;
+      status: SportEvent["status"];
+      home_participant_id?: string | null;
+      home_participant_name?: string | null;
+      away_participant_id?: string | null;
+      away_participant_name?: string | null;
+    }>>(
+      `/sports_events?${query.toString()}`,
+      { method: "GET" },
+    );
+
+    return rows.map((row) => ({
+      id: row.id,
+      canonicalKey: row.canonical_key,
+      event: {
+        id: row.id,
+        sport: row.sport,
+        competition: row.competition_name,
+        startsAt: row.starts_at,
+        status: row.status,
+        home: row.home_participant_name
+          ? {
+              id: row.home_participant_id ?? row.home_participant_name,
+              name: row.home_participant_name,
+            }
+          : undefined,
+        away: row.away_participant_name
+          ? {
+              id: row.away_participant_id ?? row.away_participant_name,
+              name: row.away_participant_name,
+            }
+          : undefined,
+      },
+    }));
+  }
+
   async appendEventState(snapshot: EventStateSnapshot): Promise<void> {
     await this.request(
       "/event_state_snapshots",
