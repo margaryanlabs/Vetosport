@@ -27,6 +27,7 @@ import { runRegimeChangeSelfCheck } from "@/lib/regime/selfcheck";
 import { runRegimeAttributionSelfCheck } from "@/lib/regime-attribution/selfcheck";
 import { runRegimeRouterSelfCheck } from "@/lib/regime-router/selfcheck";
 import { runConformalSelfCheck } from "@/lib/conformal/selfcheck";
+import { runRegimeHysteresisSelfCheck } from "@/lib/regime-hysteresis/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -154,6 +155,10 @@ export function GET() {
     conformalUncertainty: {
       model: "veto.conformal.uncertainty.v1",
       ...runConformalSelfCheck(),
+    },
+    regimeHysteresis: {
+      model: "veto.regime.hysteresis.v1",
+      ...runRegimeHysteresisSelfCheck(),
     },
   };
 
