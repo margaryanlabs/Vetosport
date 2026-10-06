@@ -2,6 +2,7 @@ import { canonicalEventKey } from "@/lib/canonical/id";
 import { getSportmonksClient } from "@/lib/providers/factory";
 import { getPersistence } from "@/lib/persistence/factory";
 import type { IngestionRunSummary } from "./types";
+import { journalizeEventState } from "@/lib/data-plane/journalize";
 
 export const ingestLatestFootballUpdates = async (): Promise<IngestionRunSummary> => {
   const startedAt = new Date().toISOString();
@@ -27,19 +28,39 @@ export const ingestLatestFootballUpdates = async (): Promise<IngestionRunSummary
         id: event.id,
       });
 
+      const statePayload = {
+        providerEventId: event.id,
+        status: event.status,
+        home: event.home,
+        away: event.away,
+        rawStateId: rawFixture.state_id,
+        rawState: rawFixture.state,
+      };
+
+      await persistence.appendTruthJournal([
+        journalizeEventState({
+          canonicalEventId: persisted.id,
+          sourceProvider: client.id,
+          sourceRecordId: `fixture:${event.id}`,
+          gatewayReceivedAt: envelope.receivedAt,
+          sourceTimeUncertaintyMs: Math.max(
+            250,
+            envelope.latencyMs,
+          ),
+          providerSequence:
+            rawFixture.state_id == null
+              ? undefined
+              : String(rawFixture.state_id),
+          payload: statePayload,
+        }),
+      ]);
+
       await persistence.appendEventState({
         eventId: persisted.id,
         sourceProvider: client.id,
         capturedAt: envelope.receivedAt,
         sourceLatencyMs: envelope.latencyMs,
-        state: {
-          providerEventId: event.id,
-          status: event.status,
-          home: event.home,
-          away: event.away,
-          rawStateId: rawFixture.state_id,
-          rawState: rawFixture.state,
-        },
+        state: statePayload,
       });
     }
 
