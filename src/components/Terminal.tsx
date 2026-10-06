@@ -542,10 +542,10 @@ export function Terminal() {
                 <span style={{ width: `${model.probability * 100}%` }} />
                 <i style={{ left: `${model.probability * 100}%` }} />
               </div>
-              <footer>
+              <div className="councilNodeFoot">
                 <span>CONF {Math.round(model.confidence * 100)}</span>
                 <b>{model.status.toUpperCase()}</b>
-              </footer>
+              </div>
             </article>
           ))}
         </div>
