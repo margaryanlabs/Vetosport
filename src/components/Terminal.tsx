@@ -18,6 +18,7 @@ import { MarketSurfaceExplorer } from "@/components/MarketSurfaceExplorer";
 import { AsianLinesBoard } from "@/components/AsianLinesBoard";
 import { BacktestLab } from "@/components/BacktestLab";
 import { ModelGovernancePanel } from "@/components/ModelGovernancePanel";
+import { VetoMark } from "@/components/VetoMark";
 import { sandboxAffectedMarkets, sandboxLiveDeltas } from "@/lib/sandbox/live-changes";
 import { explainLiveChange } from "@/lib/live-twin/explain";
 import { repricePriority } from "@/lib/live-twin/materiality";
@@ -91,16 +92,18 @@ export function Terminal() {
   ).slice(0, 4);
 
   return (
-    <main className="appFrame">
+    <main className="appFrame signalSystem">
       <div className="ambient ambientOne" />
       <div className="ambient ambientTwo" />
 
       <header className="topbar">
         <a className="brand" href="#terminal" aria-label="VETO Sport">
-          <span className="vetoGlyph" aria-hidden="true"><i /><b /></span>
-          <span className="brandWord">VETO</span>
-          <span className="brandSlash">/</span>
-          <span className="brandSport">SPORT</span>
+          <span className="brandMark"><VetoMark size={31} /></span>
+          <span className="brandType">
+            <span className="brandWord">VETO</span>
+            <span className="brandSport">SPORT</span>
+          </span>
+          <span className="brandMode">SIGNAL SYSTEM</span>
         </a>
 
         <nav>
@@ -131,28 +134,70 @@ export function Terminal() {
         </div>
       </header>
 
-      <section className="hero" id="terminal">
+      <section className="hero signalHero" id="terminal">
         <div className="heroCopyBlock">
           <div className="heroMetaRow">
-            <p className="eyebrow">{dictionary.eyebrow}</p>
-            <span className="researchBadge">RESEARCH MODE / 0.2</span>
+            <span className="signalKicker"><i /> LIVE DECISION SURFACE</span>
+            <span className="researchBadge">RESEARCH / SANDBOX</span>
           </div>
-          <h1>{dictionary.title}</h1>
-          <p className="heroCopy">{dictionary.subtitle}</p>
+
+          <div className="heroIdentity">
+            <VetoMark size={54} className="heroMark" />
+            <span>VETO SPORT</span>
+          </div>
+
+          <h1>
+            {locale === "ru"
+              ? "Рынок показывает цену. VETO показывает сигнал."
+              : locale === "hy"
+                ? "Շուկան ցույց է տալիս գինը։ VETO-ն ցույց է տալիս ազդանշանը։"
+                : "The market shows a price. VETO shows the signal."}
+          </h1>
+
+          <p className="heroCopy">
+            {locale === "ru"
+              ? "Одна живая поверхность вероятностей: матч, рынок, модели и изменения состояния — в одном контексте."
+              : locale === "hy"
+                ? "Հավանականությունների մեկ կենդանի մակերես՝ խաղը, շուկան, մոդելները և վիճակի փոփոխությունները մեկ համատեքստում։"
+                : "One live probability surface for the event, market, models and every material state change."}
+          </p>
+
+          <div className="heroTelemetry">
+            <span>LIVE 64:18</span>
+            <span>STATE #18429</span>
+            <span>FEED 0.8s</span>
+            <span>MODEL 312ms</span>
+          </div>
         </div>
 
-        <div className="heroSystemCard">
-          <div className="heroSystemHead">
-            <span className="miniLabel">VETO SYSTEM STATE</span>
-            <span className="systemStatusLight">NOMINAL</span>
+        <div className="heroSignal">
+          <div className="heroSignalTop">
+            <div>
+              <span className="miniLabel">PRIMARY SIGNAL</span>
+              <strong>UNDER 3.5</strong>
+            </div>
+            <em>EDGE</em>
           </div>
-          <div className="systemNumber">94<span>/100</span></div>
-          <div className="systemBar"><i style={{ width: "94%" }} /></div>
-          <div className="systemCardMeta">
-            <span>Model agreement</span>
-            <strong>HIGH</strong>
-            <span>Provider mode</span>
-            <strong>{providerMode}</strong>
+
+          <div className="heroProbability">
+            <strong>{pct(under35Probability)}</strong>
+            <span>VETO probability</span>
+          </div>
+
+          <div className="heroSignalLane">
+            <span style={{ width: `${under35Probability * 100}%` }} />
+            <i style={{ left: `${under35Probability * 100}%` }} />
+          </div>
+
+          <div className="heroSignalMetrics">
+            <div><span>FAIR</span><strong>{under35FairOdds.toFixed(2)}</strong></div>
+            <div><span>MARKET</span><strong>1.43</strong></div>
+            <div><span>GAP</span><strong className="positive">{pp(under35Gap)}</strong></div>
+          </div>
+
+          <div className="heroSignalWhy">
+            <span>WHY NOW</span>
+            <p>Tempo ↓ 19% · remaining λ {sandboxFootballSurface.remainingGoals.total.toFixed(2)} · council 84%</p>
           </div>
         </div>
       </section>
@@ -592,7 +637,7 @@ export function Terminal() {
 
       <footer>
         <div className="footerBrand">
-          <span className="vetoGlyph small" aria-hidden="true"><i /><b /></span>
+          <VetoMark size={22} />
           <strong>VETO SPORT</strong>
           <span>· MARGARYAN LABS</span>
         </div>
