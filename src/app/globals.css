@@ -4909,3 +4909,373 @@ body::before {
     gap: 10px;
   }
 }
+
+/* =========================================================
+   MOBILE / FOLD COMMAND MODE
+   ========================================================= */
+
+@media (max-width: 1080px) {
+  .signalSystem .topbar {
+    grid-template-columns: minmax(0,1fr) auto;
+  }
+
+  .signalSystem .topbarActions {
+    gap: 9px;
+  }
+
+  .surfaceRailNav {
+    position: fixed;
+    z-index: 44;
+    left: 10px;
+    right: 10px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    top: auto;
+    width: auto;
+    height: 50px;
+    display: grid;
+    grid-template-columns: repeat(5,1fr);
+    border: 1px solid rgba(210,225,219,.13);
+    background: rgba(5,7,8,.92);
+    backdrop-filter: blur(22px) saturate(115%);
+    box-shadow: 0 10px 34px rgba(0,0,0,.28);
+  }
+
+  .surfaceRailNav a {
+    min-height: 48px;
+    padding: 7px 4px;
+    display: grid;
+    place-content: center;
+    gap: 3px;
+    color: #59645f;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .surfaceRailNav a:nth-child(4),
+  .surfaceRailNav a:nth-child(6) {
+    display: none;
+  }
+
+  .surfaceRailNav b {
+    color: #89958f;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 7px;
+    font-weight: 600;
+  }
+
+  .surfaceRailNav span {
+    font-size: 5px;
+    font-weight: 800;
+    letter-spacing: .08em;
+  }
+
+  .surfaceRailNav a:active,
+  .surfaceRailNav a:focus-visible {
+    color: var(--edge);
+    background: rgba(91,227,162,.035);
+  }
+
+  .signalSystem {
+    padding-bottom: 68px;
+  }
+
+  .signalSystem .liveCards {
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .signalSystem .liveCards::-webkit-scrollbar {
+    display: none;
+  }
+
+  .signalSystem .liveEventCard {
+    scroll-snap-align: start;
+  }
+
+  .ledgerMetaRail {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+
+  .ledgerMetaRail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ledgerMetaRail span {
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .signalSystem .topbar {
+    height: 58px;
+  }
+
+  .signalSystem .brandMark {
+    width: 31px;
+    height: 31px;
+  }
+
+  .signalSystem .brandWord {
+    font-size: 14px;
+  }
+
+  .signalSystem .brandSport {
+    font-size: 6px;
+  }
+
+  .signalSystem .localeSwitch button {
+    min-width: 26px;
+    padding: 5px 4px;
+    font-size: 7px;
+  }
+
+  .signalHero {
+    padding-top: 42px;
+  }
+
+  .signalHero h1 {
+    font-size: clamp(38px, 11.5vw, 54px);
+  }
+
+  .signalHero .heroCopy {
+    max-width: 92%;
+    font-size: 11px;
+  }
+
+  .heroTelemetry span {
+    padding-right: 9px;
+    margin-right: 9px;
+    font-size: 6px;
+  }
+
+  .heroSignal {
+    min-height: 270px;
+  }
+
+  .heroSignalMetrics {
+    grid-template-columns: repeat(3,1fr);
+  }
+
+  .signalSystem .liveCards {
+    grid-template-columns: repeat(3, minmax(82vw, 1fr));
+  }
+
+  .eventLeagueLine {
+    justify-content: center;
+  }
+
+  .eventVerdictPlane::before {
+    left: 14px;
+  }
+
+  .verdictTop strong {
+    font-size: 15px;
+  }
+
+  .verdictPrimary > div:first-child strong {
+    font-size: 43px;
+  }
+
+  .marketTable {
+    overflow-x: visible;
+  }
+
+  .eventMarketTable .tableHead {
+    display: none;
+  }
+
+  .eventMarketTable .marketRow {
+    min-width: 0;
+    grid-template-columns: minmax(0,1fr) auto auto auto;
+    gap: 10px;
+  }
+
+  .eventMarketTable .dataRow {
+    min-height: 68px;
+    padding: 9px 11px;
+  }
+
+  .eventMarketTable .dataRow > span:nth-child(2),
+  .eventMarketTable .dataRow > span:nth-child(3),
+  .eventMarketTable .dataRow > span:nth-child(5) {
+    display: none;
+  }
+
+  .eventMarketTable .marketIdentity strong {
+    font-size: 9px;
+  }
+
+  .eventMarketTable .marketIdentity small {
+    font-size: 6px;
+  }
+
+  .eventMarketTable .vetoScore {
+    font-size: 11px;
+  }
+
+  .eventMarketTable .decision {
+    font-size: 6px;
+  }
+
+  .probChart {
+    height: 194px;
+  }
+
+  .probChart svg {
+    height: 172px;
+  }
+
+  .probLegend {
+    gap: 10px;
+    font-size: 6px;
+  }
+
+  .surfaceMarketCard {
+    min-height: 126px;
+    padding: 12px;
+  }
+
+  .signalSystem .surfaceMarketCard > strong {
+    font-size: 25px;
+  }
+
+  .asianRow {
+    min-width: 570px;
+  }
+
+  .scorelineCell {
+    min-height: 70px;
+  }
+
+  .scorelineCell strong {
+    font-size: 17px;
+  }
+
+  .ledgerEntryBody small {
+    display: none;
+  }
+
+  .validationMetric {
+    min-height: 82px;
+    padding: 12px;
+  }
+
+  .validationMetric > strong {
+    font-size: 20px;
+  }
+
+  .validationCalibration,
+  .validationEquity,
+  .validationWalk {
+    padding: 15px 14px 20px;
+  }
+
+  .governanceGate {
+    min-height: 105px;
+  }
+
+  .integrationRail {
+    margin-bottom: 4px;
+  }
+
+  .signalFooter {
+    padding-bottom: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .signalSystem .brandSport {
+    display: none;
+  }
+
+  .heroIdentity .heroMark {
+    width: 45px;
+    height: 45px;
+  }
+
+  .heroIdentity span {
+    font-size: 7px;
+  }
+
+  .heroProbability strong {
+    font-size: 51px;
+  }
+
+  .heroSignalMetrics strong {
+    font-size: 10px;
+  }
+
+  .eventScoreDigits strong {
+    font-size: 49px;
+  }
+
+  .verdictMetrics {
+    grid-template-columns: repeat(2,1fr);
+  }
+
+  .eventStateRail {
+    grid-template-columns: repeat(2,1fr);
+  }
+
+  .scenarioBranchOutcomes {
+    gap: 0;
+  }
+
+  .marketTapeRow {
+    grid-template-columns: 36px minmax(0,1fr) 72px;
+    padding: 0 12px;
+  }
+
+  .ledgerEntry {
+    grid-template-columns: 20px 48px minmax(0,1fr);
+  }
+
+  .ledgerEntryImpact {
+    display: none;
+  }
+
+  .validationMetricStrip {
+    grid-template-columns: repeat(2,1fr);
+  }
+
+  .governanceModelLine {
+    grid-template-columns: minmax(140px,1.5fr) 64px 64px;
+  }
+
+  .integrationNodes {
+    grid-template-columns: 1fr;
+  }
+
+  .integrationNodes > div,
+  .integrationNodes > div:nth-child(2) {
+    border-right: 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .integrationNodes > div:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .heroSignalLane > i,
+  .verdictLane i,
+  .surfaceProbDot,
+  .councilLane i {
+    transition: left .32s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease;
+  }
+
+  .eventMarketTable .dataRow,
+  .surfaceRailNav a,
+  .councilNode,
+  .ledgerEntry {
+    transition: background .16s ease, color .16s ease;
+  }
+
+  .ledgerEntry:hover,
+  .councilNode:hover {
+    background: rgba(255,255,255,.008);
+  }
+}
