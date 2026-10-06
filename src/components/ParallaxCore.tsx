@@ -8,6 +8,7 @@ import { TemporalResponseLab } from "@/components/TemporalResponseLab";
 import { CrossMarketPropagation } from "@/components/CrossMarketPropagation";
 import { ShockExecutionPanel } from "@/components/ShockExecutionPanel";
 import { AlphaMemoryPanel } from "@/components/AlphaMemoryPanel";
+import { ExperimentLedgerPanel } from "@/components/ExperimentLedgerPanel";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) =>
@@ -407,6 +408,7 @@ export function ParallaxCore({ locale }: { locale: Locale }) {
       <CrossMarketPropagation locale={locale} />
       <ShockExecutionPanel locale={locale} />
       <AlphaMemoryPanel locale={locale} />
+      <ExperimentLedgerPanel locale={locale} />
 
       <div className="parallaxCounterfactuals">
         <div className="parallaxCounterHead">
