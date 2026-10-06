@@ -20,6 +20,8 @@ const stakeOf = (row: BacktestRow, defaultStake = 1) =>
 export const rowProfit = (row: BacktestRow, defaultStake = 1) => {
   const stake = stakeOf(row, defaultStake);
   if (row.result === "win") return stake * (row.entryOdds - 1);
+  if (row.result === "half_win") return stake * 0.5 * (row.entryOdds - 1);
+  if (row.result === "half_loss") return -stake * 0.5;
   if (row.result === "loss") return -stake;
   return 0;
 };
@@ -121,7 +123,9 @@ export const backtestMetrics = (
     actionableRows: actionable.length,
     wins,
     losses,
+    halfWins: actionable.filter((row) => row.result === "half_win").length,
     pushes: actionable.filter((row) => row.result === "push").length,
+    halfLosses: actionable.filter((row) => row.result === "half_loss").length,
     voids: actionable.filter((row) => row.result === "void").length,
     staked,
     profit,
