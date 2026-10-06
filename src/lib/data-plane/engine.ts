@@ -40,6 +40,10 @@ export const prepareJournalRecord = <T>(
     sourceEmittedAt: normalizedIso(input.sourceEmittedAt),
     gatewayReceivedAt: normalizedIso(input.gatewayReceivedAt),
     normalizedAt: normalizedIso(input.normalizedAt),
+    knowledgeAvailableAt: normalizedIso(
+      input.knowledgeAvailableAt ?? input.gatewayReceivedAt,
+    ),
+    acquisitionMode: input.acquisitionMode ?? "LIVE",
     sourceClockOffsetMs: input.sourceClockOffsetMs ?? 0,
     sourceTimeUncertaintyMs: input.sourceTimeUncertaintyMs ?? 0,
     lateArrival: input.lateArrival ?? false,
@@ -54,6 +58,8 @@ export const prepareJournalRecord = <T>(
       normalized.schemaVersion,
       normalized.providerSequence ?? "",
       normalized.sourceEmittedAt,
+      normalized.knowledgeAvailableAt,
+      normalized.acquisitionMode,
       normalized.semanticKey ?? "",
       payloadHash,
     ].join("|"),
@@ -86,8 +92,8 @@ const correctionMap = <T>(
     const existing = map.get(record.correctionOf);
     if (
       !existing ||
-      new Date(record.gatewayReceivedAt).getTime() >
-        new Date(existing.gatewayReceivedAt).getTime()
+      new Date(record.knowledgeAvailableAt).getTime() >
+        new Date(existing.knowledgeAvailableAt).getTime()
     ) {
       map.set(record.correctionOf, record);
     }
@@ -112,12 +118,12 @@ export const buildDataPlaneReplay = <T>(
   const visible = eventRows
     .filter(
       (record) =>
-        new Date(record.gatewayReceivedAt).getTime() <= asOfMs,
+        new Date(record.knowledgeAvailableAt).getTime() <= asOfMs,
     )
     .sort(
       (a, b) =>
-        new Date(a.gatewayReceivedAt).getTime() -
-        new Date(b.gatewayReceivedAt).getTime(),
+        new Date(a.knowledgeAvailableAt).getTime() -
+        new Date(b.knowledgeAvailableAt).getTime(),
     );
 
   const corrections = correctionMap(visible);
@@ -135,7 +141,7 @@ export const buildDataPlaneReplay = <T>(
 
   const excludedFutureCount = eventRows.filter(
     (record) =>
-      new Date(record.gatewayReceivedAt).getTime() > asOfMs,
+      new Date(record.knowledgeAvailableAt).getTime() > asOfMs,
   ).length;
 
   const appliedCorrections = [...corrections.entries()].map(
@@ -147,7 +153,7 @@ export const buildDataPlaneReplay = <T>(
 
   const lookaheadSafe = active.every(
     (record) =>
-      new Date(record.gatewayReceivedAt).getTime() <= asOfMs,
+      new Date(record.knowledgeAvailableAt).getTime() <= asOfMs,
   );
 
   return {
