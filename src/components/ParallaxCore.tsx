@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { Locale } from "@/lib/domain/types";
 import { sandboxFootballSurface } from "@/lib/sandbox/football-model";
 import { sandboxParallaxAnalysis } from "@/lib/parallax/sandbox";
@@ -15,8 +16,47 @@ const residualClass = (value: number) => {
   return "low";
 };
 
+type ParallaxHealth = { passed: boolean };
+type ShadowPreview = {
+  persistence: string;
+  record?: {
+    recordHash: string;
+    modelVersion: string;
+    status: string;
+    stateId: string;
+    contractId: string;
+  };
+};
+
 export function ParallaxCore({ locale }: { locale: Locale }) {
   const analysis = sandboxParallaxAnalysis;
+  const [health, setHealth] = useState<ParallaxHealth | null>(null);
+  const [shadow, setShadow] = useState<ShadowPreview | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    Promise.all([
+      fetch("/api/intelligence/parallax/selfcheck", {
+        cache: "no-store",
+      }).then((response) => (response.ok ? response.json() : null)),
+      fetch("/api/intelligence/parallax/shadow", {
+        cache: "no-store",
+      }).then((response) => (response.ok ? response.json() : null)),
+    ])
+      .then(([healthPayload, shadowPayload]) => {
+        if (!active) return;
+        if (healthPayload) setHealth(healthPayload as ParallaxHealth);
+        if (shadowPayload) setShadow(shadowPayload as ShadowPreview);
+      })
+      .catch(() => {
+        // The research surface remains readable even if health metadata fails.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
   const topVetoStates = sandboxFootballSurface.scorelines
     .slice()
     .sort((a, b) => b.probability - a.probability)
@@ -29,7 +69,7 @@ export function ParallaxCore({ locale }: { locale: Locale }) {
   const consistencyState =
     analysis.consistencyScore >= 88
       ? "COHERENT"
-      : analysis.consistencyScore >= 72
+      : analysis.consistencyScore >= 65
         ? "TENSION"
         : "CONFLICT";
 
@@ -104,6 +144,13 @@ export function ParallaxCore({ locale }: { locale: Locale }) {
         </div>
 
         <div className="parallaxStatus">
+          <strong className={health?.passed ? "verified" : ""}>
+            {health == null
+              ? "CHECKING"
+              : health.passed
+                ? "PARALLAX VERIFIED"
+                : "PARALLAX FAIL"}
+          </strong>
           <span>{copy.snapshot}</span>
           <i />
         </div>
@@ -381,6 +428,37 @@ export function ParallaxCore({ locale }: { locale: Locale }) {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="parallaxShadow">
+        <div>
+          <span>SHADOW DECISION LEDGER</span>
+          <strong>{shadow?.record?.status ?? "SHADOW"}</strong>
+        </div>
+        <div>
+          <span>MODEL</span>
+          <code>{shadow?.record?.modelVersion ?? "veto.parallax.football.v1"}</code>
+        </div>
+        <div>
+          <span>STATE</span>
+          <code>{shadow?.record?.stateId ?? "#18429"}</code>
+        </div>
+        <div className="parallaxShadowHash">
+          <span>RECORD HASH</span>
+          <code>
+            {shadow?.record?.recordHash
+              ? `${shadow.record.recordHash.slice(0, 12)}…${shadow.record.recordHash.slice(-8)}`
+              : "pending…"}
+          </code>
+        </div>
+        <div>
+          <span>PERSISTENCE</span>
+          <strong className="negative">
+            {shadow?.persistence === "not-connected"
+              ? "NOT PERSISTED"
+              : "PREVIEW"}
+          </strong>
         </div>
       </div>
 
