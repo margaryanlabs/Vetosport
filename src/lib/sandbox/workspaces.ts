@@ -595,7 +595,7 @@ export const liveWorkspaces: LiveWorkspace[] = [
       { label: "Sinner next hold", probability: tennisOpportunities[2].fairProbability, fairOdds: tennisOpportunities[2].fairOdds, marketOdds: 1.34, decision: tennisOpportunities[2].decision },
       { label: "Alcaraz set 2", probability: tennisOpportunities[3].fairProbability, fairOdds: tennisOpportunities[3].fairOdds, marketOdds: 2.12, decision: tennisOpportunities[3].decision },
     ],
-  },,
+  },
   {
     id: "edm-vgk",
     sport: "hockey",
