@@ -29,7 +29,7 @@ export const evaluateSuspensionCensoring=(rows:AvailabilityObservation[]):Suspen
 
   const status:SuspensionCensoringResult["status"]=
     hardBlock?"BLOCK":
-    biasScore>=.38?"WATCH":
+    biasScore>=.32?"WATCH":
     "CLEAN";
 
   const reasons:string[]=[];
