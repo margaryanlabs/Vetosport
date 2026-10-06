@@ -11,6 +11,7 @@ import { AlphaMemoryPanel } from "@/components/AlphaMemoryPanel";
 import { ExperimentLedgerPanel } from "@/components/ExperimentLedgerPanel";
 import { TruthPlanePanel } from "@/components/TruthPlanePanel";
 import { ContractSemanticsPanel } from "@/components/ContractSemanticsPanel";
+import { DataPlanePanel } from "@/components/DataPlanePanel";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) =>
@@ -413,6 +414,7 @@ export function ParallaxCore({ locale }: { locale: Locale }) {
       <ExperimentLedgerPanel locale={locale} />
       <TruthPlanePanel locale={locale} />
       <ContractSemanticsPanel locale={locale} />
+      <DataPlanePanel locale={locale} />
 
       <div className="parallaxCounterfactuals">
         <div className="parallaxCounterHead">
