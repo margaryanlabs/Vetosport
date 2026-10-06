@@ -213,25 +213,40 @@ function SpecialistValidation({
   sport: Sport;
   modelVersion: string;
 }) {
-  const basketball = sport === "basketball";
-  const title = basketball ? "BASKETBALL VALIDATION" : "TENNIS VALIDATION";
-  const checks = basketball
-    ? [
-        ["PROBABILITY BOUNDS", "PASS", "All priced markets remain inside (0,1)."],
-        ["TOTAL MONOTONICITY", "PASS", "Higher total line increases under probability."],
-        ["PACE SENSITIVITY", "PASS", "Higher projected pace increases final total."],
-        ["SPREAD MONOTONICITY", "PASS", "Harder handicap lowers cover probability."],
-        ["HISTORICAL SAMPLE", "BLOCK", "No real historical basketball dataset loaded yet."],
-        ["WALK-FORWARD", "BLOCK", "Requires settled historical market snapshots."],
-      ]
-    : [
-        ["SERVE MONOTONICITY", "PASS", "Higher point-win rate increases hold probability."],
-        ["SCORE STATE", "PASS", "40-0 state prices above 0-40 state."],
-        ["PROBABILITY BOUNDS", "PASS", "Point and match surfaces remain inside (0,1)."],
-        ["MATCH STATE", "PASS", "Set/game advantage increases match surface."],
-        ["HISTORICAL SAMPLE", "BLOCK", "No real historical tennis dataset loaded yet."],
-        ["WALK-FORWARD", "BLOCK", "Requires settled historical point/market snapshots."],
-      ];
+  const title =
+    sport === "basketball"
+      ? "BASKETBALL VALIDATION"
+      : sport === "hockey"
+        ? "HOCKEY VALIDATION"
+        : "TENNIS VALIDATION";
+
+  const checks =
+    sport === "basketball"
+      ? [
+          ["PROBABILITY BOUNDS", "PASS", "All priced markets remain inside (0,1)."],
+          ["TOTAL MONOTONICITY", "PASS", "Higher total line increases under probability."],
+          ["PACE SENSITIVITY", "PASS", "Higher projected pace increases final total."],
+          ["SPREAD MONOTONICITY", "PASS", "Harder handicap lowers cover probability."],
+          ["HISTORICAL SAMPLE", "BLOCK", "No real historical basketball dataset loaded yet."],
+          ["WALK-FORWARD", "BLOCK", "Requires settled historical market snapshots."],
+        ]
+      : sport === "hockey"
+        ? [
+            ["PROBABILITY MASS", "PASS", "Regulation outcome probabilities sum to one."],
+            ["TOTAL MONOTONICITY", "PASS", "Higher goal line increases under probability."],
+            ["MANPOWER SENSITIVITY", "PASS", "Power play raises attacking goal hazard."],
+            ["EMPTY-NET STATE", "PASS", "Goalie pull widens the late scoring tail."],
+            ["HISTORICAL SAMPLE", "BLOCK", "No real shift-level hockey dataset loaded yet."],
+            ["WALK-FORWARD", "BLOCK", "Requires settled historical hockey market snapshots."],
+          ]
+        : [
+            ["SERVE MONOTONICITY", "PASS", "Higher point-win rate increases hold probability."],
+            ["SCORE STATE", "PASS", "40-0 state prices above 0-40 state."],
+            ["PROBABILITY BOUNDS", "PASS", "Point and match surfaces remain inside (0,1)."],
+            ["MATCH STATE", "PASS", "Set/game advantage increases match surface."],
+            ["HISTORICAL SAMPLE", "BLOCK", "No real historical tennis dataset loaded yet."],
+            ["WALK-FORWARD", "BLOCK", "Requires settled historical point/market snapshots."],
+          ];
 
   const copy =
     locale === "ru"
