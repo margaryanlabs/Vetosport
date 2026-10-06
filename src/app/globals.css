@@ -3480,3 +3480,81 @@ body::before {
     padding: 16px 14px;
   }
 }
+
+/* Structural rail + system alignment */
+.surfaceRailNav {
+  display: none;
+}
+
+@media (min-width: 1740px) {
+  .surfaceRailNav {
+    position: fixed;
+    z-index: 18;
+    top: 162px;
+    left: calc(50% - 790px - 74px);
+    width: 56px;
+    display: grid;
+    border-left: 1px solid var(--line-soft);
+  }
+
+  .surfaceRailNav a {
+    position: relative;
+    min-height: 48px;
+    padding: 9px 0 8px 11px;
+    display: grid;
+    align-content: center;
+    gap: 3px;
+    color: #39433f;
+    text-decoration: none;
+    transition: color .16s ease, border-color .16s ease;
+  }
+
+  .surfaceRailNav a::before {
+    content: "";
+    position: absolute;
+    left: -1px;
+    top: 16px;
+    width: 1px;
+    height: 15px;
+    background: transparent;
+  }
+
+  .surfaceRailNav a:hover {
+    color: #8a9690;
+  }
+
+  .surfaceRailNav a:hover::before {
+    background: var(--edge);
+  }
+
+  .surfaceRailNav b {
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 7px;
+    font-weight: 600;
+  }
+
+  .surfaceRailNav span {
+    font-size: 5px;
+    font-weight: 800;
+    letter-spacing: .11em;
+  }
+}
+
+.signalSystem .topbarActions {
+  min-height: 38px;
+}
+
+.signalSystem .systemPulse,
+.signalSystem .localeSwitch {
+  align-self: center;
+}
+
+.signalSystem .systemPulse {
+  height: 30px;
+}
+
+.signalSystem .localeSwitch {
+  min-height: 30px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
