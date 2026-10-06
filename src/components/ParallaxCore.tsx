@@ -30,6 +30,7 @@ import { TransitionHazardPanel } from "@/components/TransitionHazardPanel";
 import { RegimeCoherenceGatePanel } from "@/components/RegimeCoherenceGatePanel";
 import { HazardCalibrationPanel } from "@/components/HazardCalibrationPanel";
 import { TransitionAuthorityPanel } from "@/components/TransitionAuthorityPanel";
+import { AuthorityFrontierPanel } from "@/components/AuthorityFrontierPanel";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) =>
@@ -451,6 +452,7 @@ export function ParallaxCore({ locale }: { locale: Locale }) {
       <RegimeCoherenceGatePanel locale={locale} />
       <HazardCalibrationPanel locale={locale} />
       <TransitionAuthorityPanel locale={locale} />
+      <AuthorityFrontierPanel locale={locale} />
 
       <div className="parallaxCounterfactuals">
         <div className="parallaxCounterHead">
