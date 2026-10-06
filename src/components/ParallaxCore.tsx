@@ -18,6 +18,7 @@ import { MarketCapacityPanel } from "@/components/MarketCapacityPanel";
 import { SemanticDriftPanel } from "@/components/SemanticDriftPanel";
 import { LeakageMonitorPanel } from "@/components/LeakageMonitorPanel";
 import { DiscoveryControlPanel } from "@/components/DiscoveryControlPanel";
+import { CalibrationDriftPanel } from "@/components/CalibrationDriftPanel";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) =>
@@ -427,6 +428,7 @@ export function ParallaxCore({ locale }: { locale: Locale }) {
       <SemanticDriftPanel locale={locale} />
       <LeakageMonitorPanel locale={locale} />
       <DiscoveryControlPanel locale={locale} />
+      <CalibrationDriftPanel locale={locale} />
 
       <div className="parallaxCounterfactuals">
         <div className="parallaxCounterHead">
