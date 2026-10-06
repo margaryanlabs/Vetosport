@@ -23,14 +23,8 @@ export function ModelGovernancePanel({ locale }: { locale: Locale }) {
     meanClvOdds: (metrics.meanClvOdds ?? 0) - 0.004,
     maxDrawdown: metrics.maxDrawdown * 0.94,
     walkForwardWindows: Math.max(4, sandboxWalkForward.summary.count - 1),
-    positiveClvWindows: Math.max(
-      2,
-      sandboxWalkForward.summary.positiveClvWindows - 1,
-    ),
-    positiveRoiWindows: Math.max(
-      2,
-      sandboxWalkForward.summary.positiveRoiWindows - 1,
-    ),
+    positiveClvWindows: Math.max(2, sandboxWalkForward.summary.positiveClvWindows - 1),
+    positiveRoiWindows: Math.max(2, sandboxWalkForward.summary.positiveRoiWindows - 1),
   };
 
   const challenger: ModelValidationSummary = {
@@ -52,34 +46,25 @@ export function ModelGovernancePanel({ locale }: { locale: Locale }) {
   const copy =
     locale === "ru"
       ? {
-          title: "MODEL GOVERNANCE",
-          subtitle: "Champion / challenger promotion gate",
-          champion: "CHAMPION",
-          challenger: "CHALLENGER",
-          synthetic: "SANDBOX VALIDATION",
-          blocked: "Promotion заблокирован до реальной истории",
+          title: "MODEL CONTROL",
+          subtitle: "Champion / challenger · promotion authority",
+          hold: "До реальной истории promotion заблокирован",
         }
       : locale === "hy"
         ? {
-            title: "MODEL GOVERNANCE",
-            subtitle: "Champion / challenger promotion gate",
-            champion: "CHAMPION",
-            challenger: "CHALLENGER",
-            synthetic: "SANDBOX VALIDATION",
-            blocked: "Promotion-ը արգելափակված է մինչև իրական պատմական տվյալները",
+            title: "MODEL CONTROL",
+            subtitle: "Champion / challenger · promotion authority",
+            hold: "Promotion-ը արգելափակված է մինչև իրական պատմական տվյալները",
           }
         : {
-            title: "MODEL GOVERNANCE",
-            subtitle: "Champion / challenger promotion gate",
-            champion: "CHAMPION",
-            challenger: "CHALLENGER",
-            synthetic: "SANDBOX VALIDATION",
-            blocked: "Promotion blocked until real history is loaded",
+            title: "MODEL CONTROL",
+            subtitle: "Champion / challenger · promotion authority",
+            hold: "Promotion blocked until real history is loaded",
           };
 
   return (
-    <section className="panel governancePanel">
-      <div className="panelHeader">
+    <section className="governanceSurface">
+      <div className="governanceSurfaceHead">
         <div>
           <span className="panelIndex">13</span>
           <div>
@@ -87,43 +72,28 @@ export function ModelGovernancePanel({ locale }: { locale: Locale }) {
             <p>{copy.subtitle}</p>
           </div>
         </div>
-        <span className="syntheticBadge">{copy.synthetic}</span>
+        <span className="governanceSandbox">SANDBOX VALIDATION</span>
       </div>
 
-      <div className="governanceGrid">
-        <ModelCard
-          role={copy.champion}
-          version={champion.modelVersion}
-          brier={champion.brier}
-          ece={champion.expectedCalibrationError}
-          clv={champion.meanClvOdds}
-          active
-        />
-
-        <div className="promotionGate">
-          <div className={"gateDial " + gate.decision.toLowerCase()}>
-            <span>GATE</span>
-            <strong>{gate.score}</strong>
-            <em>{gate.decision}</em>
-          </div>
-          <p>{copy.blocked}</p>
+      <div className="governanceCompare">
+        <ModelLine role="CHAMPION" model={champion} active />
+        <div className="governanceGate">
+          <span>AUTHORIZE</span>
+          <strong>{gate.score}</strong>
+          <em className={gate.decision.toLowerCase()}>{gate.decision}</em>
+          <p>{copy.hold}</p>
         </div>
-
-        <ModelCard
-          role={copy.challenger}
-          version={challenger.modelVersion}
-          brier={challenger.brier}
-          ece={challenger.expectedCalibrationError}
-          clv={challenger.meanClvOdds}
-        />
+        <ModelLine role="CHALLENGER" model={challenger} />
       </div>
 
-      <div className="governanceChecks">
-        {gate.checks.map((check) => (
-          <div className="governanceCheck" key={check.id}>
+      <div className="governanceCheckRail">
+        {gate.checks.map((check, index) => (
+          <div className="governanceCheckLine" key={check.id}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
             <i className={check.passed ? "pass" : "fail"} />
-            <span>{check.id.replaceAll("-", " ")}</span>
+            <strong>{check.id.replaceAll("-", " ")}</strong>
             <p>{check.detail}</p>
+            <b>{check.passed ? "PASS" : "BLOCK"}</b>
           </div>
         ))}
       </div>
@@ -131,38 +101,43 @@ export function ModelGovernancePanel({ locale }: { locale: Locale }) {
   );
 }
 
-function ModelCard({
+function ModelLine({
   role,
-  version,
-  brier,
-  ece,
-  clv,
+  model,
   active = false,
 }: {
   role: string;
-  version: string;
-  brier: number;
-  ece: number;
-  clv?: number;
+  model: ModelValidationSummary;
   active?: boolean;
 }) {
-  const clvLabel =
-    clv == null
-      ? "—"
-      : (clv >= 0 ? "+" : "") + (clv * 100).toFixed(2) + "%";
-
   return (
-    <article className={"modelGovernanceCard " + (active ? "active" : "")}>
-      <div>
+    <article className={"governanceModelLine " + (active ? "active" : "")}>
+      <div className="governanceModelIdentity">
         <span>{role}</span>
         {active && <i>LIVE</i>}
+        <strong>{model.modelVersion}</strong>
       </div>
-      <strong>{version}</strong>
-      <dl>
-        <div><dt>Brier</dt><dd>{brier.toFixed(3)}</dd></div>
-        <div><dt>ECE</dt><dd>{(ece * 100).toFixed(1)}%</dd></div>
-        <div><dt>CLV</dt><dd>{clvLabel}</dd></div>
-      </dl>
+
+      <div className="governanceModelMetric">
+        <span>BRIER</span>
+        <strong>{model.brier.toFixed(3)}</strong>
+      </div>
+      <div className="governanceModelMetric">
+        <span>ECE</span>
+        <strong>{(model.expectedCalibrationError * 100).toFixed(1)}%</strong>
+      </div>
+      <div className="governanceModelMetric">
+        <span>CLV</span>
+        <strong>{model.meanClvOdds == null ? "—" : `${model.meanClvOdds >= 0 ? "+" : ""}${(model.meanClvOdds * 100).toFixed(2)}%`}</strong>
+      </div>
+      <div className="governanceModelMetric">
+        <span>WINDOWS</span>
+        <strong>{model.walkForwardWindows}</strong>
+      </div>
+      <div className="governanceModelMetric">
+        <span>ROWS</span>
+        <strong>{model.sampleRows}</strong>
+      </div>
     </article>
   );
 }
