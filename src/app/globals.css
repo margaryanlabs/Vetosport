@@ -3558,3 +3558,416 @@ body::before {
   padding-top: 2px;
   padding-bottom: 2px;
 }
+
+/* =========================================================
+   MODEL / SCENARIO INTELLIGENCE SURFACE
+   ========================================================= */
+
+.intelligenceSurface {
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: rgba(5,7,8,.28);
+}
+
+.intelligenceSurfaceHead,
+.intelligenceSubhead {
+  min-height: 60px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.intelligenceSurfaceHead > div:first-child,
+.intelligenceSubhead > div:first-child {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.intelligenceSurfaceHead h2,
+.intelligenceSubhead h2 {
+  margin: 0;
+  font-size: 9px;
+  letter-spacing: .14em;
+}
+
+.intelligenceSurfaceHead p,
+.intelligenceSubhead p {
+  margin: 4px 0 0;
+  color: var(--muted-2);
+  font-size: 7px;
+}
+
+.councilConsensus {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.councilConsensus span {
+  margin-right: 5px;
+  color: #46514c;
+  font-size: 6px;
+  letter-spacing: .13em;
+}
+
+.councilConsensus strong {
+  color: var(--edge);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 27px;
+  font-weight: 560;
+  letter-spacing: -.05em;
+}
+
+.councilConsensus em {
+  color: #4b5651;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 8px;
+  font-style: normal;
+}
+
+.councilStrip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.councilNode {
+  min-height: 154px;
+  padding: 15px 15px 13px;
+  border-right: 1px solid var(--line-soft);
+}
+
+.councilNode:last-child {
+  border-right: 0;
+}
+
+.councilNodeTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.councilNodeTop > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #aeb8b3;
+  font-size: 7px;
+  font-weight: 650;
+}
+
+.councilNodeTop > span i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #4a5550;
+}
+
+.councilNodeTop > span i.aligned {
+  background: var(--edge);
+}
+
+.councilNodeTop > span i.divergent {
+  background: var(--watch);
+}
+
+.councilNodeTop small {
+  color: #3f4944;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 6px;
+}
+
+.councilNode > strong {
+  display: block;
+  margin-top: 24px;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 29px;
+  font-weight: 530;
+  letter-spacing: -.055em;
+}
+
+.councilLane {
+  position: relative;
+  height: 17px;
+  margin-top: 13px;
+  border-top: 1px solid #19201d;
+}
+
+.councilLane span {
+  position: absolute;
+  left: 0;
+  top: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(91,227,162,.16), var(--edge));
+}
+
+.councilLane i {
+  position: absolute;
+  top: -4px;
+  width: 7px;
+  height: 7px;
+  margin-left: -3px;
+  border: 2px solid #07100b;
+  border-radius: 50%;
+  background: var(--edge);
+}
+
+.councilNodeFoot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: #46514c;
+  font-size: 6px;
+  letter-spacing: .08em;
+}
+
+.councilNodeFoot b {
+  color: #64716b;
+  font-weight: 700;
+}
+
+.intelligenceSurfaceBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(340px, .82fr);
+}
+
+.scenarioBranches {
+  border-right: 1px solid var(--line-soft);
+}
+
+.scenarioBranchList,
+.marketTapeList {
+  display: grid;
+}
+
+.scenarioBranch {
+  min-height: 76px;
+  padding: 0 18px;
+  display: grid;
+  grid-template-columns: minmax(170px, 1.2fr) minmax(120px, .7fr) minmax(260px, 1.1fr);
+  gap: 18px;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.scenarioBranch:last-child,
+.marketTapeRow:last-child {
+  border-bottom: 0;
+}
+
+.scenarioBranchLead {
+  display: grid;
+  grid-template-columns: 22px 10px minmax(0,1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.scenarioBranchLead > span {
+  color: #3f4944;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 6px;
+}
+
+.scenarioBranchLead > i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #607069;
+}
+
+.scenarioBranchLead strong {
+  color: #bac4bf;
+  font-size: 7px;
+}
+
+.scenarioBranchProbability {
+  display: grid;
+  grid-template-columns: 14px 44px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.scenarioBranchProbability > span {
+  color: #46514c;
+  font-size: 6px;
+}
+
+.scenarioBranchProbability > strong {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 8px;
+}
+
+.scenarioBranchProbability > i {
+  height: 1px;
+  background: #18201c;
+}
+
+.scenarioBranchProbability > i b {
+  display: block;
+  height: 1px;
+  background: #728078;
+}
+
+.scenarioBranchOutcomes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.scenarioBranchOutcomes span {
+  padding-left: 10px;
+  border-left: 1px solid var(--line-soft);
+  color: #4e5954;
+  font-size: 6px;
+  letter-spacing: .06em;
+}
+
+.scenarioBranchOutcomes b {
+  display: block;
+  margin-top: 5px;
+  color: #9ca7a1;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 8px;
+}
+
+.marketTapeRow {
+  min-height: 76px;
+  padding: 0 17px;
+  display: grid;
+  grid-template-columns: 44px minmax(0,1fr) 92px auto;
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.marketTapeTime {
+  color: #3f4944;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 6px;
+}
+
+.marketTapeAsset {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.marketTapeAsset strong {
+  color: #b9c3be;
+  font-size: 7px;
+}
+
+.marketTapeAsset small {
+  overflow: hidden;
+  color: #4f5a55;
+  font-size: 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.marketTapePrice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 7px;
+}
+
+.marketTapePrice span {
+  color: #5e6a64;
+}
+
+.marketTapePrice i {
+  color: #35403b;
+  font-style: normal;
+}
+
+.marketTapePrice strong {
+  color: #c0cac5;
+}
+
+.marketTapeRow em {
+  padding: 4px 5px;
+  border: 1px solid var(--line-soft);
+  font-size: 5px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.marketTapeRow em.explained {
+  color: #718078;
+}
+
+.marketTapeRow em.unexplained {
+  color: var(--watch);
+  border-color: rgba(191,162,105,.22);
+}
+
+@media (max-width: 1180px) {
+  .councilStrip {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .councilNode:nth-child(3) {
+    border-right: 0;
+  }
+
+  .intelligenceSurfaceBody {
+    grid-template-columns: 1fr;
+  }
+
+  .scenarioBranches {
+    border-right: 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+}
+
+@media (max-width: 760px) {
+  .intelligenceSurfaceHead,
+  .intelligenceSubhead {
+    min-height: auto;
+    padding: 13px 14px;
+  }
+
+  .councilStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .councilNode,
+  .councilNode:nth-child(3) {
+    min-height: 126px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .councilNode:last-child {
+    border-bottom: 0;
+  }
+
+  .scenarioBranch {
+    min-height: auto;
+    padding: 13px 14px;
+    grid-template-columns: 1fr;
+    gap: 11px;
+  }
+
+  .scenarioBranchOutcomes span:first-child {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .marketTapeRow {
+    min-height: 68px;
+    grid-template-columns: 40px minmax(0,1fr) 80px;
+  }
+
+  .marketTapeRow em {
+    display: none;
+  }
+}
