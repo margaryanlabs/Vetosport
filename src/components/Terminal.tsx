@@ -27,9 +27,13 @@ type ProviderStatus = {
   };
 };
 
-export function Terminal() {
+export function Terminal({ initialEventId }: { initialEventId?: string }) {
+  const initialWorkspaceId =
+    initialEventId && workspaceById[initialEventId]
+      ? initialEventId
+      : liveWorkspaces[0].id;
   const [locale, setLocale] = useState<Locale>("ru");
-  const [selectedEventId, setSelectedEventId] = useState(liveWorkspaces[0].id);
+  const [selectedEventId, setSelectedEventId] = useState(initialWorkspaceId);
   const [selectedId, setSelectedId] = useState(liveWorkspaces[0].opportunities[0].selection.id);
   const [marketMode, setMarketMode] = useState<"all" | "edges">("all");
   const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
@@ -49,14 +53,6 @@ export function Terminal() {
     return () => {
       active = false;
     };
-  }, []);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const requestedEvent = params.get("event");
-    if (requestedEvent && workspaceById[requestedEvent]) {
-      setSelectedEventId(requestedEvent);
-    }
   }, []);
 
   useEffect(() => {
