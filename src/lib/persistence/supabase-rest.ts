@@ -288,6 +288,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
           opportunity_score: entry.opportunityScore,
           captured_at: entry.capturedAt,
           immutable_fingerprint: entry.immutableFingerprint,
+          model_version_set: entry.modelVersionSet,
         }),
       },
       "return=minimal",
