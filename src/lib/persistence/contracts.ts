@@ -50,6 +50,12 @@ export interface VetoPersistence {
     id: string;
   }): Promise<PersistedEvent>;
 
+  findEventsAround(input: {
+    sport: SportEvent["sport"];
+    startsAt: string;
+    toleranceMinutes?: number;
+  }): Promise<PersistedEvent[]>;
+
   appendEventState(snapshot: EventStateSnapshot): Promise<void>;
 
   appendQuotes(eventId: string, quotes: MarketQuote[]): Promise<number>;
