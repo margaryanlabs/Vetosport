@@ -10722,3 +10722,360 @@ body::before {
     display: none;
   }
 }
+
+/* =========================================================
+   PARALLAX IX / PRODUCTION DATA PLANE
+   ========================================================= */
+
+.dataPlaneSurface {
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  background:
+    radial-gradient(circle at 80% 0%, rgba(91,227,162,.012), transparent 26rem),
+    rgba(255,255,255,.001);
+}
+
+.dataPlaneHead {
+  min-height: 62px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.dataPlaneHead > div:first-child {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.dataPlaneHead h3 {
+  margin: 0;
+  color: #e0e7e3;
+  font-size: 9px;
+  letter-spacing: .14em;
+}
+
+.dataPlaneHead p {
+  margin: 4px 0 0;
+  color: #4d5853;
+  font-size: 7px;
+}
+
+.dataPlaneHead > span {
+  color: #776a4e;
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .09em;
+}
+
+.dataPlaneHero {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.dataPlaneHero > div {
+  min-height: 82px;
+  padding: 13px 15px;
+  display: grid;
+  align-content: space-between;
+  border-right: 1px solid var(--line-soft);
+}
+
+.dataPlaneHero > div:last-child {
+  border-right: 0;
+}
+
+.dataPlaneHero span {
+  color: #414b47;
+  font-size: 5px;
+  letter-spacing: .09em;
+}
+
+.dataPlaneHero strong {
+  color: #9ca7a1;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 10px;
+  font-weight: 550;
+}
+
+.dataPlaneHero strong.warning {
+  color: var(--watch);
+}
+
+.dataPlaneMain {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.dataPlaneMain > section {
+  min-height: 330px;
+  padding: 17px 18px;
+}
+
+.dataPlaneMain > section:first-child {
+  border-right: 1px solid var(--line-soft);
+}
+
+.dataPlaneSubhead {
+  display: grid;
+  gap: 5px;
+}
+
+.dataPlaneSubhead span {
+  color: #46514c;
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .11em;
+}
+
+.dataPlaneSubhead strong {
+  color: #9ba6a0;
+  font-size: 8px;
+}
+
+.dataPlaneChecks {
+  margin-top: 18px;
+  display: grid;
+}
+
+.dataPlaneChecks > div {
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: 10px minmax(0,1fr) 76px;
+  gap: 9px;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.dataPlaneChecks > div:last-child {
+  border-bottom: 0;
+}
+
+.dataPlaneChecks i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+.dataPlaneChecks .ready i {
+  background: var(--edge);
+}
+
+.dataPlaneChecks span {
+  color: #6c7771;
+  font-size: 6px;
+  letter-spacing: .05em;
+}
+
+.dataPlaneChecks b {
+  color: var(--danger);
+  font-size: 5px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.dataPlaneChecks .ready b {
+  color: var(--edge);
+}
+
+.dataPlaneClock {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid var(--line-soft);
+  border-left: 1px solid var(--line-soft);
+}
+
+.dataPlaneClock > div {
+  min-height: 72px;
+  padding: 10px;
+  display: grid;
+  align-content: space-between;
+  border-right: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.dataPlaneClock span,
+.dataPlaneStorageMessage span {
+  color: #414b47;
+  font-size: 5px;
+  letter-spacing: .08em;
+}
+
+.dataPlaneClock strong {
+  color: #7d8982;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 6px;
+  font-weight: 550;
+}
+
+.dataPlaneClock small {
+  grid-column: 1 / -1;
+  padding-top: 8px;
+  color: #4e5954;
+  font-size: 5px;
+}
+
+.dataPlaneStorageMessage {
+  margin-top: 18px;
+  min-height: 82px;
+  padding: 11px;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  border: 1px solid var(--line-soft);
+  background: rgba(255,255,255,.002);
+}
+
+.dataPlaneStorageMessage p {
+  margin: 0;
+  color: #69746e;
+  font-size: 6px;
+  line-height: 1.5;
+}
+
+.dataPlaneBlockers {
+  min-height: 150px;
+  padding: 17px 18px;
+  display: grid;
+  grid-template-columns: 190px minmax(0,1fr);
+  gap: 20px;
+  border-bottom: 1px solid var(--line-soft);
+  background: rgba(191,162,105,.006);
+}
+
+.dataPlaneBlockers > div:first-child {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+}
+
+.dataPlaneBlockers > div:first-child span {
+  color: #776a4e;
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+
+.dataPlaneBlockers > div:first-child strong {
+  color: #a29475;
+  font-size: 8px;
+}
+
+.dataPlaneBlockers > div:last-child {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 8px;
+}
+
+.dataPlaneBlockers article {
+  min-height: 56px;
+  padding: 9px;
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 7px;
+  align-items: center;
+  border: 1px solid rgba(191,162,105,.11);
+}
+
+.dataPlaneBlockers article span {
+  color: #6b6049;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 5px;
+}
+
+.dataPlaneBlockers article p {
+  margin: 0;
+  color: #665f51;
+  font-size: 6px;
+  line-height: 1.45;
+}
+
+.dataPlaneMethod {
+  min-height: 58px;
+  padding: 11px 18px;
+  display: grid;
+  grid-template-columns: 105px minmax(0,1fr) auto;
+  gap: 18px;
+  align-items: center;
+  background: rgba(191,162,105,.008);
+}
+
+.dataPlaneMethod > span {
+  color: var(--watch);
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+
+.dataPlaneMethod p {
+  margin: 0;
+  color: #56615c;
+  font-size: 6px;
+  line-height: 1.5;
+}
+
+.dataPlaneMethod code {
+  color: #46514c;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 5px;
+}
+
+@media (max-width: 900px) {
+  .dataPlaneHero {
+    grid-template-columns: repeat(2,1fr);
+  }
+
+  .dataPlaneHero > div:nth-child(even) {
+    border-right: 0;
+  }
+
+  .dataPlaneMain {
+    grid-template-columns: 1fr;
+  }
+
+  .dataPlaneMain > section:first-child {
+    border-right: 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .dataPlaneBlockers {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .dataPlaneHead {
+    min-height: auto;
+    padding: 13px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dataPlaneMain > section,
+  .dataPlaneBlockers,
+  .dataPlaneMethod {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .dataPlaneClock,
+  .dataPlaneBlockers > div:last-child {
+    grid-template-columns: 1fr;
+  }
+
+  .dataPlaneMethod {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .dataPlaneMethod code {
+    display: none;
+  }
+}
