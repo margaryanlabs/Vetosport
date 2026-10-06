@@ -8998,3 +8998,107 @@ body::before {
     display: none;
   }
 }
+
+/* =========================================================
+   MODEL COUNCIL V2 / LINEAGE-AWARE CONSENSUS
+   ========================================================= */
+
+.councilNodeMeta {
+  margin-top: 9px;
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 5px;
+}
+
+.councilNodeMeta > span {
+  min-height: 28px;
+  padding: 5px 6px;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  border: 1px solid var(--line-soft);
+  color: #404b46;
+  font-size: 4px;
+  letter-spacing: .08em;
+}
+
+.councilNodeMeta b {
+  color: #7d8983;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 6px;
+  font-weight: 550;
+}
+
+.councilLineageRail {
+  min-height: 78px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(100px,.65fr)) minmax(210px,1.35fr);
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  background: rgba(255,255,255,.002);
+}
+
+.councilLineageRail > div {
+  padding: 12px 14px;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  border-right: 1px solid var(--line-soft);
+}
+
+.councilLineageRail > div:last-child {
+  border-right: 0;
+}
+
+.councilLineageRail span {
+  color: #414b47;
+  font-size: 5px;
+  letter-spacing: .09em;
+}
+
+.councilLineageRail strong {
+  color: #9ea9a3;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 10px;
+  font-weight: 550;
+}
+
+.councilLineageRail strong em {
+  color: #4d5853;
+  font-size: 6px;
+  font-style: normal;
+}
+
+.councilDependency strong {
+  font-size: 8px;
+}
+
+.councilDependency small {
+  color: #53605a;
+  font-size: 5px;
+}
+
+@media (max-width: 980px) {
+  .councilLineageRail {
+    grid-template-columns: repeat(2,1fr);
+  }
+
+  .councilLineageRail > div:nth-child(even) {
+    border-right: 0;
+  }
+
+  .councilDependency {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--line-soft);
+  }
+}
+
+@media (max-width: 620px) {
+  .councilLineageRail {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .councilNodeMeta {
+    grid-template-columns: 1fr;
+  }
+}
