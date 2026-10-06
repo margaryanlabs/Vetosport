@@ -29,7 +29,7 @@ const fuse=(field:string,rows:SensorObservation[]):FusedField=>{
   const freshness=reps.reduce((s,r)=>s+clamp(1-r.sourceAgeMs/15000),0)/reps.length;
   const reliability=reps.reduce((s,r)=>s+r.providerReliability,0)/reps.length;
   const confidence=clamp(.34*(1-disagreement)+.24*freshness+.22*reliability+.20*clamp(reps.length/3));
-  const status:FusedField["status"]=disagreement>=.34?"CONFLICT":confidence<.58?"DEGRADED":"HEALTHY";
+  const status:FusedField["status"]=disagreement>=.28?"CONFLICT":confidence<.58?"DEGRADED":"HEALTHY";
   return{field,value:best.value,confidence,independentGroups:reps.length,observations:rows.length,disagreement,freshness,status};
 };
 
