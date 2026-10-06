@@ -77,7 +77,7 @@ export function LiveCommandCenter({
       </div>
 
       <div className="liveCommandFilter">
-        {(["all", "football", "basketball", "tennis"] as const).map((item) => (
+        {(["all", "football", "basketball", "tennis", "hockey"] as const).map((item) => (
           <button
             className={filter === item ? "active" : ""}
             key={item}
