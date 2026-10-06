@@ -10,6 +10,7 @@ export const evaluateDecisionBoundary=(e:DecisionEvidence):DecisionBoundaryResul
     {id:"calibration",label:"Calibration family active",passed:!e.calibrationKill,hard:true,detail:e.calibrationKill?"Family calibration kill-switch is active.":"Calibration family is active."},
     {id:"censoring",label:"Availability bias acceptable",passed:!e.censoringBlock,hard:true,detail:e.censoringBlock?"Suspension censoring invalidates tradability evidence.":"No censoring hard block."},
     {id:"conformal",label:"Conformal uncertainty acceptable",passed:!e.conformalBlock,hard:true,detail:e.conformalBlock?"Adaptive conformal envelope requires abstention.":"Conformal uncertainty is within authority bounds."},
+    {id:"regime-coherence",label:"Signal regime is current",passed:e.regimeCoherent,hard:true,detail:e.regimeCoherent?"Signal snapshot matches governed regime.":"Signal was computed on a stale regime snapshot."},
     {id:"ood",label:"In distribution",passed:!e.outOfDistribution,hard:true,detail:e.outOfDistribution?"State is out-of-distribution.":"State is within monitored support."},
     {id:"capacity",label:"Non-zero market capacity",passed:e.capacityClass!=="ZERO"&&e.capacityScore>=.38,hard:true,detail:`${e.capacityClass} · capacity ${(e.capacityScore*100).toFixed(0)}%`},
     {id:"gap",label:"Robust gap survives",passed:e.robustGapPp>=1.25,hard:false,detail:`${e.robustGapPp.toFixed(2)} pp robust gap.`},
@@ -20,6 +21,7 @@ export const evaluateDecisionBoundary=(e:DecisionEvidence):DecisionBoundaryResul
     {id:"freshness",label:"Quote freshness",passed:e.quoteFreshness>=.6,hard:false,detail:`${(e.quoteFreshness*100).toFixed(0)}% freshness.`},
     {id:"survival",label:"Execution survival",passed:e.executionSurvival>=.42,hard:false,detail:`${(e.executionSurvival*100).toFixed(0)}% expected survival.`},
     {id:"uncertainty",label:"Uncertainty controlled",passed:e.uncertaintyWidthPp<=8,hard:false,detail:`${e.uncertaintyWidthPp.toFixed(1)} pp interval width.`},
+    {id:"transition-resilience",label:"Model resilient to transition hazard",passed:e.transitionHazard<.56||e.modelAdaptationSpeed>=.70,hard:false,detail:`hazard ${(e.transitionHazard*100).toFixed(0)}% · adaptation ${(e.modelAdaptationSpeed*100).toFixed(0)}%`},
   ];
 
   const hardFailures=checks.filter(x=>x.hard&&!x.passed);
@@ -38,19 +40,24 @@ export const evaluateDecisionBoundary=(e:DecisionEvidence):DecisionBoundaryResul
 
   const uncertaintyPenalty=clamp(e.uncertaintyWidthPp/12);
   const gapSupport=clamp(e.robustGapPp/6);
+  const transitionPenalty=clamp(e.transitionHazard*(1-e.modelAdaptationSpeed));
 
   const evidenceMargin=clamp(
     .38*quality+
     .22*softPass+
     .22*gapSupport+
-    .18*(1-uncertaintyPenalty)
+    .18*(1-uncertaintyPenalty)-
+    .10*transitionPenalty
   );
 
   const blockers=hardFailures.map(x=>x.detail);
   const warnings=checks.filter(x=>!x.hard&&!x.passed).map(x=>x.detail);
+  const transitionAuthorityCap=
+    e.transitionHazard>=.76&&e.modelAdaptationSpeed<.55;
 
   const decision:DecisionBoundaryResult["decision"]=
     hardFailures.length?"ABSTAIN":
+    transitionAuthorityCap?"WATCH":
     evidenceMargin>=.68&&softPass>=.78?"SHADOW_CANDIDATE":
     "WATCH";
 
