@@ -65,3 +65,30 @@ export const calibrationBuckets = (
     };
   });
 };
+
+
+export const expectedCalibrationError = (
+  rows: PredictionOutcome[],
+  bucketCount = 10,
+) => {
+  if (rows.length === 0) return 0;
+
+  const buckets = calibrationBuckets(rows, bucketCount);
+  return buckets.reduce(
+    (sum, bucket) =>
+      sum + (bucket.count / rows.length) * Math.abs(bucket.gap),
+    0,
+  );
+};
+
+export const maximumCalibrationError = (
+  rows: PredictionOutcome[],
+  bucketCount = 10,
+) => {
+  const populated = calibrationBuckets(rows, bucketCount).filter(
+    (bucket) => bucket.count > 0,
+  );
+  return populated.length === 0
+    ? 0
+    : Math.max(...populated.map((bucket) => Math.abs(bucket.gap)));
+};
