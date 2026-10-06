@@ -1,7 +1,7 @@
 import type { ConformalEnvelope, ConformalEnvelopeInput, ConformalResidual } from "@/lib/conformal/types";
 
 const clamp=(v:number,min=0,max=1)=>Math.min(max,Math.max(min,v));
-const score=(row:ConformalResidual)=>Math.abs(clamp(row.predicted)-row.outcome);
+const score=(row:ConformalResidual)=>Math.abs(clamp(row.predicted)-clamp(row.referenceProbability));
 
 const conformalQuantile=(scores:number[],alpha:number)=>{
   if(!scores.length)return 1;
