@@ -8,9 +8,9 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as SportRepriceRequest;
 
-    if (!body || !["football", "basketball", "tennis"].includes(body.sport)) {
+    if (!body || !["football", "basketball", "tennis", "hockey"].includes(body.sport)) {
       return NextResponse.json(
-        { error: "sport must be football, basketball, or tennis" },
+        { error: "sport must be football, basketball, tennis, or hockey" },
         { status: 400 },
       );
     }
