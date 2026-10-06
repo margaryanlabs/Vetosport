@@ -4,6 +4,7 @@ import { getPersistence } from "@/lib/persistence/factory";
 import { getTheOddsApiClient } from "@/lib/providers/factory";
 import { sportFromOddsApiKey } from "@/lib/providers/sport-map";
 import type { IngestionRunSummary } from "./types";
+import { journalizeMarketQuotes } from "@/lib/data-plane/journalize";
 
 export const ingestOddsSport = async (input: {
   sportKey: string;
@@ -64,6 +65,15 @@ export const ingestOddsSport = async (input: {
     }
 
     const quotes = client.normalizeQuotes(externalEvent);
+    await persistence.appendTruthJournal(
+      journalizeMarketQuotes({
+        canonicalEventId: persistedEventId,
+        sourceProvider: client.id,
+        gatewayReceivedAt: envelope.receivedAt,
+        acquisitionMode: "LIVE",
+        quotes,
+      }),
+    );
     quotesSeen += await persistence.appendQuotes(persistedEventId, quotes);
   }
 
