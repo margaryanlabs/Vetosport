@@ -7610,3 +7610,514 @@ body::before {
     border-bottom: 0;
   }
 }
+
+/* =========================================================
+   PARALLAX II / TEMPORAL MARKET RESPONSE
+   ========================================================= */
+
+.parallaxSurface {
+  margin-bottom: 26px;
+}
+
+.parallaxWorldStates > div {
+  grid-template-columns: 42px minmax(0,1fr) 52px;
+}
+
+.parallaxWorldStates i b {
+  min-width: 3px;
+}
+
+.parallaxResidualNode span,
+.parallaxResidualNode b {
+  font-size: 6px;
+}
+
+.temporalLab {
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  background:
+    linear-gradient(180deg, rgba(91,227,162,.012), transparent 26%),
+    rgba(255,255,255,.002);
+}
+
+.temporalLabHead {
+  min-height: 62px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.temporalLabHead > div:first-child {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.temporalLabHead h3 {
+  margin: 0;
+  color: #dfe6e2;
+  font-size: 9px;
+  letter-spacing: .14em;
+}
+
+.temporalLabHead p {
+  margin: 4px 0 0;
+  color: #4c5752;
+  font-size: 7px;
+}
+
+.temporalWarning {
+  color: #76684b;
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+
+.temporalSummary {
+  display: grid;
+  grid-template-columns: repeat(5,1fr);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.temporalSummary > div {
+  min-height: 88px;
+  padding: 13px 15px;
+  display: grid;
+  align-content: space-between;
+  border-right: 1px solid var(--line-soft);
+}
+
+.temporalSummary > div:last-child {
+  border-right: 0;
+}
+
+.temporalSummary span {
+  color: #414b47;
+  font-size: 5px;
+  letter-spacing: .1em;
+}
+
+.temporalSummary strong {
+  color: #aeb8b3;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 15px;
+  font-weight: 540;
+}
+
+.temporalTrace {
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.temporalTraceHead {
+  min-height: 48px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.temporalTraceHead > span {
+  color: #4e5954;
+  font-size: 6px;
+  font-weight: 850;
+  letter-spacing: .11em;
+}
+
+.temporalTraceHead > small {
+  color: #65716b;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 6px;
+}
+
+.temporalTraceRows {
+  display: grid;
+}
+
+.temporalTraceRow {
+  min-height: 86px;
+  padding: 10px 18px;
+  display: grid;
+  grid-template-columns: 120px minmax(260px,1fr) 150px;
+  gap: 18px;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.temporalTraceRow:last-child {
+  border-bottom: 0;
+}
+
+.temporalTraceIdentity {
+  display: grid;
+  gap: 7px;
+}
+
+.temporalTraceIdentity strong {
+  color: #a7b1ac;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 8px;
+  font-weight: 560;
+}
+
+.temporalTraceIdentity span {
+  width: max-content;
+  font-size: 5px;
+  font-weight: 900;
+  letter-spacing: .09em;
+}
+
+.temporalTraceIdentity span.leader { color: var(--edge); }
+.temporalTraceIdentity span.fast { color: #79a28f; }
+.temporalTraceIdentity span.follower { color: #7b8781; }
+.temporalTraceIdentity span.stale { color: var(--watch); }
+.temporalTraceIdentity span.no-signal { color: var(--danger); }
+
+.temporalTracePlot {
+  position: relative;
+  height: 56px;
+  border-left: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  background:
+    linear-gradient(to right, rgba(255,255,255,.02) 1px, transparent 1px);
+  background-size: 20% 100%;
+}
+
+.temporalTargetLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 10%;
+  height: 1px;
+  background: rgba(91,227,162,.14);
+}
+
+.temporalTracePlot b {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  margin-bottom: -3px;
+  border-radius: 50%;
+  background: var(--edge);
+  box-shadow: 0 0 0 2px #08100c;
+}
+
+.temporalTracePlot b.nonExecutable {
+  background: var(--watch);
+}
+
+.temporalTracePlot b.suspended {
+  background: var(--danger);
+  box-shadow: 0 0 0 2px #08100c, 0 0 8px rgba(227,102,110,.16);
+}
+
+.temporalTraceMeta {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.temporalTraceMeta span {
+  display: grid;
+  gap: 4px;
+  color: #414b47;
+  font-size: 5px;
+  letter-spacing: .08em;
+}
+
+.temporalTraceMeta b {
+  color: #76827c;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 6px;
+  font-weight: 550;
+}
+
+.temporalLower {
+  display: grid;
+  grid-template-columns: minmax(300px,.65fr) minmax(0,1.35fr);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.temporalGraph,
+.temporalFingerprints {
+  min-height: 282px;
+  padding: 17px 18px;
+}
+
+.temporalGraph {
+  border-right: 1px solid var(--line-soft);
+}
+
+.temporalSubhead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.temporalSubhead > div {
+  display: grid;
+  gap: 5px;
+}
+
+.temporalSubhead span {
+  color: #46514c;
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .12em;
+}
+
+.temporalSubhead strong {
+  color: #a2ada7;
+  font-size: 8px;
+}
+
+.temporalSubhead small {
+  color: #414b47;
+  font-size: 5px;
+  letter-spacing: .07em;
+}
+
+.temporalLeaderCore {
+  margin-top: 31px;
+  display: grid;
+  gap: 24px;
+}
+
+.temporalLeaderNode {
+  width: 152px;
+  min-height: 82px;
+  padding: 12px;
+  display: grid;
+  align-content: center;
+  gap: 7px;
+  border: 1px solid rgba(91,227,162,.16);
+  background: rgba(91,227,162,.02);
+}
+
+.temporalLeaderNode > span {
+  color: var(--edge);
+  font-size: 5px;
+  font-weight: 900;
+  letter-spacing: .11em;
+}
+
+.temporalLeaderNode > strong {
+  color: #c7d0cb;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  font-weight: 560;
+}
+
+.temporalLeaderNode > small {
+  color: #52605a;
+  font-size: 5px;
+}
+
+.temporalEdges {
+  display: grid;
+  gap: 9px;
+}
+
+.temporalEdges > div {
+  min-height: 30px;
+  display: grid;
+  grid-template-columns: minmax(80px,1fr) 58px 70px;
+  gap: 10px;
+  align-items: center;
+}
+
+.temporalEdges i {
+  height: 1px;
+  background: linear-gradient(90deg, var(--edge), rgba(91,227,162,.08));
+}
+
+.temporalEdges span,
+.temporalEdges strong {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 6px;
+}
+
+.temporalEdges span {
+  color: #5c6862;
+}
+
+.temporalEdges strong {
+  color: #89958f;
+  text-align: right;
+}
+
+.temporalFingerprintTable {
+  margin-top: 20px;
+  overflow-x: auto;
+}
+
+.temporalFingerprintHead,
+.temporalFingerprintRow {
+  min-width: 720px;
+  min-height: 45px;
+  padding: 0 8px;
+  display: grid;
+  grid-template-columns: 70px 70px 62px 70px 90px 72px 55px 55px;
+  gap: 9px;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.temporalFingerprintHead {
+  min-height: 30px;
+  color: #3e4844;
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .08em;
+}
+
+.temporalFingerprintRow:last-child {
+  border-bottom: 0;
+}
+
+.temporalFingerprintRow > strong {
+  color: #99a49e;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 7px;
+  font-weight: 560;
+}
+
+.temporalFingerprintRow > em {
+  font-size: 5px;
+  font-style: normal;
+  font-weight: 850;
+  letter-spacing: .07em;
+}
+
+.temporalFingerprintRow > em.leader { color: var(--edge); }
+.temporalFingerprintRow > em.fast { color: #79a28f; }
+.temporalFingerprintRow > em.follower { color: #77837d; }
+.temporalFingerprintRow > em.stale { color: var(--watch); }
+.temporalFingerprintRow > em.no-signal { color: var(--danger); }
+
+.temporalFingerprintRow > span {
+  color: #65716b;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 6px;
+}
+
+.temporalMethod {
+  min-height: 58px;
+  padding: 11px 18px;
+  display: grid;
+  grid-template-columns: 105px minmax(0,1fr) auto;
+  gap: 18px;
+  align-items: center;
+  background: rgba(191,162,105,.01);
+}
+
+.temporalMethod > span {
+  color: var(--watch);
+  font-size: 5px;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+
+.temporalMethod p {
+  margin: 0;
+  color: #56615c;
+  font-size: 6px;
+  line-height: 1.5;
+}
+
+.temporalMethod code {
+  color: #46514c;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 5px;
+}
+
+@media (max-width: 980px) {
+  .temporalSummary {
+    grid-template-columns: repeat(2,1fr);
+  }
+
+  .temporalSummary > div:nth-child(even) {
+    border-right: 0;
+  }
+
+  .temporalSummary > div:last-child {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  .temporalTraceRow {
+    grid-template-columns: 105px minmax(240px,1fr);
+  }
+
+  .temporalTraceMeta {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .temporalLower {
+    grid-template-columns: 1fr;
+  }
+
+  .temporalGraph {
+    border-right: 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+}
+
+@media (max-width: 680px) {
+  .temporalLabHead {
+    min-height: auto;
+    padding: 13px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .temporalSummary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .temporalSummary > div {
+    min-height: 72px;
+  }
+
+  .temporalTraceHead,
+  .temporalTraceRow {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .temporalTraceRow {
+    min-height: 116px;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .temporalTracePlot {
+    height: 48px;
+  }
+
+  .temporalTraceMeta {
+    grid-column: auto;
+  }
+
+  .temporalGraph,
+  .temporalFingerprints {
+    min-height: auto;
+    padding: 15px 14px;
+  }
+
+  .temporalMethod {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .temporalMethod code {
+    display: none;
+  }
+}
