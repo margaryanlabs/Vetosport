@@ -16,6 +16,7 @@ import { runContractSemanticsSelfCheck } from "@/lib/contracts/selfcheck";
 import { runDataPlaneSelfCheck } from "@/lib/data-plane/selfcheck";
 import { runSensorIntegritySelfCheck } from "@/lib/integrity/selfcheck";
 import { runVoiSelfCheck } from "@/lib/voi/selfcheck";
+import { runCapacitySelfCheck } from "@/lib/capacity/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -99,6 +100,10 @@ export function GET() {
     valueOfInformation: {
       model: "veto.voi.router.v1",
       ...runVoiSelfCheck(),
+    },
+    marketCapacity: {
+      model: "veto.capacity.tradability.v1",
+      ...runCapacitySelfCheck(),
     },
   };
 
