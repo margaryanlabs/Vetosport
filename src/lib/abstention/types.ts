@@ -20,6 +20,7 @@ export interface DecisionEvidence {
   leakageBlock:boolean;
   calibrationKill:boolean;
   censoringBlock:boolean;
+  conformalBlock:boolean;
   outOfDistribution:boolean;
 }
 
