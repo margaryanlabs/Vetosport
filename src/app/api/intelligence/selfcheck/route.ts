@@ -12,6 +12,7 @@ import { runCouncilSelfCheck } from "@/lib/council/selfcheck";
 import { runAlphaMemorySelfCheck } from "@/lib/alpha/selfcheck";
 import { runExperimentLedgerSelfCheck } from "@/lib/research/selfcheck";
 import { runTruthPlaneSelfCheck } from "@/lib/truth/selfcheck";
+import { runContractSemanticsSelfCheck } from "@/lib/contracts/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +80,10 @@ export function GET() {
     truthPlane: {
       model: "veto.truth.bitemporal.v1",
       ...runTruthPlaneSelfCheck(),
+    },
+    contractSemantics: {
+      model: "veto.contracts.semantics.v1",
+      ...runContractSemanticsSelfCheck(),
     },
   };
 
