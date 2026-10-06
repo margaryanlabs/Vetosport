@@ -1,6 +1,6 @@
 "use client";
 
-import type { Locale } from "@/lib/domain/types";
+import type { Locale, Sport } from "@/lib/domain/types";
 import {
   evaluateModelPromotion,
   type ModelValidationSummary,
@@ -10,7 +10,25 @@ import {
   sandboxWalkForward,
 } from "@/lib/sandbox/backtest";
 
-export function ModelGovernancePanel({ locale }: { locale: Locale }) {
+export function ModelGovernancePanel({
+  locale,
+  sport = "football",
+  modelVersion = "football.goal-state.v1",
+}: {
+  locale: Locale;
+  sport?: Sport;
+  modelVersion?: string;
+}) {
+  if (sport !== "football") {
+    return (
+      <SpecialistModelControl
+        locale={locale}
+        sport={sport}
+        modelVersion={modelVersion}
+      />
+    );
+  }
+
   const metrics = sandboxBacktestReport.metrics;
 
   const champion: ModelValidationSummary = {
@@ -139,5 +157,76 @@ function ModelLine({
         <strong>{model.sampleRows}</strong>
       </div>
     </article>
+  );
+}
+
+
+function SpecialistModelControl({
+  locale,
+  sport,
+  modelVersion,
+}: {
+  locale: Locale;
+  sport: Sport;
+  modelVersion: string;
+}) {
+  const label = sport === "basketball" ? "BASKETBALL" : "TENNIS";
+  const checks = [
+    { label: "engine invariants", status: "PASS", detail: "Core mathematical self-check is green." },
+    { label: "historical sample", status: "BLOCK", detail: "No production-grade settled sample loaded." },
+    { label: "closing line", status: "BLOCK", detail: "Closing benchmark is not available yet." },
+    { label: "walk-forward", status: "BLOCK", detail: "No out-of-sample windows can be produced yet." },
+    { label: "calibration", status: "BLOCK", detail: "Calibration requires real historical outcomes." },
+  ];
+
+  const blockedCopy =
+    locale === "ru"
+      ? "Новая модель не может стать champion без реальной истории."
+      : locale === "hy"
+        ? "Նոր մոդելը չի կարող դառնալ champion առանց իրական պատմական տվյալների։"
+        : "A new model cannot become champion without real historical evidence.";
+
+  return (
+    <section className="governanceSurface specialistGovernanceSurface">
+      <div className="governanceSurfaceHead">
+        <div>
+          <span className="panelIndex">13</span>
+          <div>
+            <h2>{label} MODEL CONTROL</h2>
+            <p>Promotion authority · evidence before deployment</p>
+          </div>
+        </div>
+        <span className="governanceSandbox">NO CHAMPION YET</span>
+      </div>
+
+      <div className="specialistGovernanceHero">
+        <div>
+          <span>CANDIDATE</span>
+          <strong>{modelVersion}</strong>
+        </div>
+        <div className="governanceGate">
+          <span>AUTHORIZE</span>
+          <strong>20</strong>
+          <em className="reject">REJECT</em>
+          <p>{blockedCopy}</p>
+        </div>
+        <div>
+          <span>CHAMPION</span>
+          <strong>NOT ASSIGNED</strong>
+        </div>
+      </div>
+
+      <div className="governanceCheckRail">
+        {checks.map((check, index) => (
+          <div className="governanceCheckLine" key={check.label}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <i className={check.status === "PASS" ? "pass" : "fail"} />
+            <strong>{check.label}</strong>
+            <p>{check.detail}</p>
+            <b className={check.status === "PASS" ? "positive" : "negative"}>{check.status}</b>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
