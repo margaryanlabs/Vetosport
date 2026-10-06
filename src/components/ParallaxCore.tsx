@@ -24,6 +24,7 @@ import { AbstentionBoundaryPanel } from "@/components/AbstentionBoundaryPanel";
 import { RegimeChangePanel } from "@/components/RegimeChangePanel";
 import { RegimeAttributionPanel } from "@/components/RegimeAttributionPanel";
 import { RegimeExpertRouterPanel } from "@/components/RegimeExpertRouterPanel";
+import { ConformalUncertaintyPanel } from "@/components/ConformalUncertaintyPanel";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) =>
@@ -439,6 +440,7 @@ export function ParallaxCore({ locale }: { locale: Locale }) {
       <RegimeChangePanel locale={locale} />
       <RegimeAttributionPanel locale={locale} />
       <RegimeExpertRouterPanel locale={locale} />
+      <ConformalUncertaintyPanel locale={locale} />
 
       <div className="parallaxCounterfactuals">
         <div className="parallaxCounterHead">
