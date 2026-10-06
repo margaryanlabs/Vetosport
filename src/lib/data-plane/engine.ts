@@ -127,7 +127,10 @@ export const buildDataPlaneReplay = <T>(
     if (record.correctionOf) {
       return corrections.get(record.correctionOf)?.id === record.id;
     }
-    return !replacedIds.has(record.id);
+    return (
+      !replacedIds.has(record.id) &&
+      !replacedIds.has(record.recordHash)
+    );
   });
 
   const excludedFutureCount = eventRows.filter(
