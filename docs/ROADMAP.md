@@ -109,3 +109,23 @@ No market may be presented as real live intelligence until:
 ## Current infrastructure note
 
 GitHub Actions is configured for install, type-check and production build. At the moment GitHub is refusing to start jobs because the linked account is locked for a billing issue, so CI cannot yet validate the branch.
+
+
+## Historical validation layer (built foundation)
+
+- [x] leakage guard
+- [x] ROI / yield / drawdown metrics
+- [x] Brier / log-loss / ECE / maximum calibration error
+- [x] raw entry-market and closing-market benchmarks
+- [x] odds CLV + probability CLV
+- [x] segmentation by market / competition / odds band
+- [x] walk-forward validation
+- [x] synthetic Backtest Lab UI with explicit warning
+- [x] cost-gated The Odds API historical snapshot importer
+- [x] historical Sportmonks football results importer
+- [x] half-win / half-loss settlement support
+- [x] deterministic football settlement worker
+- [x] replay-ready SQL view with model lineage and exact market semantics
+- [ ] first real historical dataset import
+- [ ] first out-of-sample calibrated football.goal-state report
+- [ ] champion/challenger promotion gate
