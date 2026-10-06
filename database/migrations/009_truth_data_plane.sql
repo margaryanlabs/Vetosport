@@ -41,7 +41,7 @@ create table if not exists truth_journal (
   created_at timestamptz not null default clock_timestamp(),
 
   check (source_emitted_at <= gateway_received_at + make_interval(secs => 10)),
-  check (gateway_received_at <= normalized_at + make_interval(secs => 10))
+  check (normalized_at >= gateway_received_at)
 );
 
 create index if not exists truth_journal_event_receive_idx
