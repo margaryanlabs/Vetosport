@@ -22,6 +22,7 @@ import { runLeakageSelfCheck } from "@/lib/leakage/selfcheck";
 import { runDiscoveryControlSelfCheck } from "@/lib/discovery/selfcheck";
 import { runCalibrationDriftSelfCheck } from "@/lib/calibration/selfcheck";
 import { runSuspensionCensoringSelfCheck } from "@/lib/censoring/selfcheck";
+import { runAbstentionSelfCheck } from "@/lib/abstention/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -129,6 +130,10 @@ export function GET() {
     suspensionCensoring: {
       model: "veto.suspension.censoring.v1",
       ...runSuspensionCensoringSelfCheck(),
+    },
+    abstentionBoundary: {
+      model: "veto.abstention.boundary.v1",
+      ...runAbstentionSelfCheck(),
     },
   };
 
