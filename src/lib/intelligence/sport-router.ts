@@ -7,6 +7,8 @@ import type { TennisStateInput } from "@/lib/models/tennis/engine";
 import { buildTennisPointState, priceTennisMarket } from "@/lib/models/tennis/engine";
 import type { HockeyStateInput } from "@/lib/models/hockey/engine";
 import { buildHockeySurface, priceHockeyMarket } from "@/lib/models/hockey/engine";
+import type { BaseballStateInput } from "@/lib/models/baseball/engine";
+import { buildBaseballSurface, priceBaseballMarket } from "@/lib/models/baseball/engine";
 
 export type SportRepriceRequest =
   | {
@@ -34,6 +36,12 @@ export type SportRepriceRequest =
   | {
       sport: "hockey";
       state: HockeyStateInput;
+      marketOdds?: Record<string, number>;
+      totalLines?: number[];
+    }
+  | {
+      sport: "baseball";
+      state: BaseballStateInput;
       marketOdds?: Record<string, number>;
       totalLines?: number[];
     };
@@ -133,39 +141,82 @@ export const repriceSport = (request: SportRepriceRequest) => {
     };
   }
 
-  const surface = buildHockeySurface(request.state);
-  const totalLines = request.totalLines ?? [5.5, 6.5, 7.5];
+  if (request.sport === "hockey") {
+    const surface = buildHockeySurface(request.state);
+    const totalLines = request.totalLines ?? [5.5, 6.5, 7.5];
+
+    return {
+      sport: request.sport,
+      model: "hockey.shift-goalie.v1",
+      version: "0.1.0",
+      generatedAt,
+      researchWarning:
+        "Hockey manpower and empty-net modifiers are research priors until calibrated on historical shift-level data.",
+      surface: {
+        remainingGoals: surface.remainingGoals,
+        regulation: {
+          home: priceHockeyMarket(
+            surface.regulation.homeWin,
+            request.marketOdds?.["reg-home"],
+          ),
+          tie: priceHockeyMarket(
+            surface.regulation.tie,
+            request.marketOdds?.["reg-tie"],
+          ),
+          away: priceHockeyMarket(
+            surface.regulation.awayWin,
+            request.marketOdds?.["reg-away"],
+          ),
+        },
+        totals: totalLines.map((line) => ({
+          line,
+          under: priceHockeyMarket(
+            surface.totalUnder(line),
+            request.marketOdds?.[`total-under-${line}`],
+          ),
+          over: priceHockeyMarket(
+            surface.totalOver(line),
+            request.marketOdds?.[`total-over-${line}`],
+          ),
+        })),
+      },
+    };
+  }
+
+  const surface = buildBaseballSurface(request.state);
+  const totalLines = request.totalLines ?? [8.5, 9.5, 10.5];
 
   return {
     sport: request.sport,
-    model: "hockey.shift-goalie.v1",
+    model: "baseball.inning-state.v1",
     version: "0.1.0",
     generatedAt,
     researchWarning:
-      "Hockey manpower and empty-net modifiers are research priors until calibrated on historical shift-level data.",
+      "Base/out run expectancy, bullpen and park modifiers are research priors until calibrated on pitch-level history.",
     surface: {
-      remainingGoals: surface.remainingGoals,
-      regulation: {
-        home: priceHockeyMarket(
-          surface.regulation.homeWin,
-          request.marketOdds?.["reg-home"],
+      remainingRuns: surface.remainingRuns,
+      projectedFinal: surface.projectedFinal,
+      gameAfterNine: {
+        home: priceBaseballMarket(
+          surface.game.homeWin,
+          request.marketOdds?.["after9-home"],
         ),
-        tie: priceHockeyMarket(
-          surface.regulation.tie,
-          request.marketOdds?.["reg-tie"],
+        tie: priceBaseballMarket(
+          surface.game.tieAfterNine,
+          request.marketOdds?.["after9-tie"],
         ),
-        away: priceHockeyMarket(
-          surface.regulation.awayWin,
-          request.marketOdds?.["reg-away"],
+        away: priceBaseballMarket(
+          surface.game.awayWin,
+          request.marketOdds?.["after9-away"],
         ),
       },
       totals: totalLines.map((line) => ({
         line,
-        under: priceHockeyMarket(
+        under: priceBaseballMarket(
           surface.totalUnder(line),
           request.marketOdds?.[`total-under-${line}`],
         ),
-        over: priceHockeyMarket(
+        over: priceBaseballMarket(
           surface.totalOver(line),
           request.marketOdds?.[`total-over-${line}`],
         ),
