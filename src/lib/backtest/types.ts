@@ -1,6 +1,6 @@
 import type { DecisionMode } from "@/lib/intelligence/policy";
 
-export type BacktestResult = "win" | "loss" | "push" | "void";
+export type BacktestResult = "win" | "half_win" | "push" | "half_loss" | "loss" | "void";
 
 export interface BacktestRow {
   id: string;
