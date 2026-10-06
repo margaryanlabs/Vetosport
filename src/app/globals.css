@@ -1385,3 +1385,120 @@ footer p {
   .surfaceMarketCard:nth-child(2n) { border-right: 0; }
   .surfaceExplorerFooter { flex-wrap: wrap; gap: 8px 16px; padding: 12px 15px; }
 }
+
+.deepMarketGrid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, .6fr);
+  gap: 12px;
+}
+.asianTable { overflow-x: auto; }
+.asianRow {
+  min-width: 650px;
+  min-height: 57px;
+  padding: 0 15px;
+  display: grid;
+  grid-template-columns: 1.35fr .55fr .48fr .55fr 1.35fr;
+  gap: 10px;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+}
+.asianRow:last-child { border-bottom: 0; }
+.asianHead {
+  min-height: 36px;
+  color: var(--muted-2);
+  font-size: 6px;
+  letter-spacing: .09em;
+}
+.asianHead span:nth-child(2),
+.asianHead span:nth-child(4),
+.asianHead strong { text-align: center; }
+.asianHead span:last-child { text-align: right; }
+.asianSide { display: grid; gap: 4px; }
+.asianSide.right { text-align: right; }
+.asianSide strong {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 13px;
+}
+.asianSide small {
+  color: var(--muted-2);
+  font-size: 6px;
+  letter-spacing: .03em;
+}
+.asianWinMass {
+  color: var(--muted);
+  text-align: center;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 7px;
+}
+.asianLine {
+  text-align: center;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 10px;
+}
+.asianFootnote {
+  min-height: 49px;
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border-top: 1px solid var(--line);
+}
+.asianFootnote > span {
+  flex: 0 0 auto;
+  color: var(--watch);
+  font-size: 6px;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+.asianFootnote p {
+  margin: 0;
+  color: var(--muted-2);
+  font-size: 7px;
+  line-height: 1.45;
+}
+.scorelineGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.scorelineCell {
+  min-height: 82px;
+  padding: 13px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-right: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  background: linear-gradient(145deg, rgba(255,255,255,.012), transparent);
+}
+.scorelineCell:nth-child(3n) { border-right: 0; }
+.scorelineCell:nth-last-child(-n+3) { border-bottom: 0; }
+.scorelineCell strong {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 20px;
+  letter-spacing: -.05em;
+}
+.scorelineCell strong i {
+  margin: 0 3px;
+  color: var(--muted-2);
+  font-style: normal;
+}
+.scorelineCell span {
+  color: var(--edge);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 8px;
+}
+@media (max-width: 1050px) {
+  .deepMarketGrid { grid-template-columns: 1fr; }
+  .scorelineGrid { grid-template-columns: repeat(6, 1fr); }
+  .scorelineCell:nth-child(3n) { border-right: 1px solid var(--line-soft); }
+  .scorelineCell:nth-child(6n) { border-right: 0; }
+  .scorelineCell:nth-last-child(-n+6) { border-bottom: 0; }
+}
+@media (max-width: 760px) {
+  .scorelineGrid { grid-template-columns: repeat(3, 1fr); }
+  .scorelineCell:nth-child(6n) { border-right: 1px solid var(--line-soft); }
+  .scorelineCell:nth-child(3n) { border-right: 0; }
+  .scorelineCell:nth-last-child(-n+6) { border-bottom: 1px solid var(--line-soft); }
+  .scorelineCell:nth-last-child(-n+3) { border-bottom: 0; }
+}
