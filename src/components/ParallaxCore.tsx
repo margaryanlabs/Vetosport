@@ -13,6 +13,7 @@ import { TruthPlanePanel } from "@/components/TruthPlanePanel";
 import { ContractSemanticsPanel } from "@/components/ContractSemanticsPanel";
 import { DataPlanePanel } from "@/components/DataPlanePanel";
 import { SensorIntegrityPanel } from "@/components/SensorIntegrityPanel";
+import { ValueOfInformationPanel } from "@/components/ValueOfInformationPanel";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) =>
@@ -417,6 +418,7 @@ export function ParallaxCore({ locale }: { locale: Locale }) {
       <ContractSemanticsPanel locale={locale} />
       <DataPlanePanel locale={locale} />
       <SensorIntegrityPanel locale={locale} />
+      <ValueOfInformationPanel locale={locale} />
 
       <div className="parallaxCounterfactuals">
         <div className="parallaxCounterHead">
