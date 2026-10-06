@@ -729,8 +729,16 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
       </section>
 
       <div id="validation">
-        <BacktestLab locale={locale} />
-        <ModelGovernancePanel locale={locale} />
+        <BacktestLab
+          locale={locale}
+          sport={activeWorkspace.sport}
+          modelVersion={activeWorkspace.modelVersion}
+        />
+        <ModelGovernancePanel
+          locale={locale}
+          sport={activeWorkspace.sport}
+          modelVersion={activeWorkspace.modelVersion}
+        />
       </div>
 
       <section className="integrationRail">
