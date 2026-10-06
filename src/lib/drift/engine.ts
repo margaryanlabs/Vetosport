@@ -9,8 +9,9 @@ const collect=(a:Record<string,unknown>,b:Record<string,unknown>,category:Semant
     if(JSON.stringify(before)===JSON.stringify(after))return[];
     const removed=before!==undefined&&after===undefined;
     const typeChanged=before!==undefined&&after!==undefined&&typeof before!==typeof after;
+    const schemaChanged=category==="SCHEMA"&&before!==undefined&&after!==undefined;
     const ruleCritical=category==="RULE"&&["overtimeIncluded","period","voidRule","settlementModel","pushRule"].includes(key);
-    const severity:SemanticChange["severity"]=removed||typeChanged||ruleCritical?"BREAKING":category==="ALIAS"?"WARNING":"WARNING";
+    const severity:SemanticChange["severity"]=removed||typeChanged||schemaChanged||ruleCritical?"BREAKING":"WARNING";
     return [{path:`${category.toLowerCase()}.${key}`,before,after,severity,category}];
   });
 };
