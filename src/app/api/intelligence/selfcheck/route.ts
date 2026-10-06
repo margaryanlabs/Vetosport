@@ -34,6 +34,7 @@ import { runHazardCalibrationSelfCheck } from "@/lib/hazard-calibration/selfchec
 import { runTransitionAuthoritySelfCheck } from "@/lib/transition-authority/selfcheck";
 import { runAuthorityFrontierSelfCheck } from "@/lib/authority-frontier/selfcheck";
 import { runRegimeBarrierSelfCheck } from "@/lib/regime-barrier/selfcheck";
+import { runRegimeGraphSelfCheck } from "@/lib/regime-graph/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -189,6 +190,10 @@ export function GET() {
     regimeBarrier: {
       model: "veto.regime.counterfactual-barrier.v1",
       ...runRegimeBarrierSelfCheck(),
+    },
+    regimeGraph: {
+      model: "veto.regime.transition-graph.v1",
+      ...runRegimeGraphSelfCheck(),
     },
   };
 
