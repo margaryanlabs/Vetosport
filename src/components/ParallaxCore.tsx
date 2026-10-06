@@ -20,6 +20,7 @@ import { LeakageMonitorPanel } from "@/components/LeakageMonitorPanel";
 import { DiscoveryControlPanel } from "@/components/DiscoveryControlPanel";
 import { CalibrationDriftPanel } from "@/components/CalibrationDriftPanel";
 import { SuspensionCensoringPanel } from "@/components/SuspensionCensoringPanel";
+import { AbstentionBoundaryPanel } from "@/components/AbstentionBoundaryPanel";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) =>
@@ -431,6 +432,7 @@ export function ParallaxCore({ locale }: { locale: Locale }) {
       <DiscoveryControlPanel locale={locale} />
       <CalibrationDriftPanel locale={locale} />
       <SuspensionCensoringPanel locale={locale} />
+      <AbstentionBoundaryPanel locale={locale} />
 
       <div className="parallaxCounterfactuals">
         <div className="parallaxCounterHead">
