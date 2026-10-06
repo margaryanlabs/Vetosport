@@ -25,6 +25,7 @@ import { runSuspensionCensoringSelfCheck } from "@/lib/censoring/selfcheck";
 import { runAbstentionSelfCheck } from "@/lib/abstention/selfcheck";
 import { runRegimeChangeSelfCheck } from "@/lib/regime/selfcheck";
 import { runRegimeAttributionSelfCheck } from "@/lib/regime-attribution/selfcheck";
+import { runRegimeRouterSelfCheck } from "@/lib/regime-router/selfcheck";
 
 export const dynamic = "force-dynamic";
 
@@ -144,6 +145,10 @@ export function GET() {
     regimeAttribution: {
       model: "veto.regime.attribution.v1",
       ...runRegimeAttributionSelfCheck(),
+    },
+    regimeRouter: {
+      model: "veto.regime.expert-router.v1",
+      ...runRegimeRouterSelfCheck(),
     },
   };
 
