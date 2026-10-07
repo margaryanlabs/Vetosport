@@ -11705,6 +11705,54 @@ body::before {
   opacity: .55;
 }
 
+
+.decisionLanguage {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.decisionLanguage article {
+  min-height: 80px;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.009);
+}
+.decisionLanguage article > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.decisionLanguage article i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.decisionLanguage article strong {
+  font-size: 9px;
+  letter-spacing: .12em;
+}
+.decisionLanguage article p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 1.5;
+}
+.decisionLanguage .edge {
+  border-color: rgba(142,227,188,.18);
+  background: rgba(142,227,188,.025);
+}
+.decisionLanguage .edge i { background: var(--edge); box-shadow: 0 0 10px rgba(142,227,188,.34); }
+.decisionLanguage .edge strong { color: var(--edge); }
+.decisionLanguage .watch {
+  border-color: rgba(201,169,107,.18);
+  background: rgba(201,169,107,.02);
+}
+.decisionLanguage .watch i { background: var(--watch); }
+.decisionLanguage .watch strong { color: var(--watch); }
+.decisionLanguage .pass i { background: #56616d; }
+.decisionLanguage .pass strong { color: #8b96a2; }
+
 .missionSteps {
   margin-top: 12px;
   padding: 14px 16px;
@@ -12008,7 +12056,8 @@ body::before {
   .missionHead h2 { font-size: 34px; }
   .missionHead > div:first-child > p { font-size: 12px; }
   .missionReadinessGrid,
-  .missionCards { grid-template-columns: 1fr; }
+  .missionCards,
+  .decisionLanguage { grid-template-columns: 1fr; }
   .missionCard { min-height: 160px; }
   .missionCard h3 { margin-top: 22px; }
   .missionStepsHead { align-items: flex-start; flex-direction: column; }
