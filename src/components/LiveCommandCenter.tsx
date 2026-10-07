@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { Opportunity, Sport } from "@/lib/domain/types";
+import type { Opportunity } from "@/lib/domain/types";
 import type { LiveWorkspace } from "@/lib/sandbox/workspaces";
 import { SportGlyph } from "@/components/SportGlyph";
 
