@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Exo_2, Montserrat } from "next/font/google";
 import "./globals.css";
 import "./veto-brand.css";
+import "./workspace-shell.css";
 
 const montserrat = Montserrat({
   subsets: ["latin", "cyrillic"],
