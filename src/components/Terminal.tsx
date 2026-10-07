@@ -16,7 +16,8 @@ import { ModelGovernancePanel } from "@/components/ModelGovernancePanel";
 import { LiveCommandCenter } from "@/components/LiveCommandCenter";
 import { ParallaxCore } from "@/components/ParallaxCore";
 import { SpecialistSportSurface } from "@/components/SpecialistSportSurface";
-import { VetoMark } from "@/components/VetoMark";
+import { VetoMark, VetoWordmark } from "@/components/VetoMark";
+import { SportAtmosphere } from "@/components/SportAtmosphere";
 import { ArenaNavigator, type WorkspaceView } from "@/components/ArenaNavigator";
 import { SystemStatusPanel } from "@/components/SystemStatusPanel";
 import { sandboxFootballBeforeSurface, sandboxFootballSurface } from "@/lib/sandbox/football-model";
@@ -210,10 +211,10 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
       <div className="ambient ambientTwo" />
 
       <header className="topbar">
-        <a className="brand" href="#terminal" aria-label="VETO Sport">
-          <span className="brandMark"><VetoMark size={31} /></span>
-          <span className="brandType">
-            <span className="brandWord">VETO</span>
+        <a className="brand brandCanonical" href="#terminal" aria-label="VETO Sport">
+          <span className="brandMark"><VetoMark size={34} /></span>
+          <span className="brandLockup">
+            <VetoWordmark className="brandWordmark" />
             <span className="brandSport">SPORT</span>
           </span>
           <span className="brandMode">MARKET INTELLIGENCE</span>
@@ -247,11 +248,14 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
             <span className="researchBadge">RESEARCH / SANDBOX</span>
           </div>
 
-          <div className="heroIdentity">
-            <VetoMark size={44} className="heroMark" />
-            <div>
-              <strong>VETO SPORT</strong>
-              <span>MARKET INTELLIGENCE</span>
+          <div className="heroIdentity heroIdentityCanonical">
+            <VetoMark size={54} className="heroMark" />
+            <div className="heroBrandLockup">
+              <VetoWordmark className="heroWordmark" />
+              <div>
+                <strong>SPORT</strong>
+                <span>MARKET INTELLIGENCE</span>
+              </div>
             </div>
           </div>
 
@@ -351,6 +355,8 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
         onSportChange={selectSport}
         onJump={jumpTo}
       />
+
+      <SportAtmosphere sport={activeWorkspace.sport} mode={activeView} />
 
       {activeView === "live" && (
         <div className="workspaceScene workspaceLive">
@@ -895,9 +901,10 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
 
       <footer className="signalFooter">
         <div className="footerSignalLine"><i /><span>VETO / SIGNAL SYSTEM</span></div>
-        <div className="footerBrand">
-          <VetoMark size={22} />
-          <strong>VETO SPORT</strong>
+        <div className="footerBrand footerBrandCanonical">
+          <VetoMark size={25} />
+          <VetoWordmark className="footerWordmark" />
+          <strong>SPORT</strong>
           <span>· MARGARYAN LABS</span>
         </div>
         <p>{dictionary.noGuarantee}</p>
