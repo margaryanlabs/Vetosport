@@ -13221,3 +13221,42 @@ body::before { display: none !important; }
     padding-right:14px;
   }
 }
+
+
+/* V2 table simplification */
+.eventMarketTable .marketRow {
+  min-width: 620px;
+  grid-template-columns: minmax(240px,1.8fr) .58fr .58fr .76fr .68fr;
+  gap: 12px;
+}
+.eventMarketTable .tableHead {
+  padding-left: 18px;
+  padding-right: 18px;
+}
+.eventMarketTable .dataRow {
+  padding-left: 18px;
+  padding-right: 18px;
+}
+.eventMarketTable .decision {
+  justify-self: end;
+}
+.localeSwitch button.selected {
+  background:#f3f4f6;
+  color:#0a0b0e;
+}
+
+@media (max-width: 760px) {
+  .eventMarketTable .marketRow {
+    min-width: 0;
+    grid-template-columns: minmax(0,1fr) auto auto;
+    gap: 10px;
+  }
+  .eventMarketTable .tableHead span:nth-child(2),
+  .eventMarketTable .tableHead span:nth-child(3) {
+    display:none;
+  }
+  .eventMarketTable .dataRow > span:nth-child(2),
+  .eventMarketTable .dataRow > span:nth-child(3) {
+    display:none;
+  }
+}
