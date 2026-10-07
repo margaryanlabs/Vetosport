@@ -1,0 +1,100 @@
+:root{
+  --veto-red:#ff2d2d;
+  --veto-white:#f7f7f8;
+}
+body{
+  font-family:var(--font-veto-sans),ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-feature-settings:"tnum" 1;
+}
+button,input,select,textarea{font-family:var(--font-veto-sans),ui-sans-serif,sans-serif}
+.mono,.panelIndex,.heroSignalMetrics strong,.verdictMetrics strong,.marketRow .mono,.surfaceMarketCard>strong,.backtestMetric strong{
+  font-family:var(--font-veto-tech),var(--font-veto-sans),sans-serif;
+}
+
+/* Canonical white/red VETO brand */
+.brandCanonical{gap:10px}
+.brandCanonical .brandMark{width:38px;height:38px;border:0;background:transparent}
+.brandLockup{display:flex;align-items:center;gap:7px}
+.brandWordmark{width:84px;height:auto;display:block}
+.brandCanonical .brandSport{color:#9aa0aa;font-family:var(--font-veto-tech),sans-serif;font-size:7px;font-weight:700;letter-spacing:.19em}
+.brandCanonical .brandMode{color:#666d78;font-size:7px;letter-spacing:.12em}
+.brandCanonical::after{content:"";width:20px;height:2px;background:linear-gradient(90deg,var(--veto-red),transparent);opacity:.7}
+.heroIdentityCanonical{margin:27px 0 25px;align-items:center}
+.heroIdentityCanonical .heroMark{filter:drop-shadow(0 0 24px rgba(255,45,45,.08))}
+.heroBrandLockup{display:grid;gap:8px}
+.heroWordmark{width:148px;height:auto;display:block}
+.heroBrandLockup>div{display:flex;align-items:center;gap:11px}
+.heroBrandLockup strong{color:var(--veto-white);font-family:var(--font-veto-tech),sans-serif;font-size:10px;letter-spacing:.19em}
+.heroBrandLockup span{position:relative;padding-left:12px;color:#7f858f;font-size:7px;letter-spacing:.13em}
+.heroBrandLockup span::before{content:"";position:absolute;left:0;top:50%;width:4px;height:4px;border-radius:50%;transform:translateY(-50%);background:var(--veto-red);box-shadow:0 0 10px rgba(255,45,45,.38)}
+.signalHero h1{font-family:var(--font-veto-sans),sans-serif;font-weight:720;letter-spacing:-.055em}
+.signalHero .heroCopy{font-size:15px;line-height:1.64;font-weight:450}
+.signalKicker i{background:var(--veto-red);box-shadow:0 0 10px rgba(255,45,45,.24)}
+.signalSystem .researchBadge{border-color:rgba(255,45,45,.12);color:#8e7a7c;background:rgba(255,45,45,.025)}
+
+/* Red is the signature, not a data-state color */
+.arenaDock::before{content:"";pointer-events:none;position:absolute;left:18px;right:18px;top:0;height:1px;background:linear-gradient(90deg,var(--veto-red),rgba(255,45,45,.16) 16%,transparent 38%)}
+.arenaLiveDot{background:var(--veto-red);border-color:rgba(255,45,45,.3);box-shadow:0 0 0 5px rgba(255,45,45,.05),0 0 20px rgba(255,45,45,.23)}
+.arenaPrimary nav button.active{border-color:rgba(255,255,255,.11);background:linear-gradient(135deg,rgba(255,255,255,.055),rgba(255,255,255,.018));box-shadow:inset 0 -2px 0 var(--veto-red)}
+.arenaPrimary nav button.active .arenaModeIcon{color:#fff;border-color:rgba(255,45,45,.17);background:rgba(255,45,45,.06)}
+.arenaModeCopy strong{font-size:9px;font-weight:700}
+.arenaModeCopy small{font-size:7px}
+.arenaSecondaryLabel{font-size:7px}
+.arenaSportsMenu button,.arenaTextMenu button{font-size:8px}
+.arenaSportsMenu button.active{color:#fff;border-color:rgba(255,45,45,.2);background:rgba(255,45,45,.06)}
+.arenaSportMoment svg{color:var(--veto-red)}
+.arenaSportMoment i{background:linear-gradient(90deg,var(--veto-red),transparent)}
+.heroSecondaryAction:hover{border-color:rgba(255,45,45,.22);background:rgba(255,45,45,.035)}
+.footerWordmark{width:70px;height:auto}
+.footerBrandCanonical strong{font-family:var(--font-veto-tech),sans-serif;font-size:7px;letter-spacing:.16em}
+
+/* Sport-specific atmosphere */
+.sportFx{position:sticky;top:164px;z-index:-1;height:0;pointer-events:none}
+.sportFxField{position:absolute;top:60px;right:1%;width:min(560px,44vw);height:360px;border:1px solid rgba(255,255,255,.035);border-radius:42px;opacity:.65;mask-image:linear-gradient(135deg,#000,transparent 88%)}
+.sportFxField::before,.sportFxField::after{content:"";position:absolute}
+.sportFx-football .sportFxField::before,
+.sportFx-basketball .sportFxField::after,
+.sportFx-tennis .sportFxField::after,
+.sportFx-hockey .sportFxField::after{left:50%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.035)}
+.sportFx-football .sportFxField::after,
+.sportFx-hockey .sportFxField::before{width:110px;height:110px;left:50%;top:50%;transform:translate(-50%,-50%);border:1px solid rgba(255,255,255,.04);border-radius:50%}
+.sportFx-basketball .sportFxField::before{width:150px;height:150px;left:50%;bottom:-78px;transform:translateX(-50%);border:1px solid rgba(255,255,255,.04);border-radius:50%}
+.sportFx-tennis .sportFxField::before{inset:22% 16%;border-top:1px solid rgba(255,255,255,.035);border-bottom:1px solid rgba(255,255,255,.035)}
+.sportFx-hockey .sportFxField{border-radius:48%/32%}
+.sportFxOrbit{position:absolute;border:1px solid rgba(255,45,45,.05);border-radius:50%}
+.sportFxOrbitOne{width:220px;height:220px;right:5%;top:12px;animation:sfxOrbit 12s linear infinite}
+.sportFxOrbitTwo{width:100px;height:100px;right:19%;top:92px;border-color:rgba(255,255,255,.035);animation:sfxBreath 9s ease-in-out infinite}
+.sportFxBall{position:absolute;right:11%;top:42px;color:rgba(247,247,248,.28);filter:drop-shadow(0 0 12px rgba(255,45,45,.1))}
+.sportFx-football .sportFxBall{animation:sfxFootball 5.8s ease-in-out infinite}
+.sportFx-basketball .sportFxBall{animation:sfxBasket 3.1s ease-in-out infinite}
+.sportFx-tennis .sportFxBall{animation:sfxTennis 4.2s ease-in-out infinite}
+.sportFx-hockey .sportFxBall{animation:sfxHockey 4.8s ease-in-out infinite}
+.sportFxSpark{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--veto-red);box-shadow:0 0 10px rgba(255,45,45,.22);animation:sfxSpark 3.8s ease-in-out infinite}
+.sportFxSparkOne{right:7%;top:180px}
+.sportFxSparkTwo{right:24%;top:66px;animation-delay:1.1s}
+.sportFxSparkThree{right:17%;top:270px;animation-delay:2.2s}
+@keyframes sfxOrbit{to{transform:rotate(360deg)}}
+@keyframes sfxBreath{50%{transform:scale(1.08) rotate(180deg)}}
+@keyframes sfxFootball{50%{transform:translate(-32px,14px) rotate(16deg)}}
+@keyframes sfxBasket{45%{transform:translate(-24px,54px) rotate(110deg)}58%{transform:translate(-27px,48px) rotate(126deg) scaleY(.88)}}
+@keyframes sfxTennis{50%{transform:translate(-86px,38px)}}
+@keyframes sfxHockey{50%{transform:translate(-108px,24px) rotate(-18deg)}}
+@keyframes sfxSpark{0%,100%{opacity:.15;transform:scale(.6)}45%{opacity:.65;transform:scale(1.25)}}
+
+@media(max-width:1080px){
+  .brandMode,.brandCanonical::after{display:none}
+  .signalHero .heroCopy{font-size:14px}
+  .sportFxField{right:-10%;width:58vw;opacity:.45}
+}
+@media(max-width:700px){
+  .brandWordmark{width:73px}
+  .heroWordmark{width:126px}
+  .signalHero .heroCopy{font-size:13px}
+  .sportFx{top:132px}
+  .sportFxField{right:-28%;width:90vw;height:300px;opacity:.3}
+  .sportFxBall{right:3%}
+  .sportFxSparkThree{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .sportFxOrbitOne,.sportFxOrbitTwo,.sportFxBall,.sportFxSpark{animation:none!important}
+}
