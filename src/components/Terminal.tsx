@@ -190,18 +190,14 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
             <span className="brandWord">VETO</span>
             <span className="brandSport">SPORT</span>
           </span>
-          <span className="brandMode">INTELLIGENCE OS</span>
+          <span className="brandMode">MARKET INTELLIGENCE</span>
         </a>
 
         <nav>
-          <a className="active" href="#terminal">{dictionary.nav.terminal}</a>
-          <a href="#how-veto-works">
-            {locale === "ru" ? "Как работает" : locale === "hy" ? "Ինչպես է աշխատում" : "How it works"}
-          </a>
-          <a href="#live">{dictionary.nav.live}</a>
-          <a href="#events">{dictionary.nav.events}</a>
-          <a href="#models">{dictionary.nav.models}</a>
-          <a href="#ledger">{dictionary.nav.ledger}</a>
+          <a className="active" href="#live">LIVE</a>
+          <a href="#events">INTELLIGENCE</a>
+          <a href="#parallax">PARALLAX</a>
+          <a href="#validation">RESEARCH</a>
         </nav>
 
         <div className="topbarActions">
@@ -224,17 +220,6 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
         </div>
       </header>
 
-      <nav className="surfaceRailNav" aria-label="VETO surface sections">
-        <a href="#live"><b>01</b><span>LIVE</span></a>
-        <a href="#events"><b>02</b><span>EVENT</span></a>
-        <a href="#parallax"><b>04</b><span>PARALLAX</span></a>
-        <a href="#market-surface"><b>05</b><span>SURFACE</span></a>
-        <a href="#pricing"><b>06</b><span>PRICING</span></a>
-        <a href="#models"><b>08</b><span>MODELS</span></a>
-        <a href="#ledger"><b>11</b><span>LEDGER</span></a>
-        <a href="#validation"><b>12</b><span>VALIDATE</span></a>
-      </nav>
-
       <section className="hero signalHero liveHero" id="terminal">
         <div className="heroCopyBlock">
           <div className="heroMetaRow">
@@ -243,24 +228,27 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
           </div>
 
           <div className="heroIdentity">
-            <VetoMark size={54} className="heroMark" />
-            <span>VETO SPORT / MARKET INTELLIGENCE</span>
+            <VetoMark size={44} className="heroMark" />
+            <div>
+              <strong>VETO SPORT</strong>
+              <span>MARKET INTELLIGENCE</span>
+            </div>
           </div>
 
           <h1>
             {locale === "ru"
-              ? "VETO не выбирает победителя. VETO проверяет цену."
+              ? "Читай игру. Проверяй рынок."
               : locale === "hy"
-                ? "VETO-ն չի ընտրում հաղթողին։ VETO-ն ստուգում է գինը։"
-                : "VETO doesn’t pick winners. It audits the price."}
+                ? "Կարդա խաղը։ Ստուգիր շուկան։"
+                : "Read the game. Audit the market."}
           </h1>
 
           <p className="heroCopy">
             {locale === "ru"
-              ? "VETO реконструирует состояние игры, затем реконструирует подразумеваемый рынком мир и показывает, где эти две реальности расходятся."
+              ? "VETO сопоставляет текущее состояние матча с тем, что уже заложено в цене, и показывает только те расхождения, которые проходят проверку качества."
               : locale === "hy"
-                ? "VETO-ն վերականգնում է խաղի վիճակը, հետո շուկայի ենթադրվող աշխարհը և ցույց է տալիս՝ որտեղ են այդ երկու իրականությունները բաժանվում։"
-                : "VETO reconstructs the game, reconstructs the market-implied world, then exposes where those two realities diverge."}
+                ? "VETO-ն համադրում է խաղի ներկա վիճակը շուկայական գնի հետ և ցույց է տալիս միայն ստուգված շեղումները։"
+                : "VETO compares the live event state with what price already implies, surfacing only dislocations that survive quality checks."}
           </p>
 
           <div className="heroActionRow">
@@ -272,13 +260,6 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
               <span>HOW VETO WORKS</span>
               <b>↓</b>
             </a>
-          </div>
-
-          <div className="heroTrustRow">
-            <span><i /> STATE MODELING</span>
-            <span><i /> PRICE AUDIT</span>
-            <span><i /> REGIME INTELLIGENCE</span>
-            <span><i /> ABSTENTION AWARE</span>
           </div>
 
           <div className="heroLiveNetwork" aria-label="Live sports network">
@@ -352,13 +333,6 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
         activeSport={activeWorkspace.sport}
         onSelect={selectSport}
       />
-
-      <section className="statGrid">
-        <Metric value="2,481" label={dictionary.scanned} detail="7 sports / 31 families" />
-        <Metric value="347" label={dictionary.repriced} detail="median delta 3.8 p.p." />
-        <Metric value="41" label={dictionary.anomalies} detail="12 unexplained" />
-        <Metric value="9" label={dictionary.validated} detail="3 high-conviction" accent />
-      </section>
 
       <LiveCommandCenter
         workspaces={liveWorkspaces}
