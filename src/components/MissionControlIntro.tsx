@@ -37,6 +37,11 @@ const copy = {
       ["Authority Frontier", "Определяет, когда доказательств уже достаточно, чтобы доверять сигналу.", "shield"],
       ["Decision Layer", "EDGE / WATCH / PASS вместо фальшивой уверенности.", "target"],
     ] as const,
+    decisions: [
+      ["EDGE", "Расхождение прошло ключевые VETO-гейты. Это исследовательский сигнал, не гарантия исхода."],
+      ["WATCH", "Ситуация интересна, но evidence / freshness / authority пока недостаточны."],
+      ["PASS", "Доказательств мало, цена уже адаптировалась или неопределённость слишком высокая."],
+    ] as const,
     how: "Как читать терминал",
     steps: [
       "Выбери матч",
@@ -81,6 +86,11 @@ const copy = {
       ["Authority Frontier", "Decides when evidence is strong enough to trust an early signal.", "shield"],
       ["Decision Layer", "EDGE / WATCH / PASS instead of fake certainty.", "target"],
     ] as const,
+    decisions: [
+      ["EDGE", "The dislocation survives key VETO gates. It is a research signal, not a guaranteed outcome."],
+      ["WATCH", "The setup is interesting, but evidence, freshness or authority is still incomplete."],
+      ["PASS", "Evidence is weak, price has adapted, or uncertainty is too high."],
+    ] as const,
     how: "How to read the terminal",
     steps: [
       "Select a match",
@@ -124,6 +134,11 @@ const copy = {
       ["Shock Detection", "Տարբերակում է ինֆորմացիոն շոկը աղմուկից և feed anomaly-ից։", "bolt"],
       ["Authority Frontier", "Որոշում է՝ երբ ապացույցները բավարար են ազդանշանին վստահելու համար։", "shield"],
       ["Decision Layer", "EDGE / WATCH / PASS՝ կեղծ վստահության փոխարեն։", "target"],
+    ] as const,
+    decisions: [
+      ["EDGE", "Շեղումը անցել է հիմնական VETO gates-ը։ Սա research signal է, ոչ երաշխիք։"],
+      ["WATCH", "Սցենարը հետաքրքիր է, բայց evidence / freshness / authority-ն դեռ բավարար չեն։"],
+      ["PASS", "Ապացույցները թույլ են, գինը հարմարվել է կամ uncertainty-ն շատ բարձր է։"],
     ] as const,
     how: "Ինչպես կարդալ տերմինալը",
     steps: [
@@ -286,6 +301,18 @@ export function MissionControlIntro({ locale }: { locale: Locale }) {
               <h3>{title}</h3>
               <p>{description}</p>
               <div className="missionCardLine"><span /></div>
+            </article>
+          ))}
+        </div>
+
+        <div className="decisionLanguage" aria-label="VETO decision language">
+          {t.decisions.map(([decision, description]) => (
+            <article className={decision.toLowerCase()} key={decision}>
+              <div>
+                <i />
+                <strong>{decision}</strong>
+              </div>
+              <p>{description}</p>
             </article>
           ))}
         </div>
