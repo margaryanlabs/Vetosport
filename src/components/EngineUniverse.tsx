@@ -6,16 +6,7 @@ import { sportEngineRegistry } from "@/lib/sports/registry";
 import { SportGlyph } from "@/components/SportGlyph";
 
 type HealthPayload = {
-  passed: boolean;
-  engines: Partial<
-    Record<
-      Sport,
-      {
-        model: string;
-        passed: boolean;
-      }
-    >
-  >;
+  engines: Partial<Record<Sport, { passed: boolean }>>;
 };
 
 export function EngineUniverse({
@@ -29,84 +20,42 @@ export function EngineUniverse({
 
   useEffect(() => {
     let active = true;
-
     fetch("/api/intelligence/selfcheck", { cache: "no-store" })
       .then((response) => (response.ok ? response.json() : null))
       .then((payload: HealthPayload | null) => {
         if (active && payload) setHealth(payload);
       })
-      .catch(() => {
-        // Registry status remains the safe fallback.
-      });
-
+      .catch(() => {});
     return () => {
       active = false;
     };
   }, []);
 
-  const activeCount = sportEngineRegistry.filter(
+  const activeEngines = sportEngineRegistry.filter(
     (engine) => engine.status === "active",
-  ).length;
-  const verifiedCount = sportEngineRegistry.filter(
-    (engine) =>
-      engine.status === "active" &&
-      health?.engines[engine.sport]?.passed === true,
-  ).length;
+  );
+  const futureCount = sportEngineRegistry.length - activeEngines.length;
 
   return (
-    <section className="engineUniverse" aria-label="VETO sport engine universe">
-      <div className="engineUniverseLead">
-        <span>ENGINE UNIVERSE</span>
-        <strong>
-          {health ? verifiedCount : activeCount} {health ? "VERIFIED" : "ACTIVE"}
-        </strong>
-        <small>{sportEngineRegistry.length - activeCount} NEXT</small>
+    <section className="v2Sports" aria-label="Sports">
+      <div className="v2SportsLabel">
+        <span>SPORTS</span>
+        <small>{futureCount} more in research</small>
       </div>
 
-      <div className="engineUniverseRail">
-        {sportEngineRegistry.map((engine) => {
-          const enabled = engine.status === "active";
-          const engineHealth = health?.engines[engine.sport];
-          const healthState = !enabled
-            ? "next"
-            : engineHealth == null
-              ? "checking"
-              : engineHealth.passed
-                ? "verified"
-                : "failed";
-
+      <div className="v2SportsTabs">
+        {activeEngines.map((engine) => {
+          const passed = health?.engines[engine.sport]?.passed;
           return (
             <button
-              className={[
-                "engineUniverseNode",
-                enabled ? "available" : "future",
-                activeSport === engine.sport ? "active" : "",
-                `health-${healthState}`,
-              ].join(" ")}
-              disabled={!enabled}
+              className={activeSport === engine.sport ? "active" : ""}
               key={engine.sport}
-              onClick={() => enabled && onSelect(engine.sport)}
+              onClick={() => onSelect(engine.sport)}
               type="button"
             >
-              <div>
-                <span className="engineSportGlyph">
-                  <SportGlyph sport={engine.sport} size={17} />
-                </span>
-                <i />
-                <span>{engine.label}</span>
-                <em>
-                  {healthState === "verified"
-                    ? "VERIFIED"
-                    : healthState === "failed"
-                      ? "FAIL"
-                      : healthState === "checking"
-                        ? "CHECK"
-                        : "NEXT"}
-                </em>
-              </div>
-              <strong>{engine.engine}</strong>
-              <small>{engine.descriptor}</small>
-              <b>{engine.families} MARKET FAMILIES</b>
+              <SportGlyph sport={engine.sport} size={20} />
+              <span>{engine.label}</span>
+              <i className={passed === false ? "fail" : passed ? "ok" : "checking"} />
             </button>
           );
         })}

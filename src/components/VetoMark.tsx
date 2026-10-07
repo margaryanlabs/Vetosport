@@ -15,10 +15,24 @@ export function VetoMark({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path d="M6 8H19.5L32 42.5L27 57L6 8Z" fill="currentColor" />
-      <path d="M58 8H44.5L32 42.5L37 57L58 8Z" fill="currentColor" opacity="0.94" />
-      <path d="M36.5 14H43L33.2 44.5L29.8 35.6L36.5 14Z" fill="var(--edge)" />
-      <path d="M31.95 42.4L37 57H27L31.95 42.4Z" fill="var(--edge)" opacity="0.34" />
+      <rect
+        x="7"
+        y="7"
+        width="50"
+        height="50"
+        rx="16"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        opacity=".9"
+      />
+      <path
+        d="M18.5 22.5 30.1 43c.9 1.6 3.1 1.7 4.1.1L46 20.5"
+        stroke="currentColor"
+        strokeWidth="5.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="46" cy="18.5" r="3.4" fill="var(--edge)" />
     </svg>
   );
 }
