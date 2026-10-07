@@ -18,6 +18,7 @@ import { LiveCommandCenter } from "@/components/LiveCommandCenter";
 import { ParallaxCore } from "@/components/ParallaxCore";
 import { SpecialistSportSurface } from "@/components/SpecialistSportSurface";
 import { VetoMark } from "@/components/VetoMark";
+import { MissionControlIntro } from "@/components/MissionControlIntro";
 import { sandboxFootballBeforeSurface, sandboxFootballSurface } from "@/lib/sandbox/football-model";
 import { analyzeModelCouncil } from "@/lib/council/engine";
 import { buildCouncilInputs } from "@/lib/council/registry";
@@ -189,7 +190,7 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
             <span className="brandWord">VETO</span>
             <span className="brandSport">SPORT</span>
           </span>
-          <span className="brandMode">SIGNAL SYSTEM</span>
+          <span className="brandMode">INTELLIGENCE OS</span>
         </a>
 
         <nav>
@@ -259,6 +260,24 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
                 : "VETO reconstructs the game, reconstructs the market-implied world, then exposes where those two realities diverge."}
           </p>
 
+          <div className="heroActionRow">
+            <a className="heroPrimaryAction" href="#live">
+              <span>OPEN INTELLIGENCE</span>
+              <b>→</b>
+            </a>
+            <a className="heroSecondaryAction" href="#how-veto-works">
+              <span>HOW VETO WORKS</span>
+              <b>↓</b>
+            </a>
+          </div>
+
+          <div className="heroTrustRow">
+            <span><i /> STATE MODELING</span>
+            <span><i /> PRICE AUDIT</span>
+            <span><i /> REGIME INTELLIGENCE</span>
+            <span><i /> ABSTENTION AWARE</span>
+          </div>
+
           <div className="heroLiveNetwork" aria-label="Live sports network">
             {liveWorkspaces.map((workspace) => (
               <button
@@ -318,6 +337,8 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
           </div>
         </div>
       </section>
+
+      <MissionControlIntro locale={locale} />
 
       <div className="sandboxBanner">
         <span><i /> {dictionary.sandbox}</span>
