@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { Opportunity, Sport } from "@/lib/domain/types";
 import type { LiveWorkspace } from "@/lib/sandbox/workspaces";
 import { SportGlyph } from "@/components/SportGlyph";
@@ -24,16 +24,6 @@ export function LiveCommandCenter({
   onSelectEvent: (id: string) => void;
   onSelectSignal: (eventId: string, selectionId: string) => void;
 }) {
-  const [filter, setFilter] = useState<"all" | Sport>("all");
-
-  const filtered = useMemo(
-    () =>
-      filter === "all"
-        ? workspaces
-        : workspaces.filter((workspace) => workspace.sport === filter),
-    [filter, workspaces],
-  );
-
   const signals = useMemo(
     () =>
       workspaces
@@ -77,29 +67,9 @@ export function LiveCommandCenter({
         </div>
       </div>
 
-      <div className="liveCommandFilter">
-        {(["all", "football", "basketball", "tennis", "hockey"] as const).map((item) => (
-          <button
-            className={filter === item ? "active" : ""}
-            key={item}
-            onClick={() => setFilter(item)}
-            type="button"
-          >
-            <span className="liveFilterIcon">
-              {item === "all" ? (
-                <i className="liveAllGlyph">◎</i>
-              ) : (
-                <SportGlyph sport={item} size={16} />
-              )}
-            </span>
-            <span>{item === "all" ? "ALL LIVE" : item.toUpperCase()}</span>
-          </button>
-        ))}
-      </div>
-
       <div className="liveCommandBody">
         <div className="liveCommandEvents">
-          {filtered.map((workspace) => {
+          {workspaces.map((workspace) => {
             const primary = workspace.opportunities[0];
             return (
               <button
@@ -187,7 +157,7 @@ export function LiveCommandCenter({
                   <b className={opportunity.probabilityEdge >= 0 ? "positive" : "negative"}>
                     {pp(opportunity.probabilityEdge)}
                   </b>
-                  <small>EDGE</small>
+                  <small>GAP</small>
                 </span>
                 <em className={decisionClass(opportunity.decision)}>
                   {opportunity.decision}
