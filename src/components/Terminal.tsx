@@ -17,8 +17,7 @@ import { LiveCommandCenter } from "@/components/LiveCommandCenter";
 import { ParallaxCore } from "@/components/ParallaxCore";
 import { SpecialistSportSurface } from "@/components/SpecialistSportSurface";
 import { VetoMark, VetoWordmark } from "@/components/VetoMark";
-import { SportAtmosphere } from "@/components/SportAtmosphere";
-import { ArenaNavigator, type WorkspaceView } from "@/components/ArenaNavigator";
+import { WorkspaceChrome, type WorkspaceView } from "@/components/WorkspaceChrome";
 import { SystemStatusPanel } from "@/components/SystemStatusPanel";
 import { sandboxFootballBeforeSurface, sandboxFootballSurface } from "@/lib/sandbox/football-model";
 import { analyzeModelCouncil } from "@/lib/council/engine";
@@ -170,17 +169,8 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
     const workspace = liveWorkspaces.find((item) => item.sport === sport);
     if (workspace) setSelectedEventId(workspace.id);
   };
-  const moveToArena = () => {
-    window.requestAnimationFrame(() => {
-      document.getElementById("arena")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    });
-  };
   const switchView = (view: WorkspaceView) => {
     setActiveView(view);
-    moveToArena();
   };
   const jumpTo = (target: string) => {
     window.requestAnimationFrame(() => {
@@ -194,7 +184,6 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
     if (!workspaceById[eventId]) return;
     setSelectedEventId(eventId);
     setActiveView("intelligence");
-    moveToArena();
   };
   const selectSignal = (eventId: string, selectionId: string) => {
     if (!workspaceById[eventId]) return;
@@ -202,162 +191,25 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
     setSelectedId(selectionId);
     setMarketMode("all");
     setActiveView("intelligence");
-    moveToArena();
   };
 
   return (
-    <main className="appFrame signalSystem">
-      <div className="ambient ambientOne" />
-      <div className="ambient ambientTwo" />
-
-      <header className="topbar">
-        <a className="brand brandCanonical" href="#terminal" aria-label="VETO Sport">
-          <span className="brandMark"><VetoMark size={34} /></span>
-          <span className="brandLockup">
-            <VetoWordmark className="brandWordmark" />
-            <span className="brandSport">SPORT</span>
-          </span>
-          <span className="brandMode">MARKET INTELLIGENCE</span>
-        </a>
-
-        <div className="topbarContext" aria-label="Current workspace">
-          <span>ARENA</span>
-          <strong>{activeView.toUpperCase()}</strong>
-        </div>
-
-        <div className="topbarActions">
-          <div className="localeSwitch" aria-label="Language">
-            {(["ru", "en", "hy"] as Locale[]).map((item) => (
-              <button
-                className={locale === item ? "selected" : ""}
-                key={item}
-                onClick={() => setLocale(item)}
-                type="button"
-              >
-                {item.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        </div>
-      </header>
-
-      <section className="hero signalHero liveHero" id="terminal">
-        <div className="heroCopyBlock">
-          <div className="heroMetaRow">
-            <span className="signalKicker"><i /> LIVE MULTI-SPORT INTELLIGENCE</span>
-            <span className="researchBadge">RESEARCH / SANDBOX</span>
-          </div>
-
-          <div className="heroIdentity heroIdentityCanonical">
-            <VetoMark size={54} className="heroMark" />
-            <div className="heroBrandLockup">
-              <VetoWordmark className="heroWordmark" />
-              <div>
-                <strong>SPORT</strong>
-                <span>MARKET INTELLIGENCE</span>
-              </div>
-            </div>
-          </div>
-
-          <h1>
-            {locale === "ru"
-              ? "Читай игру. Проверяй рынок."
-              : locale === "hy"
-                ? "Կարդա խաղը։ Ստուգիր շուկան։"
-                : "Read the game. Audit the market."}
-          </h1>
-
-          <p className="heroCopy">
-            {locale === "ru"
-              ? "VETO сопоставляет текущее состояние матча с тем, что уже заложено в цене, и показывает только те расхождения, которые проходят проверку качества."
-              : locale === "hy"
-                ? "VETO-ն համադրում է խաղի ներկա վիճակը շուկայական գնի հետ և ցույց է տալիս միայն ստուգված շեղումները։"
-                : "VETO compares the live event state with what price already implies, surfacing only dislocations that survive quality checks."}
-          </p>
-
-          <div className="heroActionRow">
-            <button
-              className="heroPrimaryAction"
-              onClick={() => switchView("live")}
-              type="button"
-            >
-              <span>ENTER LIVE ARENA</span>
-              <b>→</b>
-            </button>
-            <button
-              className="heroSecondaryAction"
-              onClick={() => switchView("intelligence")}
-              type="button"
-            >
-              <span>OPEN INTELLIGENCE</span>
-              <b>↗</b>
-            </button>
-          </div>
-
-          <div className="heroLiveNetwork" aria-label="Live sports network">
-            {liveWorkspaces.map((workspace) => (
-              <button
-                className={activeWorkspace.id === workspace.id ? "active" : ""}
-                key={workspace.id}
-                onClick={() => setSelectedEventId(workspace.id)}
-                type="button"
-              >
-                <span><i className={workspace.pulse} />{workspace.sportLabel}</span>
-                <strong>{workspace.homeCode} {workspace.homeScore}:{workspace.awayScore} {workspace.awayCode}</strong>
-                <small>{workspace.clock}</small>
-              </button>
-            ))}
-          </div>
-
-        </div>
-
-        <div className="heroSignal">
-          <div className="heroSignalEvent">
-            <span>{activeWorkspace.sportLabel}</span>
-            <strong>{activeWorkspace.homeCode} · {activeWorkspace.awayCode}</strong>
-          </div>
-
-          <div className="heroSignalTop">
-            <div>
-              <span className="miniLabel">PRIMARY SIGNAL</span>
-              <strong>{primarySignal.selection.label}</strong>
-            </div>
-            <em className={decisionClass(primarySignal.decision)}>{primarySignal.decision}</em>
-          </div>
-
-          <div className="heroProbability">
-            <strong>{pct(primarySignal.fairProbability)}</strong>
-            <span>Fair probability · {activeWorkspace.modelVersion}</span>
-          </div>
-
-          <div className="heroSignalLane">
-            <span style={{ width: `${primarySignal.fairProbability * 100}%` }} />
-            <i style={{ left: `${primarySignal.fairProbability * 100}%` }} />
-          </div>
-
-          <div className="heroSignalMetrics">
-            <div><span>FAIR</span><strong>{primarySignal.fairOdds.toFixed(2)}</strong></div>
-            <div><span>MARKET</span><strong>{primarySignal.marketOdds.toFixed(2)}</strong></div>
-            <div><span>GAP</span><strong className={primaryGap >= 0 ? "positive" : "negative"}>{pp(primaryGap)}</strong></div>
-          </div>
-
-          <div className="heroSignalWhy">
-            <span>WHY NOW</span>
-            <p>{activeWorkspace.reasonHeadline}</p>
-          </div>
-        </div>
-      </section>
-
-      <ArenaNavigator
-        activeView={activeView}
-        onViewChange={switchView}
-        activeSport={activeWorkspace.sport}
-        onSportChange={selectSport}
-        onJump={jumpTo}
-      />
-
-      <SportAtmosphere sport={activeWorkspace.sport} mode={activeView} />
-
+    <WorkspaceChrome
+      activeView={activeView}
+      onViewChange={switchView}
+      activeSport={activeWorkspace.sport}
+      onSportChange={selectSport}
+      onJump={jumpTo}
+      locale={locale}
+      onLocaleChange={setLocale}
+      homeCode={activeWorkspace.homeCode}
+      awayCode={activeWorkspace.awayCode}
+      homeScore={activeWorkspace.homeScore}
+      awayScore={activeWorkspace.awayScore}
+      clock={activeWorkspace.clock}
+      competition={activeWorkspace.competition}
+      providerMode={providerMode}
+    >
       {activeView === "live" && (
         <div className="workspaceScene workspaceLive">
           <div className="workspaceSceneIntro">
@@ -909,7 +761,7 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
         </div>
         <p>{dictionary.noGuarantee}</p>
       </footer>
-    </main>
+    </WorkspaceChrome>
   );
 }
 
