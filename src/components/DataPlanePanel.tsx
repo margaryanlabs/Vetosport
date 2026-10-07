@@ -78,7 +78,7 @@ export function DataPlanePanel({ locale }: { locale: Locale }) {
             runtime: "RUNTIME CONNECTIONS",
             blockers: "CURRENT BLOCKERS",
             note:
-              "Data Plane code-ը պատրաստ է, բայց իրական production moat-ը սկսվում է dedicated Supabase-ից, migration 009-ից և provider keys-ից հետո։",
+              "Truth Journal-ը արդեն միացված է VETO Sport-ի մեկուսացված storage bridge-ով ընդհանուր Margaryan Labs Supabase-ին։ Հաջորդ քայլը live provider keys-ն են, իսկ հետագայում storage-ը կարելի է տեղափոխել առանձին Supabase։",
           }
         : {
             title: "PRODUCTION DATA PLANE",
@@ -90,7 +90,7 @@ export function DataPlanePanel({ locale }: { locale: Locale }) {
             runtime: "RUNTIME CONNECTIONS",
             blockers: "CURRENT BLOCKERS",
             note:
-              "The Data Plane code now journals live and historical provider data into one bitemporal spine. The real production moat begins only after a dedicated Supabase project, migration 009 and provider keys are connected.",
+              "Truth Journal is already connected through an isolated VETO Sport storage bridge inside the shared Margaryan Labs Supabase. The next production step is live provider keys; storage can later move to a dedicated Supabase without rewriting the Data Plane.",
           };
 
   const runtime = status?.runtime;
@@ -105,7 +105,7 @@ export function DataPlanePanel({ locale }: { locale: Locale }) {
   ] as const;
 
   const runtimeChecks = [
-    ["SUPABASE ENV", runtime?.persistenceConfigured ?? false],
+    ["STORAGE BRIDGE", runtime?.persistenceConfigured ?? false],
     ["TRUTH TABLE", status?.storageReachable ?? false],
     ["SPORTMONKS", runtime?.sportmonksConfigured ?? false],
     ["THE ODDS API", runtime?.oddsConfigured ?? false],
