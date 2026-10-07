@@ -428,35 +428,49 @@ export function ParallaxCore({ locale }: { locale: Locale }) {
         </section>
       </div>
 
-      <TemporalResponseLab locale={locale} />
-      <CrossMarketPropagation locale={locale} />
-      <ShockExecutionPanel locale={locale} />
-      <AlphaMemoryPanel locale={locale} />
-      <ExperimentLedgerPanel locale={locale} />
-      <TruthPlanePanel locale={locale} />
-      <ContractSemanticsPanel locale={locale} />
-      <DataPlanePanel locale={locale} />
-      <SensorIntegrityPanel locale={locale} />
-      <ValueOfInformationPanel locale={locale} />
-      <MarketCapacityPanel locale={locale} />
-      <SemanticDriftPanel locale={locale} />
-      <LeakageMonitorPanel locale={locale} />
-      <DiscoveryControlPanel locale={locale} />
-      <CalibrationDriftPanel locale={locale} />
-      <SuspensionCensoringPanel locale={locale} />
-      <AbstentionBoundaryPanel locale={locale} />
-      <RegimeChangePanel locale={locale} />
-      <RegimeAttributionPanel locale={locale} />
-      <RegimeExpertRouterPanel locale={locale} />
-      <ConformalUncertaintyPanel locale={locale} />
-      <RegimeHysteresisPanel locale={locale} />
-      <TransitionHazardPanel locale={locale} />
-      <RegimeCoherenceGatePanel locale={locale} />
-      <HazardCalibrationPanel locale={locale} />
-      <TransitionAuthorityPanel locale={locale} />
-      <AuthorityFrontierPanel locale={locale} />
-      <RegimeBarrierPanel locale={locale} />
-      <RegimeGraphPanel locale={locale} />
+      <details className="parallaxAdvancedStack">
+        <summary>
+          <div>
+            <span>ADVANCED RESEARCH STACK</span>
+            <strong>Calibration, regime, authority & proof layers</strong>
+          </div>
+          <div>
+            <b>29 MODULES</b>
+            <i>+</i>
+          </div>
+        </summary>
+        <div className="parallaxAdvancedBody">
+          <TemporalResponseLab locale={locale} />
+          <CrossMarketPropagation locale={locale} />
+          <ShockExecutionPanel locale={locale} />
+          <AlphaMemoryPanel locale={locale} />
+          <ExperimentLedgerPanel locale={locale} />
+          <TruthPlanePanel locale={locale} />
+          <ContractSemanticsPanel locale={locale} />
+          <DataPlanePanel locale={locale} />
+          <SensorIntegrityPanel locale={locale} />
+          <ValueOfInformationPanel locale={locale} />
+          <MarketCapacityPanel locale={locale} />
+          <SemanticDriftPanel locale={locale} />
+          <LeakageMonitorPanel locale={locale} />
+          <DiscoveryControlPanel locale={locale} />
+          <CalibrationDriftPanel locale={locale} />
+          <SuspensionCensoringPanel locale={locale} />
+          <AbstentionBoundaryPanel locale={locale} />
+          <RegimeChangePanel locale={locale} />
+          <RegimeAttributionPanel locale={locale} />
+          <RegimeExpertRouterPanel locale={locale} />
+          <ConformalUncertaintyPanel locale={locale} />
+          <RegimeHysteresisPanel locale={locale} />
+          <TransitionHazardPanel locale={locale} />
+          <RegimeCoherenceGatePanel locale={locale} />
+          <HazardCalibrationPanel locale={locale} />
+          <TransitionAuthorityPanel locale={locale} />
+          <AuthorityFrontierPanel locale={locale} />
+          <RegimeBarrierPanel locale={locale} />
+          <RegimeGraphPanel locale={locale} />
+        </div>
+      </details>
 
       <div className="parallaxCounterfactuals">
         <div className="parallaxCounterHead">
