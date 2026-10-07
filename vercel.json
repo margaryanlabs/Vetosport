@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/live-football-state",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/live-odds",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}
