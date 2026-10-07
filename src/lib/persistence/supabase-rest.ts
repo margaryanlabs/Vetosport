@@ -22,17 +22,33 @@ import type {
 } from "./contracts";
 
 interface SupabaseRestOptions {
-  url: string;
-  serviceRoleKey: string;
+  url?: string;
+  serviceRoleKey?: string;
+  tablePrefix?: string;
+  bridgeUrl?: string;
+  bridgeSecret?: string;
 }
 
 export class SupabaseRestPersistence implements VetoPersistence {
   private readonly baseUrl: string;
-  private readonly serviceRoleKey: string;
+  private readonly serviceRoleKey?: string;
+  private readonly tablePrefix: string;
+  private readonly bridgeUrl?: string;
+  private readonly bridgeSecret?: string;
 
   constructor(options: SupabaseRestOptions) {
-    this.baseUrl = `${options.url.replace(/\/$/, "")}/rest/v1`;
+    this.baseUrl = options.url
+      ? `${options.url.replace(/\/$/, "")}/rest/v1`
+      : "";
     this.serviceRoleKey = options.serviceRoleKey;
+    this.tablePrefix = options.tablePrefix ?? "";
+    this.bridgeUrl = options.bridgeUrl?.replace(/\/$/, "");
+    this.bridgeSecret = options.bridgeSecret;
+  }
+
+  private tablePath(name: string, query?: string) {
+    const path = `/${this.tablePrefix}${name}`;
+    return query ? `${path}?${query}` : path;
   }
 
   private async request<T>(
@@ -40,21 +56,53 @@ export class SupabaseRestPersistence implements VetoPersistence {
     init: RequestInit,
     prefer?: string,
   ): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      ...init,
-      headers: {
-        apikey: this.serviceRoleKey,
-        Authorization: `Bearer ${this.serviceRoleKey}`,
-        "Content-Type": "application/json",
-        ...(prefer ? { Prefer: prefer } : {}),
-        ...(init.headers ?? {}),
-      },
-      cache: "no-store",
-    });
+    let response: Response;
+
+    if (this.bridgeUrl && this.bridgeSecret) {
+      let body: unknown = undefined;
+      if (typeof init.body === "string" && init.body.length > 0) {
+        body = JSON.parse(init.body);
+      }
+
+      response = await fetch(this.bridgeUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-veto-storage-secret": this.bridgeSecret,
+        },
+        body: JSON.stringify({
+          path,
+          method: init.method ?? "GET",
+          body,
+          prefer,
+        }),
+        cache: "no-store",
+      });
+    } else {
+      if (!this.baseUrl || !this.serviceRoleKey) {
+        throw new Error(
+          "Supabase persistence requires either a storage bridge or direct service-role credentials.",
+        );
+      }
+
+      response = await fetch(`${this.baseUrl}${path}`, {
+        ...init,
+        headers: {
+          apikey: this.serviceRoleKey,
+          Authorization: `Bearer ${this.serviceRoleKey}`,
+          "Content-Type": "application/json",
+          ...(prefer ? { Prefer: prefer } : {}),
+          ...(init.headers ?? {}),
+        },
+        cache: "no-store",
+      });
+    }
 
     if (!response.ok) {
       const body = await response.text();
-      throw new Error(`Supabase REST ${response.status}: ${body.slice(0, 500)}`);
+      throw new Error(
+        `Supabase persistence ${response.status}: ${body.slice(0, 500)}`,
+      );
     }
 
     if (response.status === 204) return undefined as T;
@@ -84,7 +132,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
     };
 
     const rows = await this.request<Array<{ id: string; canonical_key: string }>>(
-      "/sports_events?on_conflict=canonical_key",
+      this.tablePath("sports_events", "on_conflict=canonical_key"),
       {
         method: "POST",
         body: JSON.stringify(body),
@@ -133,7 +181,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
       away_participant_id?: string | null;
       away_participant_name?: string | null;
     }>>(
-      `/sports_events?${query.toString()}`,
+      this.tablePath("sports_events", query.toString()),
       { method: "GET" },
     );
 
@@ -164,7 +212,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
 
   async appendEventState(snapshot: EventStateSnapshot): Promise<void> {
     await this.request(
-      "/event_state_snapshots",
+      this.tablePath("event_state_snapshots"),
       {
         method: "POST",
         body: JSON.stringify({
@@ -200,7 +248,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
     }));
 
     await this.request(
-      "/market_quotes",
+      this.tablePath("market_quotes"),
       { method: "POST", body: JSON.stringify(rows) },
       "return=minimal",
     );
@@ -221,7 +269,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
     }));
 
     await this.request(
-      "/evidence_items",
+      this.tablePath("evidence_items"),
       { method: "POST", body: JSON.stringify(rows) },
       "return=minimal",
     );
@@ -235,7 +283,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
     capturedAt: string;
   }): Promise<string> {
     const rows = await this.request<Array<{ id: string }>>(
-      "/feature_snapshots",
+      this.tablePath("feature_snapshots"),
       {
         method: "POST",
         body: JSON.stringify({
@@ -254,7 +302,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
 
   async appendPrediction(input: PredictionRecord): Promise<string> {
     const rows = await this.request<Array<{ id: string }>>(
-      "/prediction_snapshots",
+      this.tablePath("prediction_snapshots"),
       {
         method: "POST",
         body: JSON.stringify({
@@ -285,7 +333,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
     },
   ): Promise<void> {
     await this.request(
-      "/decision_ledger",
+      this.tablePath("decision_ledger"),
       {
         method: "POST",
         body: JSON.stringify({
@@ -329,7 +377,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
       market_odds: number;
       fair_probability: number;
     }>>(
-      `/veto_unsettled_decisions?${query.toString()}`,
+      this.tablePath("veto_unsettled_decisions", query.toString()),
       { method: "GET" },
     );
 
@@ -349,7 +397,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
 
   async appendDecisionOutcome(outcome: DecisionOutcomeRecord): Promise<void> {
     await this.request(
-      "/decision_outcomes",
+      this.tablePath("decision_outcomes"),
       {
         method: "POST",
         body: JSON.stringify({
@@ -366,7 +414,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
 
   async recordHistoricalImport(record: HistoricalImportRecord): Promise<void> {
     await this.request(
-      "/historical_imports",
+      this.tablePath("historical_imports"),
       {
         method: "POST",
         body: JSON.stringify({
@@ -416,7 +464,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
     }));
 
     const inserted = await this.request<Array<{ id: string }>>(
-      "/truth_journal?on_conflict=dedupe_key",
+      this.tablePath("truth_journal", "on_conflict=dedupe_key"),
       {
         method: "POST",
         body: JSON.stringify(rows),
@@ -495,7 +543,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
       dedupe_key: string;
       record_hash: string;
     }>>(
-      `/truth_journal?${query.toString()}`,
+      this.tablePath("truth_journal", query.toString()),
       { method: "GET" },
     );
 
@@ -530,7 +578,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
     version: ProviderRulebookVersion,
   ): Promise<void> {
     await this.request(
-      "/provider_rulebook_versions?on_conflict=provider_id,version_id",
+      this.tablePath("provider_rulebook_versions", "on_conflict=provider_id,version_id"),
       {
         method: "POST",
         body: JSON.stringify({
@@ -581,7 +629,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
       content_hash: string;
       rules: Record<string, unknown>;
     }>>(
-      `/provider_rulebook_versions?${query.toString()}`,
+      this.tablePath("provider_rulebook_versions", query.toString()),
       { method: "GET" },
     );
 
@@ -603,7 +651,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
 
   async appendProviderHealth(sample: ProviderHealthSample): Promise<void> {
     await this.request(
-      "/provider_health_samples",
+      this.tablePath("provider_health_samples"),
       {
         method: "POST",
         body: JSON.stringify({

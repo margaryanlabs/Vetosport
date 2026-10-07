@@ -185,8 +185,10 @@ export const buildDataPlaneReplay = <T>(
 
 export const getDataPlaneRuntimeStatus = (): DataPlaneRuntimeStatus => {
   const persistenceConfigured = Boolean(
-    process.env.SUPABASE_URL &&
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
+    (process.env.SUPABASE_URL &&
+      process.env.SUPABASE_SERVICE_ROLE_KEY) ||
+      (process.env.VETO_STORAGE_BRIDGE_URL &&
+        process.env.VETO_STORAGE_SECRET),
   );
   const sportmonksConfigured = Boolean(
     process.env.SPORTMONKS_API_TOKEN,
