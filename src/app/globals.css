@@ -11599,6 +11599,16 @@ body::before {
   box-shadow: 0 0 10px rgba(201,169,107,.25);
 }
 .missionReadinessGrid .pending b { color: var(--watch); }
+.missionReadinessGrid .checking i {
+  border: 1px solid var(--muted-2);
+  background: transparent;
+  animation: readinessBlink 1.35s ease-in-out infinite;
+}
+.missionReadinessGrid .checking b { color: var(--muted); }
+@keyframes readinessBlink {
+  0%, 100% { opacity: .35; }
+  50% { opacity: 1; }
+}
 
 .missionCards {
   margin-top: 12px;
