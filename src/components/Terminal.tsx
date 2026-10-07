@@ -13,12 +13,12 @@ import { MarketSurfaceExplorer } from "@/components/MarketSurfaceExplorer";
 import { AsianLinesBoard } from "@/components/AsianLinesBoard";
 import { BacktestLab } from "@/components/BacktestLab";
 import { ModelGovernancePanel } from "@/components/ModelGovernancePanel";
-import { EngineUniverse } from "@/components/EngineUniverse";
 import { LiveCommandCenter } from "@/components/LiveCommandCenter";
 import { ParallaxCore } from "@/components/ParallaxCore";
 import { SpecialistSportSurface } from "@/components/SpecialistSportSurface";
 import { VetoMark } from "@/components/VetoMark";
-import { MissionControlIntro } from "@/components/MissionControlIntro";
+import { ArenaNavigator, type WorkspaceView } from "@/components/ArenaNavigator";
+import { SystemStatusPanel } from "@/components/SystemStatusPanel";
 import { sandboxFootballBeforeSurface, sandboxFootballSurface } from "@/lib/sandbox/football-model";
 import { analyzeModelCouncil } from "@/lib/council/engine";
 import { buildCouncilInputs } from "@/lib/council/registry";
@@ -48,6 +48,7 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   const [marketMode, setMarketMode] = useState<"all" | "edges">("all");
   const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
   const [remoteWorkspace, setRemoteWorkspace] = useState<LiveWorkspace | null>(null);
+  const [activeView, setActiveView] = useState<WorkspaceView>("live");
 
   useEffect(() => {
     let active = true;
@@ -168,14 +169,39 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
     const workspace = liveWorkspaces.find((item) => item.sport === sport);
     if (workspace) setSelectedEventId(workspace.id);
   };
+  const moveToArena = () => {
+    window.requestAnimationFrame(() => {
+      document.getElementById("arena")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  };
+  const switchView = (view: WorkspaceView) => {
+    setActiveView(view);
+    moveToArena();
+  };
+  const jumpTo = (target: string) => {
+    window.requestAnimationFrame(() => {
+      document.getElementById(target)?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  };
   const selectEvent = (eventId: string) => {
-    if (workspaceById[eventId]) setSelectedEventId(eventId);
+    if (!workspaceById[eventId]) return;
+    setSelectedEventId(eventId);
+    setActiveView("intelligence");
+    moveToArena();
   };
   const selectSignal = (eventId: string, selectionId: string) => {
     if (!workspaceById[eventId]) return;
     setSelectedEventId(eventId);
     setSelectedId(selectionId);
     setMarketMode("all");
+    setActiveView("intelligence");
+    moveToArena();
   };
 
   return (
@@ -193,11 +219,10 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
           <span className="brandMode">MARKET INTELLIGENCE</span>
         </a>
 
-        <nav>
-          <a className="active" href="#live">LIVE</a>
-          <a href="#events">INTELLIGENCE</a>
-          <a href="#research">RESEARCH</a>
-        </nav>
+        <div className="topbarContext" aria-label="Current workspace">
+          <span>ARENA</span>
+          <strong>{activeView.toUpperCase()}</strong>
+        </div>
 
         <div className="topbarActions">
           <div className="localeSwitch" aria-label="Language">
@@ -247,14 +272,22 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
           </p>
 
           <div className="heroActionRow">
-            <a className="heroPrimaryAction" href="#live">
-              <span>OPEN INTELLIGENCE</span>
+            <button
+              className="heroPrimaryAction"
+              onClick={() => switchView("live")}
+              type="button"
+            >
+              <span>ENTER LIVE ARENA</span>
               <b>→</b>
-            </a>
-            <a className="heroSecondaryAction" href="#how-veto-works">
-              <span>HOW VETO WORKS</span>
-              <b>↓</b>
-            </a>
+            </button>
+            <button
+              className="heroSecondaryAction"
+              onClick={() => switchView("intelligence")}
+              type="button"
+            >
+              <span>OPEN INTELLIGENCE</span>
+              <b>↗</b>
+            </button>
           </div>
 
           <div className="heroLiveNetwork" aria-label="Live sports network">
@@ -311,17 +344,21 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
         </div>
       </section>
 
-      <MissionControlIntro locale={locale} />
-
-      <div className="sandboxBanner">
-        <span><i /> {dictionary.sandbox}</span>
-        <span>{configuredProviders > 0 ? `${configuredProviders}/2 PRIMARY ADAPTERS CONFIGURED · SANDBOX VIEW STILL ACTIVE` : "LIVE ADAPTERS AWAIT KEYS · UI NEVER LABELS SYNTHETIC DATA AS REAL"}</span>
-      </div>
-
-      <EngineUniverse
+      <ArenaNavigator
+        activeView={activeView}
+        onViewChange={switchView}
         activeSport={activeWorkspace.sport}
-        onSelect={selectSport}
+        onSportChange={selectSport}
+        onJump={jumpTo}
       />
+
+      {activeView === "live" && (
+        <div className="workspaceScene workspaceLive">
+          <div className="workspaceSceneIntro">
+            <span>LIVE ARENA</span>
+            <strong>Follow the game. Catch the market reaction.</strong>
+            <small>{configuredProviders > 0 ? `${configuredProviders}/2 live adapters configured` : "Sandbox feed · live adapters awaiting keys"}</small>
+          </div>
 
       <LiveCommandCenter
         workspaces={liveWorkspaces}
@@ -329,6 +366,16 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
         onSelectEvent={selectEvent}
         onSelectSignal={selectSignal}
       />
+        </div>
+      )}
+
+      {activeView === "intelligence" && (
+        <div className="workspaceScene workspaceIntelligence">
+          <div className="workspaceSceneIntro">
+            <span>EVENT INTELLIGENCE</span>
+            <strong>{activeWorkspace.homeName} · {activeWorkspace.awayName}</strong>
+            <small>{activeWorkspace.competition} · {activeWorkspace.clock}</small>
+          </div>
 
       <section className={`eventDecisionSurface sport-${activeWorkspace.sport}`} id="events">
         <div className="surfaceCommandHeader">
@@ -347,7 +394,7 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
           </div>
         </div>
 
-        <div className="eventDecisionTop">
+        <div className="eventDecisionTop" id="event-overview">
           <div className="eventMatchPlane">
             <div className="eventLeagueLine">
               <span>{activeWorkspace.homeCode}</span>
@@ -428,7 +475,7 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
           ))}
         </div>
 
-        <div className="eventSignalBody">
+        <div className="eventSignalBody" id="event-signals">
           <section className="eventChangePlane">
             <div className="eventPlaneHead">
               <div>
@@ -526,7 +573,7 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
           </div>
         </div>
 
-        <div className="marketTable eventMarketTable">
+        <div className="marketTable eventMarketTable" id="event-market">
           <div className="marketRow tableHead">
             <span>{dictionary.market}</span>
             <span>{dictionary.price}</span>
@@ -556,20 +603,18 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
           ))}
         </div>
       </section>
+        </div>
+      )}
 
-      <details className="v2ResearchHub" id="research">
-        <summary>
-          <div>
-            <span>RESEARCH WORKSPACE</span>
+      {activeView === "research" && (
+        <section className="workspaceScene workspaceResearch" id="research">
+          <div className="workspaceSceneIntro researchIntro">
+            <span>RESEARCH LAB</span>
             <strong>PARALLAX · probability surface · model council · validation</strong>
+            <small>Deep layers stay here, away from the live operating surface.</small>
           </div>
-          <div>
-            <small>OPEN DEEP INTELLIGENCE</small>
-            <i>+</i>
-          </div>
-        </summary>
 
-        <div className="v2ResearchBody">
+          <div className="v2ResearchBody">
       {activeWorkspace.sport === "football" ? (
         <>
           <ParallaxCore locale={locale} />
@@ -836,40 +881,17 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
         />
       </div>
 
-      <section className="integrationRail">
-        <div className="integrationIdentity">
-          <span className="miniLabel">DATA PLANE</span>
-          <strong>{providerMode}</strong>
-        </div>
 
-        <div className="integrationNodes">
-          <div className={providerStatus?.providers.sportmonks.configured ? "online" : "offline"}>
-            <i />
-            <span>SPORTMONKS</span>
-            <b>{providerStatus?.providers.sportmonks.configured ? "CONNECTED" : "AWAITING KEY"}</b>
-          </div>
-          <div className={providerStatus?.providers.theOddsApi.configured ? "online" : "offline"}>
-            <i />
-            <span>THE ODDS API</span>
-            <b>{providerStatus?.providers.theOddsApi.configured ? "CONNECTED" : "AWAITING KEY"}</b>
-          </div>
-          <div className="standby">
-            <i />
-            <span>NEWS / INJURY</span>
-            <b>NEXT</b>
-          </div>
-          <div className="online">
-            <i />
-            <span>REALTIME BRIDGE</span>
-            <b>READY</b>
-          </div>
-        </div>
 
-        <p>{dictionary.connectHint}</p>
-      </section>
+          </div>
+        </section>
+      )}
 
+      {activeView === "system" && (
+        <div className="workspaceScene workspaceSystem">
+          <SystemStatusPanel />
         </div>
-      </details>
+      )}
 
       <footer className="signalFooter">
         <div className="footerSignalLine"><i /><span>VETO / SIGNAL SYSTEM</span></div>
