@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Sport } from "@/lib/domain/types";
 import { sportEngineRegistry } from "@/lib/sports/registry";
+import { SportGlyph } from "@/components/SportGlyph";
 
 type HealthPayload = {
   passed: boolean;
@@ -88,6 +89,9 @@ export function EngineUniverse({
               type="button"
             >
               <div>
+                <span className="engineSportGlyph">
+                  <SportGlyph sport={engine.sport} size={17} />
+                </span>
                 <i />
                 <span>{engine.label}</span>
                 <em>
