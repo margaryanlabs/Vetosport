@@ -428,10 +428,6 @@ export function ParallaxCore({ locale }: { locale: Locale }) {
         </section>
       </div>
 
-      <TemporalResponseLab locale={locale} />
-      <CrossMarketPropagation locale={locale} />
-      <ShockExecutionPanel locale={locale} />
-
       <details className="parallaxAdvancedStack">
         <summary>
           <div>
@@ -439,11 +435,14 @@ export function ParallaxCore({ locale }: { locale: Locale }) {
             <strong>Calibration, regime, authority & proof layers</strong>
           </div>
           <div>
-            <b>26 MODULES</b>
+            <b>29 MODULES</b>
             <i>+</i>
           </div>
         </summary>
         <div className="parallaxAdvancedBody">
+          <TemporalResponseLab locale={locale} />
+          <CrossMarketPropagation locale={locale} />
+          <ShockExecutionPanel locale={locale} />
           <AlphaMemoryPanel locale={locale} />
           <ExperimentLedgerPanel locale={locale} />
           <TruthPlanePanel locale={locale} />
