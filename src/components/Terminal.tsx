@@ -195,6 +195,9 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
 
         <nav>
           <a className="active" href="#terminal">{dictionary.nav.terminal}</a>
+          <a href="#how-veto-works">
+            {locale === "ru" ? "Как работает" : locale === "hy" ? "Ինչպես է աշխատում" : "How it works"}
+          </a>
           <a href="#live">{dictionary.nav.live}</a>
           <a href="#events">{dictionary.nav.events}</a>
           <a href="#models">{dictionary.nav.models}</a>
@@ -241,7 +244,7 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
 
           <div className="heroIdentity">
             <VetoMark size={54} className="heroMark" />
-            <span>VETO SPORT / SIGNAL SYSTEM</span>
+            <span>VETO SPORT / MARKET INTELLIGENCE</span>
           </div>
 
           <h1>
