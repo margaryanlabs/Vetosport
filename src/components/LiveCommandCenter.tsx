@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { Opportunity, Sport } from "@/lib/domain/types";
 import type { LiveWorkspace } from "@/lib/sandbox/workspaces";
+import { SportGlyph } from "@/components/SportGlyph";
 
 const pp = (value: number) =>
   `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)} pp`;
@@ -84,7 +85,14 @@ export function LiveCommandCenter({
             onClick={() => setFilter(item)}
             type="button"
           >
-            {item === "all" ? "ALL LIVE" : item.toUpperCase()}
+            <span className="liveFilterIcon">
+              {item === "all" ? (
+                <i className="liveAllGlyph">◎</i>
+              ) : (
+                <SportGlyph sport={item} size={16} />
+              )}
+            </span>
+            <span>{item === "all" ? "ALL LIVE" : item.toUpperCase()}</span>
           </button>
         ))}
       </div>
@@ -101,7 +109,11 @@ export function LiveCommandCenter({
                 type="button"
               >
                 <div className="liveCommandEventTop">
-                  <span><i className={workspace.pulse} />{workspace.sportLabel}</span>
+                  <span className="liveSportIdentity">
+                    <SportGlyph sport={workspace.sport} size={16} />
+                    <i className={workspace.pulse} />
+                    {workspace.sportLabel}
+                  </span>
                   <b>{workspace.clock}</b>
                 </div>
 
@@ -161,7 +173,10 @@ export function LiveCommandCenter({
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <div className="signalRadarIdentity">
-                  <span>{workspace.sportLabel} · {workspace.homeCode}/{workspace.awayCode}</span>
+                  <span className="signalRadarSport">
+                    <SportGlyph sport={workspace.sport} size={14} />
+                    {workspace.sportLabel} · {workspace.homeCode}/{workspace.awayCode}
+                  </span>
                   <strong>{opportunity.selection.label}</strong>
                 </div>
                 <span className="signalRadarProbability">
