@@ -59,8 +59,8 @@ export function WorkspaceChrome({
   onLocaleChange: (locale: Locale) => void;
   homeCode: string;
   awayCode: string;
-  homeScore: number;
-  awayScore: number;
+  homeScore: string | number;
+  awayScore: string | number;
   clock: string;
   competition: string;
   providerMode: string;
