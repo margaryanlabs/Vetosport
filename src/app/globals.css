@@ -11335,3 +11335,757 @@ body::before {
 .regimeBarrierMethod{min-height:58px;padding:11px 18px;display:grid;grid-template-columns:105px minmax(0,1fr) auto;gap:18px;align-items:center;background:rgba(191,162,105,.008)}.regimeBarrierMethod>span{color:var(--watch);font-size:5px;font-weight:850;letter-spacing:.1em}.regimeBarrierMethod p{margin:0;color:#56615c;font-size:6px;line-height:1.5}.regimeBarrierMethod code{color:#46514c;font-size:5px}
 @media(max-width:900px){.regimeBarrierGrid,.regimeBarrierCandidates{grid-template-columns:1fr}}
 @media(max-width:620px){.regimeBarrierHead{min-height:auto;padding:13px 14px;flex-direction:column;align-items:flex-start}.regimeBarrierGrid,.regimeBarrierCompare,.regimeBarrierCandidates,.regimeBarrierMethod{padding-left:14px;padding-right:14px}.regimeBarrierCompare{grid-template-columns:1fr}.regimeBarrierCompare i{display:none}.regimeBarrierMethod{grid-template-columns:1fr}.regimeBarrierMethod code{display:none}}
+
+
+/* ==========================================================================
+   VETO SPORT P0 UX UPLIFT — Mission Control / first-run clarity
+   ========================================================================== */
+
+.heroActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 26px;
+}
+.heroPrimaryAction,
+.heroSecondaryAction {
+  min-height: 42px;
+  padding: 0 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  text-decoration: none;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .13em;
+  transition: transform .2s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease;
+}
+.heroPrimaryAction {
+  min-width: 205px;
+  color: #06100c;
+  border: 1px solid var(--edge);
+  background: linear-gradient(120deg, #9cf1c8, #77cda8);
+  box-shadow: 0 14px 38px rgba(142,227,188,.13);
+}
+.heroSecondaryAction {
+  min-width: 185px;
+  color: var(--text-soft);
+  border: 1px solid var(--line-strong);
+  background: rgba(255,255,255,.018);
+}
+.heroPrimaryAction:hover,
+.heroSecondaryAction:hover {
+  transform: translateY(-2px);
+}
+.heroPrimaryAction:hover { box-shadow: 0 18px 48px rgba(142,227,188,.20); }
+.heroSecondaryAction:hover {
+  border-color: rgba(167,191,210,.38);
+  background: rgba(255,255,255,.035);
+}
+.heroActionRow b { font-size: 15px; font-weight: 500; }
+
+.heroTrustRow {
+  margin-top: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 15px;
+  color: var(--muted);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+.heroTrustRow span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.heroTrustRow i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--edge);
+  box-shadow: 0 0 10px rgba(142,227,188,.3);
+}
+
+.missionControl {
+  position: relative;
+  overflow: hidden;
+  margin: 14px 0 12px;
+  padding: 26px;
+  border: 1px solid rgba(167,191,210,.19);
+  background:
+    linear-gradient(145deg, rgba(17,23,30,.96), rgba(8,12,16,.96)),
+    var(--panel);
+  box-shadow: 0 28px 90px rgba(0,0,0,.26);
+  isolation: isolate;
+}
+.missionControl::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: .34;
+  background-image:
+    linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,.7), transparent 88%);
+  z-index: -2;
+}
+.missionBackdrop {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: -1;
+}
+.missionOrb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(18px);
+  opacity: .16;
+}
+.missionOrbOne {
+  width: 270px;
+  height: 270px;
+  top: -150px;
+  right: 8%;
+  border: 1px solid rgba(142,227,188,.4);
+  box-shadow: inset 0 0 80px rgba(142,227,188,.2);
+  animation: missionFloat 8s ease-in-out infinite;
+}
+.missionOrbTwo {
+  width: 180px;
+  height: 180px;
+  bottom: -110px;
+  left: 10%;
+  border: 1px solid rgba(167,191,210,.28);
+  box-shadow: inset 0 0 70px rgba(167,191,210,.14);
+  animation: missionFloat 10s ease-in-out infinite reverse;
+}
+.missionSweep {
+  position: absolute;
+  width: 560px;
+  height: 1px;
+  top: 28%;
+  right: -110px;
+  transform: rotate(-18deg);
+  background: linear-gradient(90deg, transparent, rgba(142,227,188,.17), transparent);
+  box-shadow: 0 0 22px rgba(142,227,188,.12);
+  animation: missionSweep 7s linear infinite;
+}
+@keyframes missionFloat {
+  0%, 100% { transform: translate3d(0,0,0) scale(1); }
+  50% { transform: translate3d(10px,15px,0) scale(1.06); }
+}
+@keyframes missionSweep {
+  0% { opacity: 0; transform: translateX(-90px) rotate(-18deg); }
+  18%, 72% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(130px) rotate(-18deg); }
+}
+
+.missionHead {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(260px, .7fr);
+  gap: 34px;
+  align-items: end;
+}
+.missionEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--edge);
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: .17em;
+}
+.missionEyebrow i {
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--edge);
+  border-radius: 50%;
+  box-shadow: 0 0 14px rgba(142,227,188,.35);
+}
+.missionHead h2 {
+  max-width: 820px;
+  margin: 12px 0 0;
+  font-size: clamp(30px, 3.2vw, 49px);
+  line-height: .98;
+  letter-spacing: -.048em;
+}
+.missionHead > div:first-child > p {
+  max-width: 780px;
+  margin: 16px 0 0;
+  color: #8d98a5;
+  font-size: 13px;
+  line-height: 1.66;
+}
+.missionPhilosophy {
+  padding: 17px 18px;
+  border-left: 2px solid var(--edge);
+  background: linear-gradient(90deg, rgba(142,227,188,.075), rgba(142,227,188,.012));
+}
+.missionPhilosophy span {
+  display: block;
+  color: var(--edge);
+  font-size: 7px;
+  font-weight: 850;
+  letter-spacing: .16em;
+}
+.missionPhilosophy strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.missionReadiness {
+  margin-top: 25px;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 15px;
+  border: 1px solid var(--line);
+  background: rgba(2,5,8,.42);
+}
+.missionReadinessLabel {
+  padding: 0 6px;
+  color: var(--muted-2);
+  font-size: 7px;
+  font-weight: 850;
+  letter-spacing: .16em;
+  white-space: nowrap;
+}
+.missionReadinessGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.missionReadinessGrid > div {
+  min-height: 36px;
+  padding: 0 10px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line-soft);
+  background: rgba(255,255,255,.012);
+}
+.missionReadinessGrid i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+.missionReadinessGrid span {
+  color: var(--text-soft);
+  font-size: 7px;
+  font-weight: 750;
+  letter-spacing: .08em;
+}
+.missionReadinessGrid b {
+  font-size: 7px;
+  letter-spacing: .09em;
+}
+.missionReadinessGrid .ready i {
+  background: var(--edge);
+  box-shadow: 0 0 12px rgba(142,227,188,.42);
+}
+.missionReadinessGrid .ready b { color: var(--edge); }
+.missionReadinessGrid .pending i {
+  background: var(--watch);
+  box-shadow: 0 0 10px rgba(201,169,107,.25);
+}
+.missionReadinessGrid .pending b { color: var(--watch); }
+.missionReadinessGrid .checking i {
+  border: 1px solid var(--muted-2);
+  background: transparent;
+  animation: readinessBlink 1.35s ease-in-out infinite;
+}
+.missionReadinessGrid .checking b { color: var(--muted); }
+@keyframes readinessBlink {
+  0%, 100% { opacity: .35; }
+  50% { opacity: 1; }
+}
+
+.missionCards {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.missionCard {
+  position: relative;
+  min-height: 190px;
+  overflow: hidden;
+  padding: 18px;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(155deg, rgba(255,255,255,.026), transparent 48%),
+    rgba(5,9,13,.68);
+  transition: transform .22s ease, border-color .22s ease, background .22s ease, box-shadow .22s ease;
+}
+.missionCard::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  right: -65px;
+  top: -65px;
+  border-radius: 50%;
+  background: rgba(142,227,188,.06);
+  filter: blur(10px);
+  transition: transform .3s ease, opacity .3s ease;
+}
+.missionCard:hover {
+  transform: translateY(-3px);
+  border-color: rgba(142,227,188,.28);
+  background:
+    linear-gradient(155deg, rgba(142,227,188,.045), transparent 48%),
+    rgba(8,13,17,.85);
+  box-shadow: 0 18px 48px rgba(0,0,0,.20);
+}
+.missionCard:hover::after { transform: scale(1.3); opacity: .9; }
+.missionCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.missionGlyph {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  color: var(--edge);
+  border: 1px solid rgba(142,227,188,.18);
+  background: rgba(142,227,188,.055);
+}
+.missionGlyph svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  stroke-width: 1.35;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.missionCardTop small {
+  color: #39434e;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 8px;
+}
+.missionCard h3 {
+  margin: 30px 0 0;
+  font-size: 13px;
+  letter-spacing: -.015em;
+}
+.missionCard p {
+  max-width: 300px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.52;
+}
+.missionCardLine {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 15px;
+  height: 1px;
+  background: var(--line-soft);
+}
+.missionCardLine span {
+  display: block;
+  width: 26%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--edge), transparent);
+  opacity: .55;
+}
+
+
+.decisionLanguage {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.decisionLanguage article {
+  min-height: 80px;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.009);
+}
+.decisionLanguage article > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.decisionLanguage article i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.decisionLanguage article strong {
+  font-size: 9px;
+  letter-spacing: .12em;
+}
+.decisionLanguage article p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 1.5;
+}
+.decisionLanguage .edge {
+  border-color: rgba(142,227,188,.18);
+  background: rgba(142,227,188,.025);
+}
+.decisionLanguage .edge i { background: var(--edge); box-shadow: 0 0 10px rgba(142,227,188,.34); }
+.decisionLanguage .edge strong { color: var(--edge); }
+.decisionLanguage .watch {
+  border-color: rgba(201,169,107,.18);
+  background: rgba(201,169,107,.02);
+}
+.decisionLanguage .watch i { background: var(--watch); }
+.decisionLanguage .watch strong { color: var(--watch); }
+.decisionLanguage .pass i { background: #56616d; }
+.decisionLanguage .pass strong { color: #8b96a2; }
+
+.missionSteps {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.01);
+}
+.missionStepsHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+.missionStepsHead small { color: var(--muted-2); font-size: 7px; }
+.missionStepsRail {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+}
+.missionStepsRail a {
+  min-width: 0;
+  padding: 10px 11px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  border-left: 1px solid var(--line);
+  color: var(--text-soft);
+  text-decoration: none;
+  transition: background .2s ease, color .2s ease;
+}
+.missionStepsRail a:first-child { border-left: 0; }
+.missionStepsRail a:hover {
+  color: var(--edge);
+  background: rgba(142,227,188,.035);
+}
+.missionStepsRail span {
+  color: var(--muted-2);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 7px;
+}
+.missionStepsRail strong {
+  min-width: 0;
+  font-size: 8px;
+  line-height: 1.35;
+}
+.missionStepsRail i {
+  color: #3d4854;
+  font-style: normal;
+}
+
+.vetoTourOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  padding: 18px;
+  display: grid;
+  place-items: center;
+  background: rgba(2,4,7,.78);
+  backdrop-filter: blur(18px) saturate(120%);
+  animation: vetoTourIn .28s ease both;
+}
+@keyframes vetoTourIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.vetoTourCard {
+  position: relative;
+  width: min(720px, 100%);
+  min-height: 455px;
+  overflow: hidden;
+  padding: 34px;
+  border: 1px solid rgba(167,191,210,.26);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(142,227,188,.09), transparent 38%),
+    linear-gradient(145deg, #10161c, #070a0e 72%);
+  box-shadow: 0 48px 130px rgba(0,0,0,.56);
+}
+.vetoTourCard::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,.8), transparent 88%);
+}
+.vetoTourAura {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  right: -70px;
+  top: -80px;
+  border: 1px solid rgba(142,227,188,.18);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 60px rgba(142,227,188,.08),
+    0 0 80px rgba(142,227,188,.05);
+}
+.vetoTourSkip {
+  position: absolute;
+  right: 25px;
+  top: 23px;
+  z-index: 2;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+.vetoTourSkip:hover { color: var(--text); }
+.vetoTourMark {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.vetoTourMark > span {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  color: var(--edge);
+  border: 1px solid rgba(142,227,188,.23);
+  background: rgba(142,227,188,.06);
+}
+.vetoTourMark svg {
+  width: 27px;
+  height: 27px;
+  stroke: currentColor;
+  stroke-width: 1.35;
+  fill: none;
+}
+.vetoTourMark i {
+  color: var(--muted);
+  font-style: normal;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: .16em;
+}
+.vetoTourCard h2 {
+  position: relative;
+  z-index: 1;
+  max-width: 560px;
+  margin: 38px 0 0;
+  font-size: clamp(30px, 5vw, 52px);
+  line-height: .98;
+  letter-spacing: -.052em;
+}
+.vetoTourCard > p {
+  position: relative;
+  z-index: 1;
+  max-width: 590px;
+  margin: 17px 0 0;
+  color: #9aa4ae;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.vetoTourMiniFlow {
+  position: relative;
+  z-index: 1;
+  margin-top: 30px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+.vetoTourMiniFlow button {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.012);
+  color: var(--muted);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .18s ease, background .18s ease, color .18s ease;
+}
+.vetoTourMiniFlow button.active,
+.vetoTourMiniFlow button:hover {
+  border-color: rgba(142,227,188,.28);
+  background: rgba(142,227,188,.045);
+  color: var(--text);
+}
+.vetoTourMiniFlow span {
+  margin-left: 10px;
+  color: var(--muted-2);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 7px;
+}
+.vetoTourMiniFlow b { font-size: 9px; letter-spacing: .08em; }
+.vetoTourFooter {
+  position: relative;
+  z-index: 1;
+  margin-top: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.vetoTourFooter > div { display: flex; gap: 5px; }
+.vetoTourFooter > div i {
+  width: 20px;
+  height: 2px;
+  background: #28313a;
+  transition: width .2s ease, background .2s ease;
+}
+.vetoTourFooter > div i.active {
+  width: 34px;
+  background: var(--edge);
+}
+.vetoTourPrimary {
+  min-width: 170px;
+  min-height: 42px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--edge);
+  background: var(--edge);
+  color: #07110d;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+.vetoTourPrimary span { font-size: 15px; }
+
+.liveCommandFilter button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.liveFilterIcon {
+  width: 18px;
+  height: 18px;
+  display: inline-grid;
+  place-items: center;
+  color: currentColor;
+  opacity: .75;
+}
+.liveAllGlyph {
+  font-style: normal;
+  font-size: 15px;
+  line-height: 1;
+}
+.liveSportIdentity,
+.signalRadarSport {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+}
+.liveSportIdentity svg,
+.signalRadarSport svg {
+  flex: 0 0 auto;
+  opacity: .86;
+}
+.engineSportGlyph {
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  color: var(--ice);
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.018);
+}
+.engineUniverseNode.active .engineSportGlyph,
+.engineUniverseNode:hover .engineSportGlyph {
+  color: var(--edge);
+  border-color: rgba(142,227,188,.22);
+  background: rgba(142,227,188,.05);
+}
+
+@media (max-width: 1050px) {
+  .missionHead { grid-template-columns: 1fr; }
+  .missionPhilosophy { max-width: 680px; }
+  .missionReadiness { grid-template-columns: 1fr; }
+  .missionReadinessGrid { grid-template-columns: repeat(2, 1fr); }
+  .missionCards { grid-template-columns: repeat(2, 1fr); }
+  .missionStepsRail { grid-template-columns: repeat(3, 1fr); }
+  .missionStepsRail a:nth-child(4) { border-left: 0; }
+}
+
+@media (max-width: 700px) {
+  .heroActionRow { display: grid; grid-template-columns: 1fr; }
+  .heroPrimaryAction,
+  .heroSecondaryAction { width: 100%; }
+  .heroTrustRow { gap: 8px 12px; }
+
+  .missionControl {
+    padding: 18px;
+    margin-left: -2px;
+    margin-right: -2px;
+  }
+  .missionHead h2 { font-size: 34px; }
+  .missionHead > div:first-child > p { font-size: 12px; }
+  .missionReadinessGrid,
+  .missionCards,
+  .decisionLanguage { grid-template-columns: 1fr; }
+  .missionCard { min-height: 160px; }
+  .missionCard h3 { margin-top: 22px; }
+  .missionStepsHead { align-items: flex-start; flex-direction: column; }
+  .missionStepsRail { grid-template-columns: 1fr; }
+  .missionStepsRail a,
+  .missionStepsRail a:nth-child(4) { border-left: 0; border-top: 1px solid var(--line); }
+  .missionStepsRail a:first-child { border-top: 0; }
+
+  .vetoTourOverlay { padding: 10px; }
+  .vetoTourCard {
+    min-height: auto;
+    padding: 25px 19px 20px;
+  }
+  .vetoTourSkip { right: 18px; top: 17px; }
+  .vetoTourCard h2 { margin-top: 28px; font-size: 34px; }
+  .vetoTourCard > p { font-size: 12px; }
+  .vetoTourMiniFlow { grid-template-columns: 1fr; }
+  .vetoTourMiniFlow button { min-height: 42px; }
+  .vetoTourFooter { margin-top: 20px; gap: 14px; }
+  .vetoTourPrimary { min-width: 145px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .missionOrbOne,
+  .missionOrbTwo,
+  .missionSweep,
+  .pulseCore { animation: none !important; }
+  .missionCard,
+  .heroPrimaryAction,
+  .heroSecondaryAction { transition: none !important; }
+}
