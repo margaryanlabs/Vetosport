@@ -55,6 +55,7 @@ const copy = {
     connected: "CONNECTED",
     pending: "PENDING",
     passed: "PASSED",
+    checking: "CHECKING",
     tourTitle: "Добро пожаловать в VETO Sport",
     tourSubtitle: "Это не сервис прогнозов. Это исследовательский терминал, который проверяет цену рынка.",
     tourSlides: [
@@ -98,6 +99,7 @@ const copy = {
     connected: "CONNECTED",
     pending: "PENDING",
     passed: "PASSED",
+    checking: "CHECKING",
     tourTitle: "Welcome to VETO Sport",
     tourSubtitle: "This is not a prediction service. It is a research terminal that audits market price.",
     tourSlides: [
@@ -141,6 +143,7 @@ const copy = {
     connected: "CONNECTED",
     pending: "PENDING",
     passed: "PASSED",
+    checking: "CHECKING",
     tourTitle: "Բարի գալուստ VETO Sport",
     tourSubtitle: "Սա կանխատեսումների ծառայություն չէ։ Սա շուկայի գինը ստուգող research terminal է։",
     tourSlides: [
@@ -214,15 +217,27 @@ export function MissionControlIntro({ locale }: { locale: Locale }) {
   };
 
   const statuses = useMemo(() => {
-    const feeds =
-      Boolean(dataPlane?.runtime?.sportmonksConfigured) &&
-      Boolean(dataPlane?.runtime?.oddsConfigured);
+    const coreReady = selfcheck == null ? null : Boolean(selfcheck.passed);
+    const storageReady =
+      dataPlane == null ? null : Boolean(dataPlane.storageReachable);
+    const feedsReady =
+      dataPlane == null
+        ? null
+        : Boolean(dataPlane.runtime?.sportmonksConfigured) &&
+          Boolean(dataPlane.runtime?.oddsConfigured);
+    const parallaxReady =
+      selfcheck == null
+        ? null
+        : Boolean(
+            selfcheck.researchLayers?.parallax?.passed ??
+              selfcheck.passed,
+          );
 
     return [
-      [t.core, Boolean(selfcheck?.passed), t.ready],
-      [t.storage, Boolean(dataPlane?.storageReachable), t.connected],
-      [t.feeds, feeds, feeds ? t.connected : t.pending],
-      [t.parallax, Boolean(selfcheck?.researchLayers?.parallax?.passed ?? selfcheck?.passed), t.passed],
+      [t.core, coreReady, coreReady == null ? t.checking : coreReady ? t.ready : t.pending],
+      [t.storage, storageReady, storageReady == null ? t.checking : storageReady ? t.connected : t.pending],
+      [t.feeds, feedsReady, feedsReady == null ? t.checking : feedsReady ? t.connected : t.pending],
+      [t.parallax, parallaxReady, parallaxReady == null ? t.checking : parallaxReady ? t.passed : t.pending],
     ] as const;
   }, [dataPlane, selfcheck, t]);
 
@@ -252,7 +267,7 @@ export function MissionControlIntro({ locale }: { locale: Locale }) {
           <span className="missionReadinessLabel">{t.system}</span>
           <div className="missionReadinessGrid">
             {statuses.map(([label, ok, state]) => (
-              <div className={ok ? "ready" : "pending"} key={label}>
+              <div className={ok == null ? "checking" : ok ? "ready" : "pending"} key={label}>
                 <i />
                 <span>{label}</span>
                 <b>{state}</b>
@@ -303,8 +318,8 @@ export function MissionControlIntro({ locale }: { locale: Locale }) {
               <i>VETO / FIRST RUN</i>
             </div>
 
-            <h2>{tourStep === 0 ? t.tourTitle : t.tourSlides[tourStep][0]}</h2>
-            <p>{tourStep === 0 ? t.tourSubtitle : t.tourSlides[tourStep][1]}</p>
+            <h2>{tourStep === 0 ? t.tourTitle : t.tourSlides[tourStep - 1][0]}</h2>
+            <p>{tourStep === 0 ? t.tourSubtitle : t.tourSlides[tourStep - 1][1]}</p>
 
             <div className="vetoTourMiniFlow">
               {t.tourSlides.map(([label], index) => (
