@@ -196,8 +196,7 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
         <nav>
           <a className="active" href="#live">LIVE</a>
           <a href="#events">INTELLIGENCE</a>
-          <a href="#parallax">PARALLAX</a>
-          <a href="#validation">RESEARCH</a>
+          <a href="#research">RESEARCH</a>
         </nav>
 
         <div className="topbarActions">
@@ -558,6 +557,19 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
         </div>
       </section>
 
+      <details className="v2ResearchHub" id="research">
+        <summary>
+          <div>
+            <span>RESEARCH WORKSPACE</span>
+            <strong>PARALLAX · probability surface · model council · validation</strong>
+          </div>
+          <div>
+            <small>OPEN DEEP INTELLIGENCE</small>
+            <i>+</i>
+          </div>
+        </summary>
+
+        <div className="v2ResearchBody">
       {activeWorkspace.sport === "football" ? (
         <>
           <ParallaxCore locale={locale} />
@@ -855,6 +867,9 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
 
         <p>{dictionary.connectHint}</p>
       </section>
+
+        </div>
+      </details>
 
       <footer className="signalFooter">
         <div className="footerSignalLine"><i /><span>VETO / SIGNAL SYSTEM</span></div>
