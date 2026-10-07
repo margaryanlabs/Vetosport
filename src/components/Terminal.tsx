@@ -201,10 +201,6 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
         </nav>
 
         <div className="topbarActions">
-          <div className="systemPulse">
-            <span className="pulseCore" />
-            <span>CORE ONLINE</span>
-          </div>
           <div className="localeSwitch" aria-label="Language">
             {(["ru", "en", "hy"] as Locale[]).map((item) => (
               <button
@@ -277,12 +273,6 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
             ))}
           </div>
 
-          <div className="heroTelemetry">
-            <span>{activeWorkspace.clock}</span>
-            <span>STATE {activeWorkspace.stateId}</span>
-            <span>FEED {activeWorkspace.feedLatency}</span>
-            <span>MODEL {activeWorkspace.modelLatency}</span>
-          </div>
         </div>
 
         <div className="heroSignal">
@@ -543,8 +533,6 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
             <span>{dictionary.price}</span>
             <span>{dictionary.fair}</span>
             <span>{dictionary.edge}</span>
-            <span>{dictionary.agreement}</span>
-            <span>{dictionary.score}</span>
             <span>{dictionary.decision}</span>
           </div>
           {visibleOpportunities.map((item) => (
@@ -564,11 +552,6 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
               <span className="mono">{item.marketOdds.toFixed(2)}</span>
               <span className="mono">{item.fairOdds.toFixed(2)}</span>
               <span className={item.probabilityEdge > 0 ? "positive mono" : "muted mono"}>{pp(item.probabilityEdge)}</span>
-              <span className="agreementCell">
-                <span>{item.modelAgreement}</span>
-                <i><b style={{ width: `${item.modelAgreement}%` }} /></i>
-              </span>
-              <span className="vetoScore">{item.opportunityScore}</span>
               <span className={`decision ${decisionClass(item.decision)}`}>{item.decision}</span>
             </button>
           ))}
