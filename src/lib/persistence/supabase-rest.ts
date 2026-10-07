@@ -22,20 +22,28 @@ import type {
 } from "./contracts";
 
 interface SupabaseRestOptions {
-  url: string;
-  serviceRoleKey: string;
+  url?: string;
+  serviceRoleKey?: string;
   tablePrefix?: string;
+  bridgeUrl?: string;
+  bridgeSecret?: string;
 }
 
 export class SupabaseRestPersistence implements VetoPersistence {
   private readonly baseUrl: string;
-  private readonly serviceRoleKey: string;
+  private readonly serviceRoleKey?: string;
   private readonly tablePrefix: string;
+  private readonly bridgeUrl?: string;
+  private readonly bridgeSecret?: string;
 
   constructor(options: SupabaseRestOptions) {
-    this.baseUrl = `${options.url.replace(/\/$/, "")}/rest/v1`;
+    this.baseUrl = options.url
+      ? `${options.url.replace(/\/$/, "")}/rest/v1`
+      : "";
     this.serviceRoleKey = options.serviceRoleKey;
     this.tablePrefix = options.tablePrefix ?? "";
+    this.bridgeUrl = options.bridgeUrl?.replace(/\/$/, "");
+    this.bridgeSecret = options.bridgeSecret;
   }
 
   private tablePath(name: string, query?: string) {
@@ -48,21 +56,53 @@ export class SupabaseRestPersistence implements VetoPersistence {
     init: RequestInit,
     prefer?: string,
   ): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      ...init,
-      headers: {
-        apikey: this.serviceRoleKey,
-        Authorization: `Bearer ${this.serviceRoleKey}`,
-        "Content-Type": "application/json",
-        ...(prefer ? { Prefer: prefer } : {}),
-        ...(init.headers ?? {}),
-      },
-      cache: "no-store",
-    });
+    let response: Response;
+
+    if (this.bridgeUrl && this.bridgeSecret) {
+      let body: unknown = undefined;
+      if (typeof init.body === "string" && init.body.length > 0) {
+        body = JSON.parse(init.body);
+      }
+
+      response = await fetch(this.bridgeUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-veto-storage-secret": this.bridgeSecret,
+        },
+        body: JSON.stringify({
+          path,
+          method: init.method ?? "GET",
+          body,
+          prefer,
+        }),
+        cache: "no-store",
+      });
+    } else {
+      if (!this.baseUrl || !this.serviceRoleKey) {
+        throw new Error(
+          "Supabase persistence requires either a storage bridge or direct service-role credentials.",
+        );
+      }
+
+      response = await fetch(`${this.baseUrl}${path}`, {
+        ...init,
+        headers: {
+          apikey: this.serviceRoleKey,
+          Authorization: `Bearer ${this.serviceRoleKey}`,
+          "Content-Type": "application/json",
+          ...(prefer ? { Prefer: prefer } : {}),
+          ...(init.headers ?? {}),
+        },
+        cache: "no-store",
+      });
+    }
 
     if (!response.ok) {
       const body = await response.text();
-      throw new Error(`Supabase REST ${response.status}: ${body.slice(0, 500)}`);
+      throw new Error(
+        `Supabase persistence ${response.status}: ${body.slice(0, 500)}`,
+      );
     }
 
     if (response.status === 204) return undefined as T;
