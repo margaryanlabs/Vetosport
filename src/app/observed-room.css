@@ -97,3 +97,13 @@
   .observedMarketTape article>em{display:none}
   .observedDecision{padding:17px}
 }
+
+.observedReadinessChecks{margin-top:16px;display:grid;gap:5px}
+.observedReadinessChecks>div{min-height:32px;padding:7px 8px;display:grid;grid-template-columns:8px 1fr auto;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.04);border-radius:8px;background:rgba(255,255,255,.008)}
+.observedReadinessChecks i{width:6px;height:6px;border-radius:50%;background:#5f6670}
+.observedReadinessChecks span{color:#8b919a;font-size:7px;letter-spacing:.03em}
+.observedReadinessChecks b{font-size:6px;letter-spacing:.08em}
+.observedReadinessChecks .pass i{background:#6d9b7a;box-shadow:0 0 8px rgba(109,155,122,.2)}
+.observedReadinessChecks .pass b{color:#84ad90}
+.observedReadinessChecks .block i{background:#b16e6e;box-shadow:0 0 8px rgba(177,110,110,.18)}
+.observedReadinessChecks .block b{color:#c48989}

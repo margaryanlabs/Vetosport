@@ -13,6 +13,19 @@ const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const decisionClass = (decision: Decision) =>
   decision === "EDGE" ? "edge" : decision === "WATCH" ? "watch" : "pass";
 
+const readinessLabel = (status: string | undefined) =>
+  status === "DECISION_READY"
+    ? "DECISION READY"
+    : status === "GOVERNANCE_BLOCKED"
+      ? "GOVERNANCE BLOCKED"
+      : status === "MARKET_MAPPING_INCOMPLETE"
+        ? "MAP MARKETS"
+        : status === "MODEL_INPUT_INCOMPLETE"
+          ? "INPUT NEEDED"
+          : status === "MODEL_ADAPTER_MISSING"
+            ? "ADAPTER NEEDED"
+            : "AWAITING DATA";
+
 export function LiveCommandCenter({
   events,
   activeEventId,
@@ -113,7 +126,7 @@ export function LiveCommandCenter({
                   <div className="liveCommandPrimary awaiting">
                     <div>
                       <span>VETO STATUS</span>
-                      <strong>AWAITING VETO</strong>
+                      <strong>{readinessLabel(event.decisionReadiness?.status)}</strong>
                     </div>
                     <div>
                       <b>OBSERVED</b>

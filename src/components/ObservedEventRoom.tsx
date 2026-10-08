@@ -7,6 +7,21 @@ const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) =>
   `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)} pp`;
 
+const readinessLabel = (status: string | undefined) =>
+  status === "DECISION_PRESENT"
+    ? "LEDGER DECISION"
+    : status === "DECISION_READY"
+      ? "DECISION READY"
+      : status === "GOVERNANCE_BLOCKED"
+        ? "GOVERNANCE BLOCKED"
+        : status === "MARKET_MAPPING_INCOMPLETE"
+          ? "MARKET MAPPING"
+          : status === "MODEL_INPUT_INCOMPLETE"
+            ? "MODEL INPUT"
+            : status === "MODEL_ADAPTER_MISSING"
+              ? "ADAPTER MISSING"
+              : "DATA PENDING";
+
 const print = (value: unknown) => {
   if (value == null) return "—";
   if (["string", "number", "boolean"].includes(typeof value)) return String(value);
@@ -25,6 +40,7 @@ export function ObservedEventRoom({
 }) {
   const event = observation.summary;
   const signal = observation.latestDecision;
+  const readiness = event.decisionReadiness;
   const state = Object.entries(observation.state).slice(0, 8);
 
   return (
@@ -54,7 +70,7 @@ export function ObservedEventRoom({
         <div><span>DATA STATE</span><strong>OBSERVED</strong><small>Persisted event path</small></div>
         <div><span>MARKETS</span><strong>{event.markets}</strong><small>{observation.quoteCount} quote rows</small></div>
         <div><span>LEDGER</span><strong>{observation.decisionCount ? "PRESENT" : "EMPTY"}</strong><small>{observation.decisionCount} decisions</small></div>
-        <div><span>VETO STATUS</span><strong>{signal?.decision ?? "AWAITING VETO"}</strong><small>{signal ? "Persisted decision" : "No synthetic forecast"}</small></div>
+        <div><span>VETO STATUS</span><strong>{signal?.decision ?? readinessLabel(readiness?.status)}</strong><small>{signal ? "Persisted decision" : "Preflight · no synthetic forecast"}</small></div>
       </div>
 
       <div className="observedBody">
@@ -110,9 +126,23 @@ export function ObservedEventRoom({
             </>
           ) : (
             <div className="observedAwaiting">
-              <span>NO DECISION YET</span>
-              <strong>Data first. Decision second.</strong>
-              <p>VETO is observing this event, but no immutable prediction/decision exists yet. No EDGE or WATCH is fabricated.</p>
+              <span>DECISION PREFLIGHT</span>
+              <strong>{readinessLabel(readiness?.status)}</strong>
+              <p>
+                {readiness?.blockers?.[0] ??
+                  "VETO is observing this event, but no immutable prediction/decision exists yet. No EDGE or WATCH is fabricated."}
+              </p>
+              {readiness?.requirements?.length ? (
+                <div className="observedReadinessChecks">
+                  {readiness.requirements.map((item) => (
+                    <div key={item.id} className={item.passed ? "pass" : "block"}>
+                      <i />
+                      <span>{item.label}</span>
+                      <b>{item.passed ? "PASS" : "BLOCK"}</b>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
           )}
 
@@ -120,6 +150,8 @@ export function ObservedEventRoom({
             <div><span>STATE SOURCE</span><strong>{observation.stateSource ?? "—"}</strong></div>
             <div><span>STATE LATENCY</span><strong>{observation.stateLatencyMs == null ? "—" : `${Math.round(observation.stateLatencyMs)} ms`}</strong></div>
             <div><span>SOURCE MODE</span><strong>PERSISTED</strong></div>
+            <div><span>MODEL</span><strong>{readiness?.modelVersion ?? "—"}</strong></div>
+            <div><span>PRODUCTION AUTHORITY</span><strong>{readiness?.productionAuthorized ? "AUTHORIZED" : "BLOCKED"}</strong></div>
           </div>
         </aside>
       </div>

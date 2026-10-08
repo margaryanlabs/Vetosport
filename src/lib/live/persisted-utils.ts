@@ -5,6 +5,7 @@ import type {
   PersistedMarketQuoteRecord,
 } from "@/lib/persistence/contracts";
 import type { LiveEventSummary, LivePrimarySignal } from "@/lib/live/types";
+import { evaluateLiveDecisionReadiness } from "@/lib/live/decision-readiness";
 
 export const isSelfcheckEvent = (event: PersistedEvent) =>
   event.canonicalKey === "veto-sport-storage-selfcheck" ||
@@ -108,6 +109,8 @@ export const buildPersistedSummary = (input: {
         ? clock.period.toUpperCase()
         : input.event.event.status.toUpperCase();
 
+  const decisionReadiness = evaluateLiveDecisionReadiness(input);
+
   return {
     id: input.event.id,
     source: "persisted",
@@ -133,6 +136,7 @@ export const buildPersistedSummary = (input: {
     markets: new Set(eventQuotes.map((quote) => quote.marketKey)).size,
     repriced: 0,
     intelligenceReady: Boolean(input.decision),
+    decisionReadiness,
     lastUpdatedAt,
     primarySignal: signalFromDecision(input.decision, eventQuotes),
   };
