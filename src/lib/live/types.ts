@@ -12,6 +12,32 @@ export interface LivePrimarySignal {
   capturedAt: string;
 }
 
+export type LiveDecisionReadinessStatus =
+  | "DECISION_PRESENT"
+  | "DATA_PENDING"
+  | "MODEL_INPUT_INCOMPLETE"
+  | "MARKET_MAPPING_INCOMPLETE"
+  | "GOVERNANCE_BLOCKED"
+  | "DECISION_READY"
+  | "MODEL_ADAPTER_MISSING";
+
+export interface LiveDecisionRequirement {
+  id: string;
+  label: string;
+  passed: boolean;
+  detail: string;
+}
+
+export interface LiveDecisionReadiness {
+  status: LiveDecisionReadinessStatus;
+  modelId?: string;
+  modelVersion?: string;
+  productionAuthorized: boolean;
+  autoDecisionEligible: boolean;
+  blockers: string[];
+  requirements: LiveDecisionRequirement[];
+}
+
 export interface LiveEventSummary {
   id: string;
   source: "persisted" | "sandbox";
@@ -32,6 +58,7 @@ export interface LiveEventSummary {
   markets: number;
   repriced: number;
   intelligenceReady: boolean;
+  decisionReadiness?: LiveDecisionReadiness;
   lastUpdatedAt?: string;
   primarySignal?: LivePrimarySignal;
 }
