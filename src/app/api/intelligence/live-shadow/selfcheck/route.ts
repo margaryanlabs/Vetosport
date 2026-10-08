@@ -5,10 +5,11 @@ import type {
 } from "@/lib/persistence/contracts";
 import { buildFootballProbabilitySurface } from "@/lib/models/football/surface";
 import { mapFootballQuoteToModel } from "@/lib/live/football-market-map";
+import { getPersistence, persistenceConfiguration } from "@/lib/persistence/factory";
 
 export const dynamic = "force-dynamic";
 
-export function GET() {
+export async function GET() {
   const event: PersistedEvent = {
     id: "00000000-0000-4000-8000-000000000777",
     canonicalKey: "selfcheck",
@@ -58,10 +59,42 @@ export function GET() {
   const mapped = cases.map((item) =>
     mapFootballQuoteToModel({ event, quote: item, surface }),
   );
-  const passed = mapped.every(Boolean);
+  const mapperPassed = mapped.every(Boolean);
+  let storageProbe = {
+    configured: persistenceConfiguration().supabaseConfigured,
+    reachable: false,
+    message: "Persistence is not configured.",
+  };
+
+  if (storageProbe.configured) {
+    try {
+      await getPersistence().listPredictionHeads([
+        "00000000-0000-4000-8000-000000000777",
+      ]);
+      storageProbe = {
+        configured: true,
+        reachable: true,
+        message: "prediction_snapshots read path is reachable.",
+      };
+    } catch (error) {
+      storageProbe = {
+        configured: true,
+        reachable: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "prediction_snapshots read probe failed.",
+      };
+    }
+  }
+
+  const passed =
+    mapperPassed &&
+    (!storageProbe.configured || storageProbe.reachable);
 
   return NextResponse.json({
     passed,
+    storageProbe,
     model: "veto.football-shadow-mapper.v1",
     checks: cases.map((item, index) => ({
       marketKey: item.marketKey,
