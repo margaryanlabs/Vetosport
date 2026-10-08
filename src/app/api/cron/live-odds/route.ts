@@ -13,27 +13,27 @@ export async function GET(request: Request) {
 
   const providers = providerConfiguration();
   const persistence = persistenceConfiguration();
-  const sportKeys = (process.env.VETO_ODDS_SPORT_KEYS ?? "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
+  const sportKeys = providers.theOddsApi.sportKeys;
+  const markets = providers.theOddsApi.markets;
 
-  if (!providers.theOddsApi.configured || !persistence.supabaseConfigured || sportKeys.length === 0) {
+  if (
+    !providers.theOddsApi.configured ||
+    !persistence.supabaseConfigured ||
+    !providers.theOddsApi.sportKeysConfigured
+  ) {
     return NextResponse.json({
       ok: true,
       skipped: true,
+      quotaProtected: true,
       reason: !providers.theOddsApi.configured
         ? "THE_ODDS_API_KEY is not configured."
         : !persistence.supabaseConfigured
           ? "Persistence is not configured."
-          : "VETO_ODDS_SPORT_KEYS is empty.",
+          : "VETO_ODDS_SPORT_KEYS is empty; refusing broad provider polling.",
+      sportKeys,
+      markets,
     });
   }
-
-  const markets = (process.env.VETO_ODDS_MARKETS ?? "h2h,spreads,totals")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
 
   const results = [];
   for (const sportKey of sportKeys) {
@@ -43,6 +43,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ok: true,
     skipped: false,
+    quotaProtected: true,
     sportKeys,
     markets,
     results,

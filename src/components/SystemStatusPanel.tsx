@@ -7,6 +7,8 @@ type Plane = {
     mode?: string;
     sportmonksConfigured?: boolean;
     oddsConfigured?: boolean;
+    oddsSportKeysConfigured?: boolean;
+    oddsSportKeysCount?: number;
     blockers?: string[];
   };
   storageReachable?: boolean;
@@ -18,7 +20,12 @@ type Providers = {
   mode?: string;
   providers?: {
     sportmonks?: { configured?: boolean };
-    theOddsApi?: { configured?: boolean };
+    theOddsApi?: {
+      configured?: boolean;
+      sportKeysConfigured?: boolean;
+      sportKeysCount?: number;
+      ingestionReady?: boolean;
+    };
   };
 };
 
@@ -60,6 +67,11 @@ export function SystemStatusPanel() {
     providers?.providers?.theOddsApi?.configured ??
     plane?.runtime?.oddsConfigured ??
     false;
+  const oddsAllowlist =
+    providers?.providers?.theOddsApi?.sportKeysConfigured ??
+    plane?.runtime?.oddsSportKeysConfigured ??
+    false;
+  const marketReady = odds && oddsAllowlist;
 
   return (
     <section className="systemScene">
@@ -97,9 +109,15 @@ export function SystemStatusPanel() {
 
         <article>
           <span>MARKET DATA</span>
-          <strong>{odds ? "CONNECTED" : "PENDING"}</strong>
-          <small>The Odds API market-price adapter.</small>
-          <i className={odds ? "ok" : "pending"} />
+          <strong>{marketReady ? "READY" : odds ? "NEEDS ALLOWLIST" : "PENDING"}</strong>
+          <small>
+            {marketReady
+              ? `Odds adapter armed · ${providers?.providers?.theOddsApi?.sportKeysCount ?? plane?.runtime?.oddsSportKeysCount ?? 0} sport keys allowed.`
+              : odds
+                ? "API key exists, but VETO_ODDS_SPORT_KEYS is empty. Polling remains disabled."
+                : "The Odds API key is not configured."}
+          </small>
+          <i className={marketReady ? "ok" : "pending"} />
         </article>
       </div>
 

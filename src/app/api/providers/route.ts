@@ -1,39 +1,19 @@
 import { NextResponse } from "next/server";
+import { getDataPlaneRuntimeStatus } from "@/lib/data-plane/engine";
 import { providerConfiguration } from "@/lib/providers/factory";
 import { persistenceConfiguration } from "@/lib/persistence/factory";
+
+export const dynamic = "force-dynamic";
 
 export function GET() {
   const providers = providerConfiguration();
   const persistence = persistenceConfiguration();
-  const sportKeys = (process.env.VETO_ODDS_SPORT_KEYS ?? "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
+  const runtime = getDataPlaneRuntimeStatus();
 
   const secrets = {
     cronSecretConfigured: Boolean(process.env.CRON_SECRET),
     ingestionSecretConfigured: Boolean(process.env.INGESTION_SECRET),
   };
-
-  const blockers: string[] = [];
-  if (!providers.sportmonks.configured) {
-    blockers.push("SPORTMONKS_API_TOKEN is not configured.");
-  }
-  if (!providers.theOddsApi.configured) {
-    blockers.push("THE_ODDS_API_KEY is not configured.");
-  }
-  if (sportKeys.length === 0) {
-    blockers.push("VETO_ODDS_SPORT_KEYS is empty.");
-  }
-  if (!persistence.supabaseConfigured) {
-    blockers.push("Persistence is not configured.");
-  }
-  if (!secrets.cronSecretConfigured) {
-    blockers.push("CRON_SECRET is not configured.");
-  }
-  if (!secrets.ingestionSecretConfigured) {
-    blockers.push("INGESTION_SECRET is not configured.");
-  }
 
   const footballStateReady =
     providers.sportmonks.configured &&
@@ -42,41 +22,36 @@ export function GET() {
 
   const liveOddsReady =
     providers.theOddsApi.configured &&
-    sportKeys.length > 0 &&
+    providers.theOddsApi.sportKeysConfigured &&
     persistence.supabaseConfigured &&
     secrets.cronSecretConfigured;
 
   return NextResponse.json({
-    model: "veto.provider-activation.v2",
-    mode:
-      footballStateReady && liveOddsReady
-        ? "live-ready"
-        : blockers.length < 6
-          ? "partially-configured"
-          : "sandbox",
+    model: "veto.provider-activation.v3",
     generatedAt: new Date().toISOString(),
+    mode: runtime.mode,
+    liveReady: runtime.mode === "LIVE_READY",
     providers: {
       sportmonks: {
         role: "football events, live state and final score",
         configured: providers.sportmonks.configured,
+        ingestionReady: footballStateReady,
       },
       theOddsApi: {
         role: "multi-book live odds and historical snapshots",
         configured: providers.theOddsApi.configured,
-        regions: (process.env.THE_ODDS_API_REGIONS ?? "eu")
-          .split(",")
-          .map((value) => value.trim())
-          .filter(Boolean),
-        sportKeys,
-        markets: (process.env.VETO_ODDS_MARKETS ?? "h2h,spreads,totals")
-          .split(",")
-          .map((value) => value.trim())
-          .filter(Boolean),
+        regions: providers.theOddsApi.regions,
+        sportKeys: providers.theOddsApi.sportKeys,
+        sportKeysConfigured: providers.theOddsApi.sportKeysConfigured,
+        sportKeysCount: providers.theOddsApi.sportKeys.length,
+        markets: providers.theOddsApi.markets,
+        ingestionReady: liveOddsReady,
       },
     },
     storage: {
       configured: persistence.supabaseConfigured,
       mode: persistence.storageMode,
+      tablePrefix: persistence.tablePrefix,
     },
     automation: {
       cronSecretConfigured: secrets.cronSecretConfigured,
@@ -87,42 +62,50 @@ export function GET() {
       terminalClosingConsensusReady:
         liveOddsReady && persistence.supabaseConfigured,
       decisionProofReady: persistence.supabaseConfigured,
+      quotaGuard:
+        "Odds cron refuses polling when VETO_ODDS_SPORT_KEYS is empty.",
       schedules: {
         footballState: "*/5 * * * *",
         liveOdds: "*/5 * * * *",
       },
     },
-    blockers,
+    blockers: runtime.blockers,
     requiredEnvironment: [
       {
         key: "SPORTMONKS_API_TOKEN",
         configured: providers.sportmonks.configured,
         purpose: "Football live state + final score",
+        secret: true,
       },
       {
         key: "THE_ODDS_API_KEY",
         configured: providers.theOddsApi.configured,
         purpose: "Live and historical bookmaker odds",
+        secret: true,
       },
       {
         key: "VETO_ODDS_SPORT_KEYS",
-        configured: sportKeys.length > 0,
-        purpose: "Explicit The Odds API competitions/sports to ingest",
+        configured: providers.theOddsApi.sportKeysConfigured,
+        purpose: "Explicit quota-safe The Odds API competitions/sports allowlist",
+        secret: false,
       },
       {
         key: "CRON_SECRET",
         configured: secrets.cronSecretConfigured,
         purpose: "Protect scheduled ingestion routes",
+        secret: true,
       },
       {
         key: "INGESTION_SECRET",
         configured: secrets.ingestionSecretConfigured,
         purpose: "Protect manual ingestion/settlement routes",
+        secret: true,
       },
       {
         key: "VETO_STORAGE_BRIDGE_* or SUPABASE_*",
         configured: persistence.supabaseConfigured,
         purpose: "Truth Journal, decision ledger, quotes and settlement storage",
+        secret: true,
       },
     ],
   });
