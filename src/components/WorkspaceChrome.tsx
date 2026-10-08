@@ -6,47 +6,22 @@ import { VetoMark, VetoWordmark } from "@/components/VetoMark";
 
 export type WorkspaceView = "live" | "intelligence" | "research" | "system";
 
-const modes: Array<{ id: WorkspaceView; label: string; short: string }> = [
-  { id: "live", label: "Live", short: "LIVE" },
-  { id: "intelligence", label: "Intelligence", short: "INTEL" },
-  { id: "research", label: "Research", short: "LAB" },
-  { id: "system", label: "System", short: "SYS" },
+const nav: Array<[WorkspaceView,string]> = [
+  ["live","MATCHES"],
+  ["intelligence","MATCH ROOM"],
+  ["research","LAB"],
+  ["system","SYSTEM"],
 ];
 
-const sports: Array<{ id: Sport; label: string }> = [
-  { id: "football", label: "Football" },
-  { id: "basketball", label: "Basketball" },
-  { id: "tennis", label: "Tennis" },
-  { id: "hockey", label: "Hockey" },
-];
-
-const submenus: Partial<Record<WorkspaceView, Array<[string,string]>>> = {
-  intelligence: [["event-overview","Match"],["event-signals","Signals"],["event-market","Markets"]],
-  research: [["parallax","Parallax"],["market-surface","Probability"],["models","Models"],["validation","Validate"]],
-  system: [["system-health","Health"],["system-providers","Providers"],["system-data","Data plane"]],
-};
-
-function ModeIcon({ mode }: { mode: WorkspaceView }) {
-  if (mode === "live") return <svg viewBox="0 0 24 24"><path d="M3 13h4l2-5 3 10 2.5-7 1.7 2H21"/></svg>;
-  if (mode === "intelligence") return <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.6"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3"/></svg>;
-  if (mode === "research") return <svg viewBox="0 0 24 24"><path d="M6 18 10.4 6h3.2L18 18M8 13h8"/><path d="M4 20h16"/></svg>;
-  return <svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14"/><circle cx="9" cy="7" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="11" cy="17" r="1.2"/></svg>;
-}
+const sports: Sport[] = ["football","basketball","tennis","hockey"];
 
 export function WorkspaceChrome({
   activeView,
   onViewChange,
   activeSport,
   onSportChange,
-  onJump,
   locale,
   onLocaleChange,
-  homeCode,
-  awayCode,
-  homeScore,
-  awayScore,
-  clock,
-  competition,
   providerMode,
   children,
 }: {
@@ -66,97 +41,51 @@ export function WorkspaceChrome({
   providerMode: string;
   children: React.ReactNode;
 }) {
-  const submenu = submenus[activeView] ?? [];
-
   return (
-    <main className={`vetoShell vetoShell-${activeSport}`}>
-      <aside className="vetoRail">
-        <button className="vetoRailBrand" onClick={() => onViewChange("live")} type="button" aria-label="VETO Sport home">
-          <VetoMark size={38} />
-          <VetoWordmark className="vetoRailWordmark" />
+    <main className={`matchShell matchShell-${activeSport}`}>
+      <header className="matchShellTop">
+        <button className="matchShellBrand" onClick={() => onViewChange("intelligence")} type="button" aria-label="VETO Sport">
+          <VetoMark size={31} />
+          <VetoWordmark className="matchShellWordmark" />
           <span>SPORT</span>
         </button>
 
-        <nav className="vetoRailNav" aria-label="Main navigation">
-          {modes.map((mode) => (
-            <div className="vetoRailGroup" key={mode.id}>
-              <button
-                className={activeView === mode.id ? "active" : ""}
-                onClick={() => onViewChange(mode.id)}
-                type="button"
-              >
-                <span className="vetoRailIcon"><ModeIcon mode={mode.id} /></span>
-                <span className="vetoRailLabel">{mode.label}</span>
-              </button>
-
-              {activeView === mode.id && submenu.length > 0 && (
-                <div className="vetoSubnav">
-                  {submenu.map(([target,label]) => (
-                    <button key={target} onClick={() => onJump(target)} type="button">{label}</button>
-                  ))}
-                </div>
-              )}
-            </div>
+        <nav className="matchShellNav">
+          {nav.map(([id,label]) => (
+            <button className={activeView===id?"active":""} key={id} onClick={() => onViewChange(id)} type="button">
+              {label}
+            </button>
           ))}
         </nav>
 
-        <div className="vetoRailBottom">
-          <div className="vetoRailStatus"><i /><span>{providerMode}</span></div>
-          <div className="vetoRailLanguages">
-            {(["ru","en","hy"] as Locale[]).map((item) => (
-              <button className={locale===item?"active":""} key={item} onClick={() => onLocaleChange(item)} type="button">
-                {item.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        </div>
-      </aside>
-
-      <section className="vetoShellMain">
-        <header className="vetoWorkspaceTop">
-          <div className="vetoWorkspaceTitle">
-            <span>{activeView === "live" ? "LIVE MARKET" : activeView.toUpperCase()}</span>
-            <strong>{competition}</strong>
-          </div>
-
-          <div className="vetoEventTicker">
-            <span>{homeCode}</span>
-            <strong>{homeScore}<i>:</i>{awayScore}</strong>
-            <span>{awayCode}</span>
-            <em>{clock}</em>
-          </div>
-
-          <div className="vetoSportTabs" aria-label="Sports">
+        <div className="matchShellTools">
+          <div className="matchShellSports">
             {sports.map((sport) => (
-              <button
-                className={activeSport===sport.id?"active":""}
-                key={sport.id}
-                onClick={() => onSportChange(sport.id)}
-                type="button"
-                title={sport.label}
-              >
-                <SportGlyph sport={sport.id} size={18} />
-                <span>{sport.label}</span>
+              <button className={activeSport===sport?"active":""} key={sport} onClick={() => onSportChange(sport)} type="button">
+                <SportGlyph sport={sport} size={17} />
               </button>
             ))}
           </div>
-        </header>
-
-        <div className="vetoWorkspaceBackdrop" aria-hidden>
-          <span className="vetoFieldMark vetoFieldMarkA" />
-          <span className="vetoFieldMark vetoFieldMarkB" />
-          <span className="vetoFieldSweep" />
-          <span className="vetoSportWatermark"><SportGlyph sport={activeSport} size={150} /></span>
+          <span className="matchShellStatus"><i />{providerMode}</span>
+          <div className="matchShellLang">
+            {(["ru","en","hy"] as Locale[]).map((item) => (
+              <button className={locale===item?"active":""} key={item} onClick={() => onLocaleChange(item)} type="button">{item.toUpperCase()}</button>
+            ))}
+          </div>
         </div>
+      </header>
 
-        <div className="vetoWorkspaceCanvas">{children}</div>
-      </section>
+      <div className="matchShellBackdrop" aria-hidden>
+        <span className="matchShellPitch" />
+        <span className="matchShellCut" />
+      </div>
 
-      <nav className="vetoMobileNav" aria-label="Mobile navigation">
-        {modes.map((mode) => (
-          <button className={activeView===mode.id?"active":""} key={mode.id} onClick={() => onViewChange(mode.id)} type="button">
-            <ModeIcon mode={mode.id} />
-            <span>{mode.short}</span>
+      <div className="matchShellCanvas">{children}</div>
+
+      <nav className="matchShellMobile">
+        {nav.map(([id,label]) => (
+          <button className={activeView===id?"active":""} key={id} onClick={() => onViewChange(id)} type="button">
+            <span>{label.split(" ")[0]}</span>
           </button>
         ))}
       </nav>
