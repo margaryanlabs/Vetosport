@@ -90,11 +90,16 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
           ) => {
             if (!active || !payload?.events?.length) return;
             setEventSummaries(payload.events);
-            setLiveSourceMode(
-              payload.mode === "persisted"
-                ? "persisted"
-                : "sandbox-fallback",
-            );
+            const persistedMode = payload.mode === "persisted";
+            setLiveSourceMode(persistedMode ? "persisted" : "sandbox-fallback");
+
+            if (persistedMode) {
+              setSelectedEventId((current) =>
+                payload.events!.some((event) => event.id === current)
+                  ? current
+                  : payload.events![0].id,
+              );
+            }
           },
         )
         .catch(() => {});
