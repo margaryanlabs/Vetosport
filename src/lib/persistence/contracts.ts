@@ -64,6 +64,21 @@ export interface UnsettledDecision {
   fairProbability: number;
 }
 
+export interface DecisionHistoryRecord {
+  id: string;
+  eventId: string;
+  marketKey: string;
+  selectionKey: string;
+  decision: DecisionLedgerEntry["decision"];
+  decisionMode: string;
+  marketOdds: number;
+  fairProbability: number;
+  opportunityScore: number;
+  capturedAt: string;
+  immutableFingerprint: string;
+  modelVersionSet: string[];
+}
+
 export interface DecisionOutcomeRecord {
   decisionId: string;
   result: "win" | "half_win" | "push" | "half_loss" | "loss" | "void";
@@ -122,6 +137,13 @@ export interface VetoPersistence {
   recordHistoricalImport(record: HistoricalImportRecord): Promise<void>;
 
   findUnsettledDecisions(eventId: string): Promise<UnsettledDecision[]>;
+
+  listDecisionHistory(input: {
+    eventId: string;
+    marketKey?: string;
+    selectionKey?: string;
+    limit?: number;
+  }): Promise<DecisionHistoryRecord[]>;
 
   appendDecisionOutcome(outcome: DecisionOutcomeRecord): Promise<void>;
 

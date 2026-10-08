@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Opportunity } from "@/lib/domain/types";
 import type { LiveWorkspace } from "@/lib/sandbox/workspaces";
 import { ParallaxView } from "@/components/ParallaxView";
@@ -11,6 +11,37 @@ type RoomMode = "overview" | "parallax" | "evidence" | "replay";
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) => `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)} pp`;
 const compactPp = (value: number) => `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)}`;
+
+type LedgerDecision = {
+  id: string;
+  eventId: string;
+  marketKey: string;
+  selectionKey: string;
+  decision: Opportunity["decision"];
+  decisionMode: string;
+  marketOdds: number;
+  fairProbability: number;
+  opportunityScore: number;
+  capturedAt: string;
+  immutableFingerprint: string;
+  modelVersionSet: string[];
+};
+
+type ReplaySnapshot = {
+  id: string;
+  label: string;
+  decision: Opportunity["decision"];
+  marketProbability: number;
+  fairProbability: number;
+  marketOdds: number;
+  gap: number;
+  verified: boolean;
+  capturedAt?: string;
+  opportunityScore?: number;
+};
+
+const replayDecisionFromGap = (gap: number): Opportunity["decision"] =>
+  gap >= 0.06 ? "EDGE" : gap >= 0.025 ? "WATCH" : "PASS";
 
 export function MatchRoom({
   workspace,
@@ -24,6 +55,12 @@ export function MatchRoom({
   onOpenLab: () => void;
 }) {
   const [mode, setMode] = useState<RoomMode>("overview");
+  const [ledgerHistory, setLedgerHistory] = useState<LedgerDecision[]>([]);
+  const [ledgerStatus, setLedgerStatus] = useState<
+    "loading" | "verified" | "reconstructed"
+  >("loading");
+  const [replayIndex, setReplayIndex] = useState(0);
+  const [momentPulse, setMomentPulse] = useState(0);
 
   const marketProbability = 1 / selected.marketOdds;
   const gap = selected.fairProbability - marketProbability;
@@ -60,6 +97,127 @@ export function MatchRoom({
       : selected.freshnessSeconds <= 60
         ? "AGING"
         : "STALE";
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const params = new URLSearchParams({
+      eventId: selected.eventId,
+      marketKey: selected.marketId,
+      selectionKey: selected.selection.id,
+      limit: "100",
+    });
+
+    setLedgerStatus("loading");
+    setLedgerHistory([]);
+
+    fetch(`/api/intelligence/decision-history?${params.toString()}`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("decision history unavailable");
+        return response.json() as Promise<{ rows?: LedgerDecision[] }>;
+      })
+      .then((payload) => {
+        const rows = Array.isArray(payload.rows) ? payload.rows : [];
+        setLedgerHistory(rows);
+        setLedgerStatus(rows.length > 0 ? "verified" : "reconstructed");
+      })
+      .catch((error) => {
+        if ((error as Error).name === "AbortError") return;
+        setLedgerHistory([]);
+        setLedgerStatus("reconstructed");
+      });
+
+    return () => controller.abort();
+  }, [selected.eventId, selected.marketId, selected.selection.id]);
+
+  const replaySnapshots = useMemo<ReplaySnapshot[]>(() => {
+    if (ledgerHistory.length > 0) {
+      return ledgerHistory.map((row) => {
+        const marketProbability = 1 / row.marketOdds;
+        return {
+          id: row.id,
+          label: new Date(row.capturedAt).toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          }),
+          decision: row.decision,
+          marketProbability,
+          fairProbability: row.fairProbability,
+          marketOdds: row.marketOdds,
+          gap: row.fairProbability - marketProbability,
+          verified: true,
+          capturedAt: row.capturedAt,
+          opportunityScore: row.opportunityScore,
+        };
+      });
+    }
+
+    return workspace.probabilityHistory.map((point, index) => {
+      const gap = point.veto - point.market;
+      return {
+        id: `reconstructed-${index}`,
+        label: point.label,
+        decision: replayDecisionFromGap(gap),
+        marketProbability: point.market,
+        fairProbability: point.veto,
+        marketOdds: point.market > 0 ? 1 / point.market : 0,
+        gap,
+        verified: false,
+      };
+    });
+  }, [ledgerHistory, workspace.probabilityHistory]);
+
+  useEffect(() => {
+    setReplayIndex(Math.max(0, replaySnapshots.length - 1));
+  }, [replaySnapshots.length, selected.selection.id, workspace.id]);
+
+  const replayCurrent =
+    replaySnapshots[Math.min(replayIndex, Math.max(0, replaySnapshots.length - 1))];
+
+  const verifiedMomentIndex = useMemo(() => {
+    if (ledgerStatus !== "verified") return -1;
+    return replaySnapshots.findIndex(
+      (snapshot, index) =>
+        index > 0 &&
+        replaySnapshots[index - 1]?.decision === "WATCH" &&
+        snapshot.decision === "EDGE",
+    );
+  }, [ledgerStatus, replaySnapshots]);
+
+  const reconstructedMomentIndex = useMemo(
+    () =>
+      replaySnapshots.findIndex(
+        (snapshot, index) =>
+          index > 0 &&
+          replaySnapshots[index - 1]?.decision === "WATCH" &&
+          snapshot.decision === "EDGE",
+      ),
+    [replaySnapshots],
+  );
+
+  const momentIndex =
+    verifiedMomentIndex >= 0 ? verifiedMomentIndex : reconstructedMomentIndex;
+  const momentVerified = verifiedMomentIndex >= 0;
+  const momentActive = momentIndex >= 0 && replayIndex === momentIndex;
+
+  const replayPoints = useMemo(
+    () =>
+      replaySnapshots.slice(0, replayIndex + 1).map((snapshot) => ({
+        label: snapshot.label,
+        market: snapshot.marketProbability,
+        veto: snapshot.fairProbability,
+      })),
+    [replayIndex, replaySnapshots],
+  );
+
+  const jumpToMoment = () => {
+    if (momentIndex < 0) return;
+    setReplayIndex(momentIndex);
+    setMomentPulse((value) => value + 1);
+  };
 
   const causalSteps = useMemo(() => {
     const stateChange = workspace.changes[0];
@@ -371,25 +529,159 @@ export function MatchRoom({
         </div>
       )}
 
-      {mode === "replay" && (
-        <div className="matchRoomModePanel replayMode">
-          <header>
-            <span>STATE REPLAY</span>
-            <h3>Reconstruct the last market transition.</h3>
+      {mode === "replay" && replayCurrent && (
+        <div className={`matchRoomModePanel replayMode replayModeV2 ${momentActive ? "moment-active" : ""}`}>
+          <header className="replayHeaderV2">
+            <div>
+              <span>REPLAY 2.0</span>
+              <h3>Return to what VETO knew at that moment.</h3>
+            </div>
+            <div className="replayHeaderActions">
+              <span className={`replaySourceBadge ${ledgerStatus}`}>
+                {ledgerStatus === "verified"
+                  ? "VERIFIED LEDGER"
+                  : ledgerStatus === "loading"
+                    ? "CHECKING LEDGER"
+                    : "RECONSTRUCTED"}
+              </span>
+              {momentIndex >= 0 && (
+                <button onClick={jumpToMoment} type="button">
+                  {momentVerified ? "Jump to VETO Moment" : "Preview reconstructed transition"}
+                </button>
+              )}
+            </div>
           </header>
-          <div className="replayTrack">
-            {workspace.changes.map((change,index) => (
-              <article key={change.label}>
-                <span>0{index+1}</span>
-                <i className={change.direction} />
-                <div>
-                  <strong>{change.label}</strong>
-                  <p>{change.note}</p>
+
+          {momentActive && (
+            <div
+              className={`vetoMoment ${momentVerified ? "verified" : "reconstructed"}`}
+              key={`${momentPulse}-${replayIndex}`}
+            >
+              <i aria-hidden />
+              <div>
+                <span>{momentVerified ? "VETO MOMENT" : "RECONSTRUCTED TRANSITION"}</span>
+                <strong>WATCH → EDGE</strong>
+                <p>
+                  {momentVerified
+                    ? "The immutable decision ledger confirms the moment VETO crossed into EDGE."
+                    : "This transition is reconstructed from stored probability history and is not a verified ledger decision."}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="replayWorkspace">
+            <section className="replayVisual">
+              <ParallaxView
+                points={replayPoints.length > 0 ? replayPoints : workspace.probabilityHistory.slice(0, 1)}
+                label={`${workspace.probabilityLabel} · ${replayCurrent.label}`}
+              />
+
+              <div className="replayScrubber">
+                <div className="replayScrubberMeta">
+                  <span>EARLIEST</span>
+                  <strong>{replayCurrent.label}</strong>
+                  <span>NOW</span>
                 </div>
-                <b>{pp(change.delta)}</b>
-              </article>
-            ))}
+                <input
+                  aria-label="Replay timeline"
+                  max={Math.max(0, replaySnapshots.length - 1)}
+                  min="0"
+                  onChange={(event) => setReplayIndex(Number(event.target.value))}
+                  step="1"
+                  type="range"
+                  value={replayIndex}
+                />
+                <div className="replayTicks" aria-hidden>
+                  {replaySnapshots.map((snapshot, index) => (
+                    <i
+                      className={`${snapshot.decision.toLowerCase()} ${index === replayIndex ? "active" : ""}`}
+                      key={snapshot.id}
+                      style={{ left: `${replaySnapshots.length <= 1 ? 0 : (index / (replaySnapshots.length - 1)) * 100}%` }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <aside className="replaySnapshot">
+              <div className="replaySnapshotTop">
+                <span>AT THIS MOMENT</span>
+                <em className={replayCurrent.decision.toLowerCase()}>{replayCurrent.decision}</em>
+              </div>
+
+              <strong className="replaySnapshotTime">{replayCurrent.label}</strong>
+
+              <div className="replaySnapshotNumbers">
+                <div>
+                  <span>VETO FAIR</span>
+                  <strong>{pct(replayCurrent.fairProbability)}</strong>
+                </div>
+                <div>
+                  <span>MARKET</span>
+                  <strong>{pct(replayCurrent.marketProbability)}</strong>
+                </div>
+                <div>
+                  <span>GAP</span>
+                  <strong>{pp(replayCurrent.gap)}</strong>
+                </div>
+                <div>
+                  <span>ODDS</span>
+                  <strong>{replayCurrent.marketOdds > 0 ? replayCurrent.marketOdds.toFixed(2) : "—"}</strong>
+                </div>
+              </div>
+
+              <div className="replaySnapshotSource">
+                <span>SOURCE</span>
+                <strong>{replayCurrent.verified ? "IMMUTABLE DECISION LEDGER" : "PROBABILITY HISTORY"}</strong>
+                <p>
+                  {replayCurrent.verified
+                    ? "This point is a persisted VETO decision and can be audited against its captured timestamp."
+                    : "This point is reconstructed for product replay because no persisted decision exists for this event/selection yet."}
+                </p>
+              </div>
+
+              {replayCurrent.verified && replayCurrent.opportunityScore != null && (
+                <div className="replayOpportunityScore">
+                  <span>OPPORTUNITY SCORE</span>
+                  <strong>{Math.round(replayCurrent.opportunityScore)}</strong>
+                </div>
+              )}
+            </aside>
           </div>
+
+          <section className="decisionHistory">
+            <header>
+              <div>
+                <span>DECISION HISTORY</span>
+                <strong>{replaySnapshots.length} captured states</strong>
+              </div>
+              <small>
+                {ledgerStatus === "verified"
+                  ? "Immutable ledger sequence"
+                  : "Reconstructed sequence · not ledger evidence"}
+              </small>
+            </header>
+
+            <div className="decisionHistoryRail">
+              {replaySnapshots.map((snapshot, index) => (
+                <button
+                  className={`${snapshot.decision.toLowerCase()} ${index === replayIndex ? "active" : ""} ${index === momentIndex ? "moment" : ""}`}
+                  key={snapshot.id}
+                  onClick={() => {
+                    setReplayIndex(index);
+                    if (index === momentIndex) setMomentPulse((value) => value + 1);
+                  }}
+                  type="button"
+                >
+                  <span>{snapshot.label}</span>
+                  <strong>{snapshot.decision}</strong>
+                  <small>{pp(snapshot.gap)}</small>
+                  {snapshot.verified && <i>✓</i>}
+                </button>
+              ))}
+            </div>
+          </section>
         </div>
       )}
     </section>
