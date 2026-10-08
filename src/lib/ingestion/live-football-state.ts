@@ -74,7 +74,8 @@ export const ingestLatestFootballState = async () => {
       shadowCycles.push(await runFootballShadowPrediction(persisted.id));
     } catch (error) {
       shadowCycles.push({
-        status: "SKIPPED",
+        ok: false,
+        skipped: true,
         eventId: persisted.id,
         reason:
           error instanceof Error
@@ -105,7 +106,13 @@ export const ingestLatestFootballState = async () => {
       statesPersisted,
       journalRows,
       finishedEvents: finishedEvents.length,
-      shadowCycles: shadowCycles.map((row) => row.status),
+      shadowCycles: shadowCycles.map((row) =>
+        row.ok && !row.skipped
+          ? "SHADOW_WRITTEN"
+          : row.ok
+            ? "SHADOW_SKIPPED"
+            : "SHADOW_ERROR",
+      ),
     },
   });
 

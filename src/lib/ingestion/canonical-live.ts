@@ -495,7 +495,8 @@ export const ingestCanonicalLivePayload = async (
       shadowCycle = await runFootballShadowPrediction(persisted.id);
     } catch (error) {
       shadowCycle = {
-        status: "SKIPPED",
+        ok: false,
+        skipped: true,
         eventId: persisted.id,
         reason:
           error instanceof Error

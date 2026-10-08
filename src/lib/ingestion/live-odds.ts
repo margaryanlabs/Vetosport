@@ -83,7 +83,8 @@ export const ingestLiveOdds = async (input: {
         shadowCycles.push(await runFootballShadowPrediction(eventId));
       } catch (error) {
         shadowCycles.push({
-          status: "SKIPPED",
+          ok: false,
+          skipped: true,
           eventId,
           reason:
             error instanceof Error
@@ -109,7 +110,13 @@ export const ingestLiveOdds = async (input: {
       quotesPersisted,
       journalRows,
       warnings,
-      shadowCycles: shadowCycles.map((row) => row.status),
+      shadowCycles: shadowCycles.map((row) =>
+        row.ok && !row.skipped
+          ? "SHADOW_WRITTEN"
+          : row.ok
+            ? "SHADOW_SKIPPED"
+            : "SHADOW_ERROR",
+      ),
     },
   });
 
