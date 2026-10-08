@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ingestLatestFootballState } from "@/lib/ingestion/live-football-state";
+import { runLiveFootballCycle } from "@/lib/ingestion/live-football-cycle";
 import { providerConfiguration } from "@/lib/providers/factory";
 import { persistenceConfiguration } from "@/lib/persistence/factory";
 
@@ -25,8 +25,17 @@ export async function GET(request: Request) {
   }
 
   try {
-    const result = await ingestLatestFootballState();
-    return NextResponse.json({ ok: true, skipped: false, result });
+    const result = await runLiveFootballCycle();
+    const settlementErrors = result.settlement.errors.length;
+
+    return NextResponse.json(
+      {
+        ok: settlementErrors === 0,
+        skipped: false,
+        result,
+      },
+      { status: settlementErrors === 0 ? 200 : 502 },
+    );
   } catch (error) {
     return NextResponse.json(
       {
@@ -35,7 +44,7 @@ export async function GET(request: Request) {
         error:
           error instanceof Error
             ? error.message
-            : "Football state cron failed.",
+            : "Football live cycle failed.",
       },
       { status: 502 },
     );

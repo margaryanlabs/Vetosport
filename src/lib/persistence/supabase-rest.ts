@@ -11,6 +11,7 @@ import type {
   ProviderRulebookVersion,
 } from "@/lib/data-plane/types";
 import type {
+  ClosingConsensusRecord,
   DecisionHistoryRecord,
   DecisionOutcomeRecord,
   DecisionProofRecord,
@@ -548,6 +549,84 @@ export class SupabaseRestPersistence implements VetoPersistence {
       modelAgreement: Number(row.model_agreement),
       uncertainty: Number(row.uncertainty),
     }));
+  }
+
+  async findClosingConsensus(input: {
+    eventId: string;
+    marketKey: string;
+    selectionKey: string;
+    afterAt?: string;
+    beforeAt: string;
+    limit?: number;
+  }): Promise<ClosingConsensusRecord | null> {
+    const query = new URLSearchParams();
+    query.set("event_id", `eq.${input.eventId}`);
+    query.set("market_key", `eq.${input.marketKey}`);
+    query.set("selection_key", `eq.${input.selectionKey}`);
+    if (input.afterAt) {
+      query.set("captured_at", `gte.${new Date(input.afterAt).toISOString()}`);
+      query.append(
+        "captured_at",
+        `lte.${new Date(input.beforeAt).toISOString()}`,
+      );
+    } else {
+      query.set(
+        "captured_at",
+        `lte.${new Date(input.beforeAt).toISOString()}`,
+      );
+    }
+    query.set("or", "(suspended.is.null,suspended.eq.false)");
+    query.set("order", "captured_at.desc");
+    query.set("limit", String(Math.min(250, Math.max(1, input.limit ?? 120))));
+    query.set("select", "bookmaker,decimal_odds,captured_at");
+
+    const rows = await this.request<Array<{
+      bookmaker: string;
+      decimal_odds: number;
+      captured_at: string;
+    }>>(
+      this.tablePath("market_quotes", query.toString()),
+      { method: "GET" },
+    );
+
+    const latestByBookmaker = new Map<
+      string,
+      { decimalOdds: number; capturedAt: string }
+    >();
+
+    for (const row of rows) {
+      const decimalOdds = Number(row.decimal_odds);
+      if (!Number.isFinite(decimalOdds) || decimalOdds <= 1) continue;
+      if (latestByBookmaker.has(row.bookmaker)) continue;
+      latestByBookmaker.set(row.bookmaker, {
+        decimalOdds,
+        capturedAt: row.captured_at,
+      });
+    }
+
+    const samples = [...latestByBookmaker.values()];
+    if (samples.length === 0) return null;
+
+    const sorted = samples
+      .map((sample) => sample.decimalOdds)
+      .sort((a, b) => a - b);
+    const middle = Math.floor(sorted.length / 2);
+    const median =
+      sorted.length % 2 === 0
+        ? (sorted[middle - 1] + sorted[middle]) / 2
+        : sorted[middle];
+
+    const latestCapturedAt = samples
+      .map((sample) => sample.capturedAt)
+      .sort()
+      .at(-1)!;
+
+    return {
+      decimalOdds: median,
+      bookmakerCount: latestByBookmaker.size,
+      sampleSize: rows.length,
+      latestCapturedAt,
+    };
   }
 
   async appendDecisionOutcome(outcome: DecisionOutcomeRecord): Promise<void> {
