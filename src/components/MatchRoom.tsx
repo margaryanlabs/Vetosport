@@ -10,6 +10,7 @@ type RoomMode = "overview" | "parallax" | "evidence" | "replay";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) => `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)} pp`;
+const compactPp = (value: number) => `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)}`;
 
 export function MatchRoom({
   workspace,
@@ -26,47 +27,153 @@ export function MatchRoom({
 
   const marketProbability = 1 / selected.marketOdds;
   const gap = selected.fairProbability - marketProbability;
+  const historyLatest = workspace.probabilityHistory.at(-1);
+  const historyPrevious = workspace.probabilityHistory.at(-2);
+  const vetoMove =
+    historyLatest && historyPrevious ? historyLatest.veto - historyPrevious.veto : 0;
+  const marketMove =
+    historyLatest && historyPrevious ? historyLatest.market - historyPrevious.market : 0;
+  const gapPrevious =
+    historyPrevious ? historyPrevious.veto - historyPrevious.market : gap;
+  const gapOpening = Math.abs(gap) - Math.abs(gapPrevious);
 
-  const timeline = useMemo(
-    () =>
-      workspace.evidence.slice(0, 5).map((item, index) => ({
-        time: item.time,
-        kicker: item.kind,
-        title: item.title,
-        impact: item.impact,
-        hot: index === 0,
-      })),
-    [workspace.evidence],
-  );
+  const parallaxState =
+    Math.abs(gap) >= 0.06
+      ? "DISLOCATED"
+      : Math.abs(gap) >= 0.025
+        ? "DIVERGING"
+        : "ALIGNED";
+
+  const momentumState =
+    vetoMove > 0.01 ? "RISING" : vetoMove < -0.01 ? "FALLING" : "STABLE";
+
+  const authority =
+    selected.modelAgreement >= 85
+      ? "HIGH"
+      : selected.modelAgreement >= 70
+        ? "MEDIUM"
+        : "LOW";
+
+  const freshness =
+    selected.freshnessSeconds <= 20
+      ? "FRESH"
+      : selected.freshnessSeconds <= 60
+        ? "AGING"
+        : "STALE";
+
+  const causalSteps = useMemo(() => {
+    const stateChange = workspace.changes[0];
+    const evidence = workspace.evidence[0];
+
+    return [
+      {
+        id: "state",
+        kicker: "STATE CHANGE",
+        title: stateChange?.label ?? workspace.reasonHeadline,
+        detail: stateChange?.note ?? workspace.reasonSummary,
+        metric: stateChange ? pp(stateChange.delta) : workspace.period,
+      },
+      {
+        id: "model",
+        kicker: "MODEL REACTION",
+        title: workspace.reasonHeadline,
+        detail: evidence?.impact ?? workspace.reasonSummary,
+        metric: `VETO ${compactPp(vetoMove)} pp`,
+      },
+      {
+        id: "market",
+        kicker: "MARKET MOVE",
+        title:
+          Math.abs(marketMove) + 0.002 < Math.abs(vetoMove)
+            ? "Price is reacting slower than the model."
+            : "Price is reacting with the model.",
+        detail: `Implied probability moved ${pp(marketMove)} in the latest step.`,
+        metric: `MKT ${compactPp(marketMove)} pp`,
+      },
+      {
+        id: "veto",
+        kicker: "VETO DIVERGENCE",
+        title: `${parallaxState} · ${selected.decision}`,
+        detail:
+          gapOpening > 0.002
+            ? "The Reality ↔ Market gap is still opening."
+            : gapOpening < -0.002
+              ? "The Reality ↔ Market gap is beginning to close."
+              : "The divergence is holding near its current level.",
+        metric: pp(gap),
+      },
+    ];
+  }, [
+    gap,
+    gapOpening,
+    marketMove,
+    parallaxState,
+    selected.decision,
+    vetoMove,
+    workspace.changes,
+    workspace.evidence,
+    workspace.period,
+    workspace.reasonHeadline,
+    workspace.reasonSummary,
+  ]);
 
   return (
     <section className={`matchRoom matchRoom-${workspace.sport}`}>
-      <header className="matchRoomHero">
+      <header className="matchRoomHero matchRoomHeroV2">
         <div className="matchRoomMeta">
           <span className="matchRoomLive"><i /> LIVE</span>
           <span>{workspace.competition}</span>
           <span>{workspace.period}</span>
         </div>
 
-        <div className="matchRoomScore">
-          <div>
+        <div className="matchRoomScore matchRoomScoreV2">
+          <div className="matchTeamBlock">
             <small>{workspace.homeCode}</small>
             <strong>{workspace.homeName}</strong>
           </div>
+
           <div className="matchRoomScoreCore">
             <b>{workspace.homeScore}</b>
             <i>:</i>
             <b>{workspace.awayScore}</b>
             <em>{workspace.clock}</em>
           </div>
-          <div className="away">
+
+          <div className="matchTeamBlock away">
             <small>{workspace.awayCode}</small>
             <strong>{workspace.awayName}</strong>
           </div>
         </div>
 
+        <div className="scoreboardTelemetry">
+          <div className={`scoreboardMomentum ${momentumState.toLowerCase()}`}>
+            <span>STATE MOMENTUM</span>
+            <strong>{momentumState}</strong>
+            <b>{pp(vetoMove)}</b>
+          </div>
+          <div>
+            <span>PARALLAX</span>
+            <strong>{parallaxState}</strong>
+            <b>{pp(gap)}</b>
+          </div>
+          <div>
+            <span>AUTHORITY</span>
+            <strong>{authority}</strong>
+            <b>{selected.modelAgreement}/100</b>
+          </div>
+          <div className={`freshness ${freshness.toLowerCase()}`}>
+            <span>FRESHNESS</span>
+            <strong>{freshness}</strong>
+            <b>{selected.freshnessSeconds}s</b>
+          </div>
+        </div>
+
+        <div className="scoreboardPulse" aria-hidden>
+          <span style={{ width: `${Math.max(12, Math.min(88, selected.modelAgreement))}%` }} />
+        </div>
+
         <div className="matchRoomSportMark" aria-hidden>
-          <SportGlyph sport={workspace.sport} size={88} />
+          <SportGlyph sport={workspace.sport} size={96} />
         </div>
       </header>
 
@@ -87,9 +194,9 @@ export function MatchRoom({
       </nav>
 
       {mode === "overview" && (
-        <div className="matchRoomOverview">
+        <div className="matchRoomOverview matchRoomOverviewV2">
           <section className="matchWorld">
-            <div className="matchWorldColumns">
+            <div className="matchWorldColumns matchWorldColumnsV2">
               <article>
                 <span>GAME</span>
                 <strong>{workspace.stateMetrics[0]?.value ?? workspace.period}</strong>
@@ -98,62 +205,78 @@ export function MatchRoom({
               <article>
                 <span>MARKET</span>
                 <strong>{pct(marketProbability)}</strong>
-                <p>Current implied probability for {selected.selection.label}.</p>
+                <p>What price currently implies for {selected.selection.label}.</p>
               </article>
               <article className="veto">
                 <span>VETO</span>
                 <strong>{pct(selected.fairProbability)}</strong>
-                <p>{gap >= 0 ? "Reality is ahead of price." : "Price is ahead of the model."}</p>
+                <p>{gap >= 0 ? "Evidence-led reality is ahead of price." : "Price is ahead of the model."}</p>
               </article>
             </div>
 
-            <ParallaxView points={workspace.probabilityHistory} label={workspace.probabilityLabel} />
+            <ParallaxView
+              points={workspace.probabilityHistory}
+              label={workspace.probabilityLabel}
+            />
 
-            <div className="matchTimeline">
-              <div className="matchTimelineRail" />
-              {timeline.map((item) => (
-                <article className={item.hot ? "hot" : ""} key={`${item.time}-${item.title}`}>
-                  <span>{item.time}</span>
-                  <i />
-                  <div>
-                    <small>{item.kicker}</small>
-                    <strong>{item.title}</strong>
-                  </div>
-                  <b>{item.impact}</b>
-                </article>
-              ))}
-            </div>
+            <section className="causalTimeline">
+              <header>
+                <div>
+                  <span>CAUSAL TIMELINE</span>
+                  <strong>How the current decision formed.</strong>
+                </div>
+                <small>STATE → MODEL → MARKET → VETO</small>
+              </header>
+
+              <div className="causalTimelineFlow">
+                {causalSteps.map((step, index) => (
+                  <article className={step.id === "veto" ? "veto" : ""} key={step.id}>
+                    <div className="causalStepIndex">0{index + 1}</div>
+                    <div className="causalStepBody">
+                      <span>{step.kicker}</span>
+                      <strong>{step.title}</strong>
+                      <p>{step.detail}</p>
+                    </div>
+                    <b>{step.metric}</b>
+                    {index < causalSteps.length - 1 && <i aria-hidden>→</i>}
+                  </article>
+                ))}
+              </div>
+            </section>
           </section>
 
-          <aside className="vetoDecisionPanel">
+          <aside className="vetoDecisionPanel vetoDecisionPanelV2">
             <div className="decisionPanelTop">
               <span>VETO DECISION</span>
               <em className={selected.decision.toLowerCase()}>{selected.decision}</em>
             </div>
 
-            <div className="decisionSelection">
-              <small>SELECTED MARKET</small>
-              <strong>{selected.selection.label}</strong>
+            <div className="decisionHero">
+              <small>{selected.selection.label}</small>
+              <strong>{selected.decision}</strong>
+              <p>{pp(gap)} dislocation</p>
             </div>
 
-            <div className="decisionNumbers">
-              <div>
-                <span>VETO FAIR</span>
-                <strong>{pct(selected.fairProbability)}</strong>
-              </div>
-              <div>
-                <span>MARKET</span>
+            <div className="decisionWhyNow">
+              <span>WHY NOW?</span>
+              <strong>{workspace.reasonHeadline}</strong>
+              <p>{workspace.reasonSummary}</p>
+            </div>
+
+            <div className="decisionBeliefs">
+              <article>
+                <span>MARKET BELIEVES</span>
                 <strong>{pct(marketProbability)}</strong>
-              </div>
-              <div className="gap">
-                <span>DISLOCATION</span>
-                <strong>{pp(gap)}</strong>
-              </div>
+                <p>{selected.marketOdds.toFixed(2)} current market odds</p>
+              </article>
+              <article className="veto">
+                <span>VETO BELIEVES</span>
+                <strong>{pct(selected.fairProbability)}</strong>
+                <p>{parallaxState.toLowerCase()} Reality ↔ Price state</p>
+              </article>
             </div>
 
-            <p className="decisionThesis">{workspace.reasonSummary}</p>
-
-            <div className="decisionReasons">
+            <div className="decisionReasons decisionReasonsV2">
               {selected.rationale.slice(0, 3).map((reason, index) => (
                 <div key={reason}>
                   <span>0{index + 1}</span>
@@ -162,33 +285,44 @@ export function MatchRoom({
               ))}
             </div>
 
-            <div className="decisionConfidence">
-              <span>MODEL AGREEMENT</span>
-              <strong>{selected.modelAgreement}/100</strong>
-              <i><b style={{width:`${selected.modelAgreement}%`}} /></i>
+            <div className="decisionBreak">
+              <span>WHAT BREAKS THE THESIS</span>
+              <p>{workspace.invalidation}</p>
             </div>
 
-            <div className="decisionMarketStrip">
-              {workspace.opportunities.slice(0,4).map((item) => (
-                <button
-                  className={item.selection.id===selected.selection.id?"active":""}
-                  key={item.selection.id}
-                  onClick={() => onSelectSignal(item.selection.id)}
-                  type="button"
-                >
-                  <span>{item.decision}</span>
-                  <strong>{item.selection.label}</strong>
-                  <small>{item.marketOdds.toFixed(2)} · {pp(item.probabilityEdge)}</small>
-                </button>
-              ))}
-            </div>
-
-            <details className="decisionEvidence">
-              <summary>Open evidence <span>+</span></summary>
+            <div className="decisionTrust">
               <div>
-                <p><strong>Risk:</strong> {selected.risk}</p>
-                <p><strong>Invalidation:</strong> {workspace.invalidation}</p>
-                <p><strong>Freshness:</strong> {selected.freshnessSeconds}s</p>
+                <span>CONFIDENCE</span>
+                <strong>{authority}</strong>
+                <small>{selected.modelAgreement}/100 agreement</small>
+              </div>
+              <div>
+                <span>FRESHNESS</span>
+                <strong>{freshness}</strong>
+                <small>{selected.freshnessSeconds}s since refresh</small>
+              </div>
+              <div>
+                <span>RISK</span>
+                <strong>{selected.risk}</strong>
+                <small>Current thesis risk</small>
+              </div>
+            </div>
+
+            <details className="decisionMarkets">
+              <summary>Other monitored markets <span>+</span></summary>
+              <div className="decisionMarketStrip">
+                {workspace.opportunities.slice(0,4).map((item) => (
+                  <button
+                    className={item.selection.id===selected.selection.id?"active":""}
+                    key={item.selection.id}
+                    onClick={() => onSelectSignal(item.selection.id)}
+                    type="button"
+                  >
+                    <span>{item.decision}</span>
+                    <strong>{item.selection.label}</strong>
+                    <small>{item.marketOdds.toFixed(2)} · {pp(item.probabilityEdge)}</small>
+                  </button>
+                ))}
               </div>
             </details>
           </aside>
