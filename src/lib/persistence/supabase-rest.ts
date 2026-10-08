@@ -11,6 +11,7 @@ import type {
   ProviderRulebookVersion,
 } from "@/lib/data-plane/types";
 import type {
+  DecisionHistoryRecord,
   DecisionOutcomeRecord,
   EventStateSnapshot,
   HistoricalImportRecord,
@@ -392,6 +393,70 @@ export class SupabaseRestPersistence implements VetoPersistence {
       capturedAt: row.captured_at,
       marketOdds: Number(row.market_odds),
       fairProbability: Number(row.fair_probability),
+    }));
+  }
+
+  async listDecisionHistory(input: {
+    eventId: string;
+    marketKey?: string;
+    selectionKey?: string;
+    limit?: number;
+  }): Promise<DecisionHistoryRecord[]> {
+    const query = new URLSearchParams();
+    query.set("event_id", `eq.${input.eventId}`);
+    if (input.marketKey) query.set("market_key", `eq.${input.marketKey}`);
+    if (input.selectionKey) query.set("selection_key", `eq.${input.selectionKey}`);
+    query.set("order", "captured_at.asc");
+    query.set("limit", String(Math.min(250, Math.max(1, input.limit ?? 80))));
+    query.set(
+      "select",
+      [
+        "id",
+        "event_id",
+        "market_key",
+        "selection_key",
+        "decision",
+        "decision_mode",
+        "market_odds",
+        "fair_probability",
+        "opportunity_score",
+        "captured_at",
+        "immutable_fingerprint",
+        "model_version_set",
+      ].join(","),
+    );
+
+    const rows = await this.request<Array<{
+      id: string;
+      event_id: string;
+      market_key: string;
+      selection_key: string;
+      decision: DecisionHistoryRecord["decision"];
+      decision_mode: string;
+      market_odds: number;
+      fair_probability: number;
+      opportunity_score: number;
+      captured_at: string;
+      immutable_fingerprint: string;
+      model_version_set?: string[] | null;
+    }>>(
+      this.tablePath("decision_ledger", query.toString()),
+      { method: "GET" },
+    );
+
+    return rows.map((row) => ({
+      id: row.id,
+      eventId: row.event_id,
+      marketKey: row.market_key,
+      selectionKey: row.selection_key,
+      decision: row.decision,
+      decisionMode: row.decision_mode,
+      marketOdds: Number(row.market_odds),
+      fairProbability: Number(row.fair_probability),
+      opportunityScore: Number(row.opportunity_score),
+      capturedAt: row.captured_at,
+      immutableFingerprint: row.immutable_fingerprint,
+      modelVersionSet: row.model_version_set ?? [],
     }));
   }
 
