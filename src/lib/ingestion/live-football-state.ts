@@ -12,6 +12,12 @@ export const ingestLatestFootballState = async () => {
   let eventsPersisted = 0;
   let statesPersisted = 0;
   let journalRows = 0;
+  const finishedEvents: Array<{
+    eventId: string;
+    providerEventId: string;
+    finalScore: { home: number; away: number };
+    settledAt: string;
+  }> = [];
 
   for (const raw of envelope.data.data) {
     eventsSeen += 1;
@@ -61,6 +67,15 @@ export const ingestLatestFootballState = async () => {
         payload: state,
       }),
     ]);
+
+    if (event.status === "finished" && score) {
+      finishedEvents.push({
+        eventId: persisted.id,
+        providerEventId: event.id,
+        finalScore: score,
+        settledAt: envelope.receivedAt,
+      });
+    }
   }
 
   await persistence.appendProviderHealth({
@@ -74,6 +89,7 @@ export const ingestLatestFootballState = async () => {
       eventsPersisted,
       statesPersisted,
       journalRows,
+      finishedEvents: finishedEvents.length,
     },
   });
 
@@ -85,5 +101,6 @@ export const ingestLatestFootballState = async () => {
     eventsPersisted,
     statesPersisted,
     journalRows,
+    finishedEvents,
   };
 };

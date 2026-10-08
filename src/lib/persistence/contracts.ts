@@ -102,6 +102,13 @@ export interface DecisionProofRecord {
   uncertainty: number;
 }
 
+export interface ClosingConsensusRecord {
+  decimalOdds: number;
+  bookmakerCount: number;
+  sampleSize: number;
+  latestCapturedAt: string;
+}
+
 export interface DecisionOutcomeRecord {
   decisionId: string;
   result: "win" | "half_win" | "push" | "half_loss" | "loss" | "void";
@@ -174,6 +181,15 @@ export interface VetoPersistence {
     selectionKey?: string;
     limit?: number;
   }): Promise<DecisionProofRecord[]>;
+
+  findClosingConsensus(input: {
+    eventId: string;
+    marketKey: string;
+    selectionKey: string;
+    afterAt?: string;
+    beforeAt: string;
+    limit?: number;
+  }): Promise<ClosingConsensusRecord | null>;
 
   appendDecisionOutcome(outcome: DecisionOutcomeRecord): Promise<void>;
 

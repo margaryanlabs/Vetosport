@@ -20,6 +20,9 @@ export const settleFootballEvent = async (input: {
     selectionKey: string;
     result: string;
     closingOdds?: number;
+    closingSource: "manual" | "terminal-consensus" | "unavailable";
+    closingBookmakers?: number;
+    closingCapturedAt?: string;
   }> = [];
 
   const skipped: Array<{
@@ -44,7 +47,25 @@ export const settleFootballEvent = async (input: {
       finalScore: input.finalScore,
     });
 
-    const closingOdds = input.closingPrices?.[decision.selectionKey];
+    const manualClosingOdds = input.closingPrices?.[decision.selectionKey];
+    const consensus =
+      manualClosingOdds == null
+        ? await persistence.findClosingConsensus({
+            eventId: decision.eventId,
+            marketKey: decision.marketKey,
+            selectionKey: decision.selectionKey,
+            afterAt: decision.capturedAt,
+            beforeAt: input.settledAt,
+          })
+        : null;
+
+    const closingOdds = manualClosingOdds ?? consensus?.decimalOdds;
+    const closingSource =
+      manualClosingOdds != null
+        ? "manual"
+        : consensus
+          ? "terminal-consensus"
+          : "unavailable";
 
     await persistence.appendDecisionOutcome({
       decisionId: decision.decisionId,
@@ -57,6 +78,13 @@ export const settleFootballEvent = async (input: {
         selectionKey: decision.selectionKey,
         selectionLine: decision.selectionLine,
         selectionSide: decision.selectionSide,
+        closingPrice: {
+          source: closingSource,
+          decimalOdds: closingOdds,
+          bookmakerCount: consensus?.bookmakerCount,
+          sampleSize: consensus?.sampleSize,
+          latestCapturedAt: consensus?.latestCapturedAt,
+        },
       },
     });
 
@@ -66,6 +94,9 @@ export const settleFootballEvent = async (input: {
       selectionKey: decision.selectionKey,
       result,
       closingOdds,
+      closingSource,
+      closingBookmakers: consensus?.bookmakerCount,
+      closingCapturedAt: consensus?.latestCapturedAt,
     });
   }
 
@@ -75,6 +106,12 @@ export const settleFootballEvent = async (input: {
     decisionsFound: decisions.length,
     settled: settled.length,
     voids: settled.filter((row) => row.result === "void").length,
+    withClosingConsensus: settled.filter(
+      (row) => row.closingSource === "terminal-consensus",
+    ).length,
+    withoutClosingPrice: settled.filter(
+      (row) => row.closingSource === "unavailable",
+    ).length,
     skipped,
     rows: settled,
   };
