@@ -75,6 +75,20 @@ export interface LiveQuotePreview {
   suspended?: boolean;
 }
 
+export interface LiveShadowPrediction {
+  marketKey: string;
+  selectionKey: string;
+  label: string;
+  fairProbability: number;
+  fairOdds: number;
+  marketOdds?: number;
+  edge?: number;
+  capturedAt: string;
+  modelVersion?: string;
+  mode: "SHADOW";
+  calibration: "UNVALIDATED";
+}
+
 export interface LiveObservation {
   summary: LiveEventSummary;
   stateSource?: string;
@@ -85,4 +99,5 @@ export interface LiveObservation {
   quoteCount: number;
   decisionCount: number;
   latestDecision?: LivePrimarySignal;
+  shadowPredictions?: LiveShadowPrediction[];
 }

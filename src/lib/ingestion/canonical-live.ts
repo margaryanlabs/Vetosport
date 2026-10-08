@@ -12,6 +12,7 @@ import {
   journalizeMarketQuotes,
 } from "@/lib/data-plane/journalize";
 import { getPersistence } from "@/lib/persistence/factory";
+import { runFootballShadowCycle } from "@/lib/live/football-shadow-cycle";
 
 const sports = new Set<Sport>([
   "football",
@@ -488,6 +489,22 @@ export const ingestCanonicalLivePayload = async (
     },
   });
 
+  let shadowCycle: Awaited<ReturnType<typeof runFootballShadowCycle>> | undefined;
+  if (input.event.sport === "football") {
+    try {
+      shadowCycle = await runFootballShadowCycle(persisted.id);
+    } catch (error) {
+      shadowCycle = {
+        status: "SKIPPED",
+        eventId: persisted.id,
+        reason:
+          error instanceof Error
+            ? `Shadow cycle failed safely: ${error.message}`
+            : "Shadow cycle failed safely.",
+      };
+    }
+  }
+
   return {
     provider: input.provider,
     canonicalEventId: persisted.id,
@@ -499,5 +516,6 @@ export const ingestCanonicalLivePayload = async (
     evidenceRows,
     journalRows,
     freshnessSeconds,
+    shadowCycle,
   };
 };

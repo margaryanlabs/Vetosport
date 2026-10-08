@@ -41,6 +41,7 @@ export function ObservedEventRoom({
   const event = observation.summary;
   const signal = observation.latestDecision;
   const readiness = event.decisionReadiness;
+  const shadow = observation.shadowPredictions?.[0];
   const state = Object.entries(observation.state).slice(0, 8);
 
   return (
@@ -70,7 +71,8 @@ export function ObservedEventRoom({
         <div><span>DATA STATE</span><strong>OBSERVED</strong><small>Persisted event path</small></div>
         <div><span>MARKETS</span><strong>{event.markets}</strong><small>{observation.quoteCount} quote rows</small></div>
         <div><span>LEDGER</span><strong>{observation.decisionCount ? "PRESENT" : "EMPTY"}</strong><small>{observation.decisionCount} decisions</small></div>
-        <div><span>VETO STATUS</span><strong>{signal?.decision ?? readinessLabel(readiness?.status)}</strong><small>{signal ? "Persisted decision" : "Preflight · no synthetic forecast"}</small></div>
+        <div><span>SHADOW</span><strong>{observation.shadowPredictions?.length ?? 0}</strong><small>research predictions</small></div>
+        <div><span>VETO STATUS</span><strong>{signal?.decision ?? shadow ? "SHADOW" : readinessLabel(readiness?.status)}</strong><small>{signal ? "Persisted decision" : shadow ? "Unvalidated fair value · never an EDGE" : "Preflight · no synthetic forecast"}</small></div>
       </div>
 
       <div className="observedBody">
@@ -132,6 +134,18 @@ export function ObservedEventRoom({
                 {readiness?.blockers?.[0] ??
                   "VETO is observing this event, but no immutable prediction/decision exists yet. No EDGE or WATCH is fabricated."}
               </p>
+              {shadow ? (
+                <>
+                  <span>SHADOW FAIR · UNVALIDATED</span>
+                  <strong className="observedDecisionTitle">{shadow.label}</strong>
+                  <div className="observedDecisionNumbers">
+                    <div><span>MODEL FAIR</span><strong>{pct(shadow.fairProbability)}</strong></div>
+                    <div><span>FAIR ODDS</span><strong>{shadow.fairOdds.toFixed(2)}</strong></div>
+                    <div><span>MARKET GAP</span><strong>{shadow.edge == null ? "—" : pp(shadow.edge)}</strong></div>
+                  </div>
+                  <p>Research-only output from {shadow.modelVersion ?? "the persisted football model"}. Calibration is not validated, so this cannot become EDGE/WATCH or enter the immutable decision ledger.</p>
+                </>
+              ) : null}
               {readiness?.requirements?.length ? (
                 <div className="observedReadinessChecks">
                   {readiness.requirements.map((item) => (

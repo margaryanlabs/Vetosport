@@ -13,7 +13,7 @@ export const getPersistedObservation = async (
   const event = await persistence.getEventById(eventId);
   if (!event || isSelfcheckEvent(event)) return null;
 
-  const [states, quotes, decisions] = await Promise.all([
+  const [states, quotes, decisions, predictions] = await Promise.all([
     persistence.listRecentEventStates({
       eventIds: [eventId],
       limit: 40,
@@ -23,6 +23,7 @@ export const getPersistedObservation = async (
       limit: 500,
     }),
     persistence.listDecisionHeads([eventId]),
+    persistence.listPredictionHeads([eventId]),
   ]);
 
   const state = states[0];
@@ -53,5 +54,35 @@ export const getPersistedObservation = async (
     quoteCount: quotes.length,
     decisionCount: decisions.length,
     latestDecision: signalFromDecision(decision, quotes),
+    shadowPredictions: predictions.slice(0, 20).map((prediction) => {
+      const quote = quotes.find(
+        (item) =>
+          item.marketKey === prediction.marketKey &&
+          item.selectionKey === prediction.selectionKey,
+      );
+      const modelSignal = prediction.modelSignals.find(
+        (item) => item && typeof item === "object" && !Array.isArray(item),
+      ) as Record<string, unknown> | undefined;
+      const marketOdds = quote?.decimalOdds;
+      return {
+        marketKey: prediction.marketKey,
+        selectionKey: prediction.selectionKey,
+        label: quote?.selectionLabel ?? prediction.selectionKey,
+        fairProbability: prediction.fairProbability,
+        fairOdds: prediction.fairOdds,
+        marketOdds,
+        edge:
+          marketOdds && marketOdds > 1
+            ? prediction.fairProbability - 1 / marketOdds
+            : undefined,
+        capturedAt: prediction.capturedAt,
+        modelVersion:
+          typeof modelSignal?.version === "string"
+            ? modelSignal.version
+            : undefined,
+        mode: "SHADOW" as const,
+        calibration: "UNVALIDATED" as const,
+      };
+    }),
   };
 };
