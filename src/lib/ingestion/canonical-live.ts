@@ -12,7 +12,7 @@ import {
   journalizeMarketQuotes,
 } from "@/lib/data-plane/journalize";
 import { getPersistence } from "@/lib/persistence/factory";
-import { runFootballShadowCycle } from "@/lib/live/football-shadow-cycle";
+import { runFootballShadowPrediction } from "@/lib/live/shadow-football";
 
 const sports = new Set<Sport>([
   "football",
@@ -489,10 +489,10 @@ export const ingestCanonicalLivePayload = async (
     },
   });
 
-  let shadowCycle: Awaited<ReturnType<typeof runFootballShadowCycle>> | undefined;
+  let shadowCycle: Awaited<ReturnType<typeof runFootballShadowPrediction>> | undefined;
   if (input.event.sport === "football") {
     try {
-      shadowCycle = await runFootballShadowCycle(persisted.id);
+      shadowCycle = await runFootballShadowPrediction(persisted.id);
     } catch (error) {
       shadowCycle = {
         status: "SKIPPED",

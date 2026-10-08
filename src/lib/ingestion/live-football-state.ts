@@ -2,7 +2,7 @@ import { canonicalEventKey } from "@/lib/canonical/id";
 import { journalizeEventState } from "@/lib/data-plane/journalize";
 import { getPersistence } from "@/lib/persistence/factory";
 import { getSportmonksClient } from "@/lib/providers/factory";
-import { runFootballShadowCycle } from "@/lib/live/football-shadow-cycle";
+import { runFootballShadowPrediction } from "@/lib/live/shadow-football";
 
 export const ingestLatestFootballState = async () => {
   const client = getSportmonksClient();
@@ -13,7 +13,7 @@ export const ingestLatestFootballState = async () => {
   let eventsPersisted = 0;
   let statesPersisted = 0;
   let journalRows = 0;
-  const shadowCycles: Awaited<ReturnType<typeof runFootballShadowCycle>>[] = [];
+  const shadowCycles: Awaited<ReturnType<typeof runFootballShadowPrediction>>[] = [];
   const finishedEvents: Array<{
     eventId: string;
     providerEventId: string;
@@ -71,7 +71,7 @@ export const ingestLatestFootballState = async () => {
     ]);
 
     try {
-      shadowCycles.push(await runFootballShadowCycle(persisted.id));
+      shadowCycles.push(await runFootballShadowPrediction(persisted.id));
     } catch (error) {
       shadowCycles.push({
         status: "SKIPPED",

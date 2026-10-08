@@ -8,81 +8,12 @@ import {
   evaluateLiveDecisionReadiness,
   extractFootballDecisionInput,
 } from "@/lib/live/decision-readiness";
+import { mapLatestFootballQuotes } from "@/lib/live/football-market-map";
 import { buildFootballProbabilitySurface } from "@/lib/models/football/surface";
 
-const FEATURE_VERSION = "football.shadow-input.v1";
+const FEATURE_VERSION = "football.shadow-input.v2";
 const MODEL_ID = "football.goal-state";
 const MODEL_VERSION = "football.goal-state.v1";
-
-const normalized = (value: string | undefined) =>
-  (value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
-
-const sideFromLabel = (
-  label: string,
-  event: PersistedEvent,
-): "home" | "away" | "draw" | "over" | "under" | undefined => {
-  const value = normalized(label);
-  const home = normalized(event.event.home?.name);
-  const away = normalized(event.event.away?.name);
-
-  if (value === home || (home && value.includes(home))) return "home";
-  if (value === away || (away && value.includes(away))) return "away";
-  if (value === "draw" || value.includes("draw")) return "draw";
-  if (value.startsWith("over") || value.includes(" over ")) return "over";
-  if (value.startsWith("under") || value.includes(" under ")) return "under";
-  return undefined;
-};
-
-const canonicalTarget = (
-  quote: PersistedMarketQuoteRecord,
-  event: PersistedEvent,
-): { marketKey: string; selectionKey: string } | null => {
-  if (
-    [
-      "football.1x2",
-      "football.total_goals",
-      "football.btts",
-      "football.team_total",
-      "football.handicap",
-    ].includes(quote.marketKey)
-  ) {
-    return {
-      marketKey: quote.marketKey,
-      selectionKey: quote.selectionKey,
-    };
-  }
-
-  const side = sideFromLabel(quote.selectionLabel, event);
-
-  if (quote.marketKey.endsWith(".h2h")) {
-    if (side === "home" || side === "away" || side === "draw") {
-      return { marketKey: "football.1x2", selectionKey: side };
-    }
-    return null;
-  }
-
-  if (quote.marketKey.endsWith(".totals")) {
-    if ((side === "over" || side === "under") && quote.line != null) {
-      return {
-        marketKey: "football.total_goals",
-        selectionKey: `${side}-${quote.line}`,
-      };
-    }
-    return null;
-  }
-
-  if (quote.marketKey.endsWith(".spreads")) {
-    if ((side === "home" || side === "away") && quote.line != null) {
-      return {
-        marketKey: "football.handicap",
-        selectionKey: `${side}-${quote.line}`,
-      };
-    }
-    return null;
-  }
-
-  return null;
-};
 
 export interface FootballShadowPredictionPlan {
   eventId: string;
@@ -94,6 +25,9 @@ export interface FootballShadowPredictionPlan {
   predictions: Array<{
     marketKey: string;
     selectionKey: string;
+    selectionLabel: string;
+    canonicalMarketKey: string;
+    canonicalSelectionKey: string;
     fairProbability: number;
     fairOdds: number;
     sourceQuoteCount: number;
@@ -128,14 +62,13 @@ export const buildFootballShadowPredictionPlan = (input: {
     awayRedCards: normalizedInput.awayRedCards,
   });
 
-  const surfaceByKey = new Map(
-    surface.markets.map((market) => [
-      `${market.marketId}::${market.selectionId}`,
-      market,
-    ]),
-  );
+  const mapped = mapLatestFootballQuotes({
+    event: input.event,
+    quotes: input.quotes,
+    surface,
+  });
 
-  const quoteCounts = new Map<string, number>();
+  const counts = new Map<string, number>();
   for (const quote of input.quotes) {
     if (
       quote.eventId !== input.event.id ||
@@ -145,23 +78,9 @@ export const buildFootballShadowPredictionPlan = (input: {
     ) {
       continue;
     }
-    const target = canonicalTarget(quote, input.event);
-    if (!target) continue;
-    const key = `${target.marketKey}::${target.selectionKey}`;
-    quoteCounts.set(key, (quoteCounts.get(key) ?? 0) + 1);
+    const key = `${quote.marketKey}|${quote.selectionKey}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
   }
-
-  const predictions = [...quoteCounts.entries()].flatMap(([key, count]) => {
-    const market = surfaceByKey.get(key);
-    if (!market) return [];
-    return [{
-      marketKey: market.marketId,
-      selectionKey: market.selectionId,
-      fairProbability: market.probability,
-      fairOdds: market.fairOdds,
-      sourceQuoteCount: count,
-    }];
-  });
 
   return {
     eventId: input.event.id,
@@ -185,8 +104,19 @@ export const buildFootballShadowPredictionPlan = (input: {
       stateSource: input.state.sourceProvider,
       stateFingerprint: input.state.fingerprint,
       shadow: true,
+      calibration: "UNVALIDATED",
     },
-    predictions,
+    predictions: mapped.map(({ quote, modelMarket }) => ({
+      marketKey: quote.marketKey,
+      selectionKey: quote.selectionKey,
+      selectionLabel: quote.selectionLabel,
+      canonicalMarketKey: modelMarket.marketId,
+      canonicalSelectionKey: modelMarket.selectionId,
+      fairProbability: modelMarket.probability,
+      fairOdds: modelMarket.fairOdds,
+      sourceQuoteCount:
+        counts.get(`${quote.marketKey}|${quote.selectionKey}`) ?? 1,
+    })),
     warnings: [
       "SHADOW ONLY: prediction snapshots are stored without EDGE/WATCH/PASS ledger writes.",
       "modelAgreement=0 and uncertainty=1 are persisted intentionally until independent-model validation and calibration exist.",
@@ -209,7 +139,16 @@ export const runFootballShadowPrediction = async (
     };
   }
 
-  const [states, quotes, decisions] = await Promise.all([
+  if (event.event.sport !== "football") {
+    return {
+      ok: true,
+      skipped: true,
+      reason: "Persisted-state shadow adapter currently supports football only.",
+      eventId,
+    };
+  }
+
+  const [states, quotes, decisions, predictionHeads] = await Promise.all([
     persistence.listRecentEventStates({
       eventIds: [eventId],
       limit: 40,
@@ -219,6 +158,7 @@ export const runFootballShadowPrediction = async (
       limit: 1000,
     }),
     persistence.listDecisionHeads([eventId]),
+    persistence.listPredictionHeads([eventId]),
   ]);
 
   const state = states[0];
@@ -249,7 +189,8 @@ export const runFootballShadowPrediction = async (
     return {
       ok: true,
       skipped: true,
-      reason: "No mapped market selections overlap the football probability surface.",
+      reason:
+        "No deterministically mapped market selections overlap the football probability surface.",
       eventId,
       readiness,
       plan,
@@ -267,33 +208,32 @@ export const runFootballShadowPrediction = async (
     };
   }
 
-  const existingFeatureSnapshot =
-    await persistence.findFeatureSnapshot({
-      eventId,
-      version: plan.featureVersion,
-      capturedAt: plan.stateCapturedAt,
-    });
-
-  if (existingFeatureSnapshot) {
-    return {
-      ok: true,
-      skipped: true,
-      reason: "Shadow prediction already exists for this state snapshot.",
-      eventId,
-      readiness,
-      featureSnapshotId: existingFeatureSnapshot,
-    };
-  }
-
-  const featureSnapshotId = await persistence.appendFeatureSnapshot({
+  let featureSnapshotId = await persistence.findFeatureSnapshot({
     eventId,
     version: plan.featureVersion,
-    features: plan.features,
     capturedAt: plan.stateCapturedAt,
   });
 
+  if (!featureSnapshotId) {
+    featureSnapshotId = await persistence.appendFeatureSnapshot({
+      eventId,
+      version: plan.featureVersion,
+      features: plan.features,
+      capturedAt: plan.stateCapturedAt,
+    });
+  }
+
+  const alreadyWritten = new Set(
+    predictionHeads
+      .filter((row) => row.capturedAt === plan.stateCapturedAt)
+      .map((row) => `${row.marketKey}|${row.selectionKey}`),
+  );
+
   const predictionIds: string[] = [];
   for (const prediction of plan.predictions) {
+    const key = `${prediction.marketKey}|${prediction.selectionKey}`;
+    if (alreadyWritten.has(key)) continue;
+
     predictionIds.push(
       await persistence.appendPrediction({
         eventId,
@@ -313,8 +253,13 @@ export const runFootballShadowPrediction = async (
             confidence: 0,
             generatedAt: plan.stateCapturedAt,
             mode: "SHADOW",
-            note:
-              "Single research model. No independent council/calibration authority.",
+            calibration: "UNVALIDATED",
+            productionAuthorized: readiness.productionAuthorized,
+            sourceQuoteCount: prediction.sourceQuoteCount,
+            canonicalTarget: {
+              marketKey: prediction.canonicalMarketKey,
+              selectionKey: prediction.canonicalSelectionKey,
+            },
           },
         ],
         capturedAt: plan.stateCapturedAt,
@@ -322,30 +267,39 @@ export const runFootballShadowPrediction = async (
     );
   }
 
-  await persistence.appendProviderHealth({
-    providerId: "veto-shadow-football",
-    status: "healthy",
-    checkedAt: new Date().toISOString(),
-    message: "Shadow football predictions persisted without decision-ledger writes.",
-    metadata: {
-      eventId,
-      stateCapturedAt: plan.stateCapturedAt,
-      featureSnapshotId,
-      predictions: predictionIds.length,
-      modelVersion: plan.modelVersion,
-    },
-  });
+  if (predictionIds.length > 0) {
+    await persistence.appendProviderHealth({
+      providerId: "veto-shadow-football",
+      status: "healthy",
+      checkedAt: new Date().toISOString(),
+      message:
+        "Shadow football predictions persisted without decision-ledger writes.",
+      metadata: {
+        eventId,
+        stateCapturedAt: plan.stateCapturedAt,
+        featureSnapshotId,
+        mappedMarkets: plan.predictions.length,
+        predictionsWritten: predictionIds.length,
+        modelVersion: plan.modelVersion,
+      },
+    });
+  }
 
   return {
     ok: true,
-    skipped: false,
+    skipped: predictionIds.length === 0,
     dryRun: false,
     eventId,
     readiness,
     featureSnapshotId,
     predictionIds,
+    mappedMarkets: plan.predictions.length,
     predictionsPersisted: predictionIds.length,
     decisionWrites: 0,
+    current:
+      predictionIds.length === 0
+        ? "All mapped predictions are already stored for this state snapshot."
+        : undefined,
     warnings: plan.warnings,
   };
 };

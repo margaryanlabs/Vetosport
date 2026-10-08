@@ -4,7 +4,7 @@ import { journalizeMarketQuotes } from "@/lib/data-plane/journalize";
 import { getPersistence } from "@/lib/persistence/factory";
 import { getTheOddsApiClient } from "@/lib/providers/factory";
 import { sportFromOddsApiKey } from "@/lib/providers/sport-map";
-import { runFootballShadowCycle } from "@/lib/live/football-shadow-cycle";
+import { runFootballShadowPrediction } from "@/lib/live/shadow-football";
 
 export const ingestLiveOdds = async (input: {
   sportKey: string;
@@ -28,7 +28,7 @@ export const ingestLiveOdds = async (input: {
   let quotesPersisted = 0;
   let journalRows = 0;
   const warnings: string[] = [];
-  const shadowCycles: Awaited<ReturnType<typeof runFootballShadowCycle>>[] = [];
+  const shadowCycles: Awaited<ReturnType<typeof runFootballShadowPrediction>>[] = [];
 
   for (const externalEvent of envelope.data) {
     eventsSeen += 1;
@@ -80,7 +80,7 @@ export const ingestLiveOdds = async (input: {
 
     if (sport === "football") {
       try {
-        shadowCycles.push(await runFootballShadowCycle(eventId));
+        shadowCycles.push(await runFootballShadowPrediction(eventId));
       } catch (error) {
         shadowCycles.push({
           status: "SKIPPED",
