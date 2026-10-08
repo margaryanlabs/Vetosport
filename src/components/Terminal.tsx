@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { Locale, Opportunity, Sport } from "@/lib/domain/types";
+import type { Locale, Sport } from "@/lib/domain/types";
 import { dictionaries } from "@/lib/i18n/dictionaries";
 import {
   liveWorkspaces,
   workspaceById,
   type LiveWorkspace,
 } from "@/lib/sandbox/workspaces";
-import { ProbabilityChart } from "@/components/ProbabilityChart";
 import { MarketSurfaceExplorer } from "@/components/MarketSurfaceExplorer";
 import { AsianLinesBoard } from "@/components/AsianLinesBoard";
 import { BacktestLab } from "@/components/BacktestLab";
@@ -16,19 +15,14 @@ import { ModelGovernancePanel } from "@/components/ModelGovernancePanel";
 import { LiveCommandCenter } from "@/components/LiveCommandCenter";
 import { ParallaxCore } from "@/components/ParallaxCore";
 import { SpecialistSportSurface } from "@/components/SpecialistSportSurface";
-import { VetoMark, VetoWordmark } from "@/components/VetoMark";
 import { WorkspaceChrome, type WorkspaceView } from "@/components/WorkspaceChrome";
+import { MatchRoom } from "@/components/MatchRoom";
 import { SystemStatusPanel } from "@/components/SystemStatusPanel";
 import { sandboxFootballBeforeSurface, sandboxFootballSurface } from "@/lib/sandbox/football-model";
 import { analyzeModelCouncil } from "@/lib/council/engine";
 import { buildCouncilInputs } from "@/lib/council/registry";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
-const pp = (value: number) => `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)} п.п.`;
-
-const decisionClass = (decision: Opportunity["decision"]) =>
-  decision === "EDGE" ? "edge" : decision === "WATCH" ? "watch" : "pass";
-
 type ProviderStatus = {
   mode: "sandbox" | "partially-configured";
   providers: {
@@ -45,10 +39,9 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   const [locale, setLocale] = useState<Locale>("ru");
   const [selectedEventId, setSelectedEventId] = useState(initialWorkspaceId);
   const [selectedId, setSelectedId] = useState(liveWorkspaces[0].opportunities[0].selection.id);
-  const [marketMode, setMarketMode] = useState<"all" | "edges">("all");
   const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
   const [remoteWorkspace, setRemoteWorkspace] = useState<LiveWorkspace | null>(null);
-  const [activeView, setActiveView] = useState<WorkspaceView>("live");
+  const [activeView, setActiveView] = useState<WorkspaceView>("intelligence");
 
   useEffect(() => {
     let active = true;
@@ -122,7 +115,6 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
     if (!selectionStillExists) {
       setSelectedId(activeWorkspace.opportunities[0].selection.id);
     }
-    setMarketMode("all");
   }, [activeWorkspace.id]);
 
   const selected = useMemo(
@@ -133,14 +125,6 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
     [activeWorkspace, selectedId],
   );
 
-  const visibleOpportunities =
-    marketMode === "edges"
-      ? activeWorkspace.opportunities.filter((item) => item.decision !== "PASS")
-      : activeWorkspace.opportunities;
-
-  const primarySignal = activeWorkspace.opportunities[0];
-  const primaryMarketProbability = 1 / primarySignal.marketOdds;
-  const primaryGap = primarySignal.fairProbability - primaryMarketProbability;
   const councilAnalysis = useMemo(
     () =>
       analyzeModelCouncil(
@@ -154,12 +138,6 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   const councilConsensus = Math.round(
     councilAnalysis.consensusConfidence * 100,
   );
-  const livePriority =
-    activeWorkspace.pulse === "hot"
-      ? "high"
-      : activeWorkspace.pulse === "stable"
-        ? "medium"
-        : "low";
 
   const configuredProviders = providerStatus
     ? Object.values(providerStatus.providers).filter((provider) => provider.configured).length
@@ -189,7 +167,6 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
     if (!workspaceById[eventId]) return;
     setSelectedEventId(eventId);
     setSelectedId(selectionId);
-    setMarketMode("all");
     setActiveView("intelligence");
   };
 
@@ -229,238 +206,12 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
 
       {activeView === "intelligence" && (
         <div className="workspaceScene workspaceIntelligence">
-          <div className="workspaceSceneIntro">
-            <span>EVENT INTELLIGENCE</span>
-            <strong>{activeWorkspace.homeName} · {activeWorkspace.awayName}</strong>
-            <small>{activeWorkspace.competition} · {activeWorkspace.clock}</small>
-          </div>
-
-      <section className={`eventDecisionSurface sport-${activeWorkspace.sport}`} id="events">
-        <div className="surfaceCommandHeader">
-          <div className="surfaceCommandTitle">
-            <span className="panelIndex">02</span>
-            <div>
-              <h2>EVENT INTELLIGENCE</h2>
-              <p>{activeWorkspace.competition} · {activeWorkspace.sportLabel} specialist state</p>
-            </div>
-          </div>
-          <div className="headerTelemetry">
-            <span><i className="hotDot" /> {activeWorkspace.clock}</span>
-            <span>STATE {activeWorkspace.stateId}</span>
-            <span>FEED {activeWorkspace.feedLatency}</span>
-            <span>MODEL {activeWorkspace.modelLatency}</span>
-          </div>
-        </div>
-
-        <div className="eventDecisionTop" id="event-overview">
-          <div className="eventMatchPlane">
-            <div className="eventLeagueLine">
-              <span>{activeWorkspace.homeCode}</span>
-              <i />
-              <span>{activeWorkspace.competition}</span>
-              <i />
-              <span>{activeWorkspace.awayCode}</span>
-            </div>
-
-            <div className="eventScoreLine">
-              <div className="eventTeam eventTeamHome">
-                <span>{activeWorkspace.sportLabel} / HOME</span>
-                <strong>{activeWorkspace.homeName}</strong>
-                <small>{activeWorkspace.specialistMetrics[1]?.label} {activeWorkspace.specialistMetrics[1]?.value}</small>
-              </div>
-
-              <div className="eventScoreCore">
-                <div className="eventScoreDigits">
-                  <strong>{activeWorkspace.homeScore}</strong><i>:</i><strong>{activeWorkspace.awayScore}</strong>
-                </div>
-                <div className="eventClockLine">
-                  <b>{activeWorkspace.clock}</b>
-                  <span>{activeWorkspace.period}</span>
-                </div>
-              </div>
-
-              <div className="eventTeam eventTeamAway">
-                <span>{activeWorkspace.sportLabel} / AWAY</span>
-                <strong>{activeWorkspace.awayName}</strong>
-                <small>{activeWorkspace.specialistMetrics[2]?.label} {activeWorkspace.specialistMetrics[2]?.value}</small>
-              </div>
-            </div>
-          </div>
-
-          <aside className="eventVerdictPlane">
-            <div className="verdictTop">
-              <div>
-                <span className="miniLabel">SELECTED SIGNAL</span>
-                <strong>{selected.selection.label}</strong>
-              </div>
-              <em className={decisionClass(selected.decision)}>{selected.decision}</em>
-            </div>
-
-            <div className="verdictPrimary">
-              <div>
-                <strong>{pct(selected.fairProbability)}</strong>
-                <span>FAIR PROBABILITY</span>
-              </div>
-              <div className="verdictScore">
-                <span>SCORE</span>
-                <b>{selected.opportunityScore}</b>
-              </div>
-            </div>
-
-            <div className="verdictLane">
-              <span style={{ width: `${selected.fairProbability * 100}%` }} />
-              <i style={{ left: `${selected.fairProbability * 100}%` }} />
-            </div>
-
-            <div className="verdictMetrics">
-              <div><span>MARKET</span><strong>{selected.marketOdds.toFixed(2)}</strong></div>
-              <div><span>FAIR</span><strong>{selected.fairOdds.toFixed(2)}</strong></div>
-              <div><span>EDGE</span><strong className={selected.probabilityEdge >= 0 ? "positive" : "negative"}>{pp(selected.probabilityEdge)}</strong></div>
-              <div><span>EV</span><strong className={selected.expectedValue >= 0 ? "positive" : "negative"}>{pct(selected.expectedValue)}</strong></div>
-            </div>
-          </aside>
-        </div>
-
-        <div className="eventStateRail">
-          {activeWorkspace.stateMetrics.map((metric) => (
-            <StatePill
-              accent={metric.accent}
-              key={metric.label}
-              label={metric.label}
-              value={metric.value}
-              note={metric.note}
-            />
-          ))}
-        </div>
-
-        <div className="eventSignalBody" id="event-signals">
-          <section className="eventChangePlane">
-            <div className="eventPlaneHead">
-              <div>
-                <span className="miniLabel">{dictionary.whatChanged}</span>
-                <strong>{activeWorkspace.reasonHeadline}</strong>
-              </div>
-              <span className={`priorityTag ${livePriority}`}>{livePriority.toUpperCase()}</span>
-            </div>
-
-            <p>{activeWorkspace.reasonSummary}</p>
-
-            <div className="changeTimeline">
-              {activeWorkspace.changes.map((change, index) => (
-                <div className="changeTimelineRow" key={change.label}>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  <i className={change.direction} />
-                  <div>
-                    <strong>{change.label}</strong>
-                    <small>{change.note}</small>
-                  </div>
-                  <b className={change.direction === "up" ? "positive" : change.direction === "down" ? "negative" : ""}>
-                    {pp(change.delta)}
-                  </b>
-                </div>
-              ))}
-            </div>
-
-            <div className="affectedMarkets">
-              <span>AFFECTED</span>
-              <div>
-                {activeWorkspace.affectedMarkets.map((market) => (
-                  <i key={market}>{market}</i>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="eventProbabilityPlane">
-            <div className="eventPlaneHead">
-              <div>
-                <span className="miniLabel">{dictionary.probabilitySurface}</span>
-                <strong>{activeWorkspace.probabilityLabel} · {activeWorkspace.modelVersion}</strong>
-              </div>
-              <div className="surfaceHeadline">
-                <span>VETO</span>
-                <strong>{pct(primarySignal.fairProbability)}</strong>
-              </div>
-            </div>
-
-            <ProbabilityChart points={activeWorkspace.probabilityHistory} />
-
-            <div className="probabilityFoot">
-              <span>MARKET <b>{pct(primaryMarketProbability)}</b></span>
-              <span>FAIR <b>{primarySignal.fairOdds.toFixed(2)}</b></span>
-              <span>GAP <b className={primaryGap >= 0 ? "positive" : "negative"}>{pp(primaryGap)}</b></span>
-              <span>AGREEMENT <b>{selected.modelAgreement}/100</b></span>
-            </div>
-          </section>
-        </div>
-
-        <div className="eventReasonBand">
-          <div className="reasonNarrative">
-            <span className="miniLabel">{dictionary.why}</span>
-            <h3>{activeWorkspace.reasonHeadline}</h3>
-            <p>{activeWorkspace.reasonSummary}</p>
-          </div>
-
-          <div className="reasonEvidence">
-            {selected.rationale.slice(0, 3).map((line, index) => (
-              <div key={line}>
-                <span>0{index + 1}</span>
-                <p>{line}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="reasonRisk">
-            <span className="miniLabel">RISK / INVALIDATION</span>
-            <strong>{selected.risk}</strong>
-            <p>{activeWorkspace.invalidation}</p>
-          </div>
-        </div>
-
-        <div className="marketSurfaceHeader">
-          <div>
-            <span className="panelIndex">03</span>
-            <div>
-              <h2>{dictionary.opportunities}</h2>
-              <p>{activeWorkspace.sportLabel} markets ranked by evidence quality</p>
-            </div>
-          </div>
-          <div className="segmented">
-            <button className={marketMode === "all" ? "active" : ""} onClick={() => setMarketMode("all")} type="button">{dictionary.allMarkets}</button>
-            <button className={marketMode === "edges" ? "active" : ""} onClick={() => setMarketMode("edges")} type="button">{dictionary.topEdges}</button>
-          </div>
-        </div>
-
-        <div className="marketTable eventMarketTable" id="event-market">
-          <div className="marketRow tableHead">
-            <span>{dictionary.market}</span>
-            <span>{dictionary.price}</span>
-            <span>{dictionary.fair}</span>
-            <span>{dictionary.edge}</span>
-            <span>{dictionary.decision}</span>
-          </div>
-          {visibleOpportunities.map((item) => (
-            <button
-              type="button"
-              key={item.selection.id}
-              className={`marketRow dataRow ${selected.selection.id === item.selection.id ? "rowSelected" : ""}`}
-              onClick={() => setSelectedId(item.selection.id)}
-            >
-              <span className="marketIdentity">
-                <i className={decisionClass(item.decision)} />
-                <span>
-                  <strong>{item.selection.label}</strong>
-                  <small>{item.marketId.replace(`${activeWorkspace.sport}.`, "").replaceAll("_", " ")}</small>
-                </span>
-              </span>
-              <span className="mono">{item.marketOdds.toFixed(2)}</span>
-              <span className="mono">{item.fairOdds.toFixed(2)}</span>
-              <span className={item.probabilityEdge > 0 ? "positive mono" : "muted mono"}>{pp(item.probabilityEdge)}</span>
-              <span className={`decision ${decisionClass(item.decision)}`}>{item.decision}</span>
-            </button>
-          ))}
-        </div>
-      </section>
+          <MatchRoom
+            workspace={activeWorkspace}
+            selected={selected}
+            onSelectSignal={(selectionId) => setSelectedId(selectionId)}
+            onOpenLab={() => setActiveView("research")}
+          />
         </div>
       )}
 
