@@ -7,7 +7,9 @@ type Plane = {
     mode?: string;
     sportmonksConfigured?: boolean;
     oddsConfigured?: boolean;
+    canonicalGatewayConfigured?: boolean;
     blockers?: string[];
+    directAdapterGaps?: string[];
   };
   storageReachable?: boolean;
   storageMessage?: string;
@@ -17,6 +19,7 @@ type Plane = {
 type Providers = {
   mode?: string;
   providers?: {
+    canonicalGateway?: { configured?: boolean };
     sportmonks?: { configured?: boolean };
     theOddsApi?: { configured?: boolean };
   };
@@ -60,6 +63,10 @@ export function SystemStatusPanel() {
     providers?.providers?.theOddsApi?.configured ??
     plane?.runtime?.oddsConfigured ??
     false;
+  const gateway =
+    providers?.providers?.canonicalGateway?.configured ??
+    plane?.runtime?.canonicalGatewayConfigured ??
+    false;
 
   return (
     <section className="systemScene">
@@ -101,6 +108,13 @@ export function SystemStatusPanel() {
           <small>The Odds API market-price adapter.</small>
           <i className={odds ? "ok" : "pending"} />
         </article>
+
+        <article>
+          <span>LIVE GATEWAY</span>
+          <strong>{gateway ? "READY" : "PENDING"}</strong>
+          <small>Provider-neutral normalized push into the Truth Journal.</small>
+          <i className={gateway ? "ok" : "pending"} />
+        </article>
       </div>
 
       <div className="systemModeBand">
@@ -111,7 +125,9 @@ export function SystemStatusPanel() {
         <p>
           {plane?.runtime?.blockers?.length
             ? plane.runtime.blockers.join(" · ")
-            : "No active infrastructure blockers reported."}
+            : plane?.runtime?.directAdapterGaps?.length
+              ? `Gateway ready · optional direct adapters: ${plane.runtime.directAdapterGaps.join(" · ")}`
+              : "No active infrastructure blockers reported."}
         </p>
       </div>
     </section>

@@ -147,3 +147,34 @@ export const journalizeEventState = <T>(input: {
 
   return prepareJournalRecord(record);
 };
+
+
+export const journalizeEvidence = (input: {
+  canonicalEventId: string;
+  sourceProvider: string;
+  gatewayReceivedAt: string;
+  evidence: import("@/lib/domain/types").Evidence[];
+}): PreparedJournalRecord[] =>
+  input.evidence.map((item) =>
+    prepareJournalRecord({
+      eventId: input.canonicalEventId,
+      sourceProvider: item.source || input.sourceProvider,
+      sourceRecordId: item.id,
+      stream: "EVIDENCE",
+      schemaVersion: "veto.evidence.v1",
+      eventOccurredAt: validIsoOr(item.capturedAt, input.gatewayReceivedAt),
+      sourceEmittedAt: validIsoOr(item.capturedAt, input.gatewayReceivedAt),
+      gatewayReceivedAt: new Date(input.gatewayReceivedAt).toISOString(),
+      normalizedAt: new Date().toISOString(),
+      knowledgeAvailableAt: new Date(input.gatewayReceivedAt).toISOString(),
+      acquisitionMode: "LIVE",
+      sourceClockOffsetMs: 0,
+      sourceTimeUncertaintyMs: 1000,
+      lateArrival:
+        new Date(input.gatewayReceivedAt).getTime() -
+          new Date(item.capturedAt).getTime() >
+        30_000,
+      semanticKey: [item.kind, item.title].join("|"),
+      payload: item,
+    }),
+  );
