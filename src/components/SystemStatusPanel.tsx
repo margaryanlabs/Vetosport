@@ -7,7 +7,11 @@ type Plane = {
     mode?: string;
     sportmonksConfigured?: boolean;
     oddsConfigured?: boolean;
+    oddsSportKeysConfigured?: boolean;
+    oddsSportKeysCount?: number;
+    canonicalGatewayConfigured?: boolean;
     blockers?: string[];
+    directAdapterGaps?: string[];
   };
   storageReachable?: boolean;
   storageMessage?: string;
@@ -17,8 +21,14 @@ type Plane = {
 type Providers = {
   mode?: string;
   providers?: {
+    canonicalGateway?: { configured?: boolean };
     sportmonks?: { configured?: boolean };
-    theOddsApi?: { configured?: boolean };
+    theOddsApi?: {
+      configured?: boolean;
+      sportKeysConfigured?: boolean;
+      sportKeysCount?: number;
+      ingestionReady?: boolean;
+    };
   };
 };
 
@@ -60,6 +70,15 @@ export function SystemStatusPanel() {
     providers?.providers?.theOddsApi?.configured ??
     plane?.runtime?.oddsConfigured ??
     false;
+  const oddsAllowlist =
+    providers?.providers?.theOddsApi?.sportKeysConfigured ??
+    plane?.runtime?.oddsSportKeysConfigured ??
+    false;
+  const marketReady = odds && oddsAllowlist;
+  const gateway =
+    providers?.providers?.canonicalGateway?.configured ??
+    plane?.runtime?.canonicalGatewayConfigured ??
+    false;
 
   return (
     <section className="systemScene">
@@ -67,8 +86,8 @@ export function SystemStatusPanel() {
         <span>SYSTEM / HEALTH</span>
         <h2>{selfcheck?.passed ? "Core is healthy." : "Running system checks…"}</h2>
         <p>
-          Storage, provider connectivity and the intelligence engine are shown here
-          without mixing infrastructure into the live sports workspace.
+          Storage, live ingress, provider connectivity and the intelligence engine
+          are shown here without mixing infrastructure into the live sports workspace.
         </p>
         <div className="systemHeroPulse" aria-hidden><i /><i /><i /></div>
       </div>
@@ -88,18 +107,33 @@ export function SystemStatusPanel() {
           <i className={plane?.storageReachable ? "ok" : "wait"} />
         </article>
 
+        <article>
+          <span>LIVE GATEWAY</span>
+          <strong>{gateway ? "READY" : "PENDING"}</strong>
+          <small>Provider-neutral normalized push into the Truth Journal.</small>
+          <i className={gateway ? "ok" : "pending"} />
+        </article>
+
         <article id="system-providers">
           <span>SPORT DATA</span>
-          <strong>{sportmonks ? "CONNECTED" : "PENDING"}</strong>
-          <small>Sportmonks live event-state adapter.</small>
-          <i className={sportmonks ? "ok" : "pending"} />
+          <strong>{sportmonks ? "DIRECT READY" : gateway ? "GATEWAY ONLY" : "PENDING"}</strong>
+          <small>SportMonks direct football state adapter is optional when the canonical gateway is used.</small>
+          <i className={sportmonks || gateway ? "ok" : "pending"} />
         </article>
 
         <article>
           <span>MARKET DATA</span>
-          <strong>{odds ? "CONNECTED" : "PENDING"}</strong>
-          <small>The Odds API market-price adapter.</small>
-          <i className={odds ? "ok" : "pending"} />
+          <strong>{marketReady ? "DIRECT READY" : odds ? "NEEDS ALLOWLIST" : gateway ? "GATEWAY ONLY" : "PENDING"}</strong>
+          <small>
+            {marketReady
+              ? `Odds adapter armed · ${providers?.providers?.theOddsApi?.sportKeysCount ?? plane?.runtime?.oddsSportKeysCount ?? 0} sport keys allowed.`
+              : odds
+                ? "API key exists, but VETO_ODDS_SPORT_KEYS is empty. Polling remains disabled."
+                : gateway
+                  ? "Direct Odds API is optional; normalized market quotes can arrive through the gateway."
+                  : "No market-data ingress is configured."}
+          </small>
+          <i className={marketReady || gateway ? "ok" : "pending"} />
         </article>
       </div>
 
@@ -111,7 +145,9 @@ export function SystemStatusPanel() {
         <p>
           {plane?.runtime?.blockers?.length
             ? plane.runtime.blockers.join(" · ")
-            : "No active infrastructure blockers reported."}
+            : plane?.runtime?.directAdapterGaps?.length
+              ? `Live gateway ready · optional direct adapters: ${plane.runtime.directAdapterGaps.join(" · ")}`
+              : "No active infrastructure blockers reported."}
         </p>
       </div>
     </section>

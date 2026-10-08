@@ -194,38 +194,63 @@ export const getDataPlaneRuntimeStatus = (): DataPlaneRuntimeStatus => {
     process.env.SPORTMONKS_API_TOKEN,
   );
   const oddsConfigured = Boolean(process.env.THE_ODDS_API_KEY);
+  const oddsSportKeys = (process.env.VETO_ODDS_SPORT_KEYS ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const oddsSportKeysConfigured = oddsSportKeys.length > 0;
   const ingestionSecretConfigured = Boolean(
     process.env.INGESTION_SECRET,
   );
+  const canonicalGatewayConfigured =
+    persistenceConfigured && ingestionSecretConfigured;
 
   const blockers: string[] = [];
   if (!persistenceConfigured)
     blockers.push("Supabase persistence is not configured.");
-  if (!sportmonksConfigured)
-    blockers.push("SPORTMONKS_API_TOKEN is not configured.");
-  if (!oddsConfigured)
-    blockers.push("THE_ODDS_API_KEY is not configured.");
   if (!ingestionSecretConfigured)
     blockers.push("INGESTION_SECRET is not configured.");
+
+  const directAdapterGaps: string[] = [];
+  if (!sportmonksConfigured)
+    directAdapterGaps.push("SPORTMONKS_API_TOKEN is not configured.");
+  if (!oddsConfigured) {
+    directAdapterGaps.push("THE_ODDS_API_KEY is not configured.");
+  } else if (!oddsSportKeysConfigured) {
+    directAdapterGaps.push(
+      "VETO_ODDS_SPORT_KEYS is empty; direct market polling is disabled to protect provider quota.",
+    );
+  }
 
   const feedCount =
     Number(sportmonksConfigured) + Number(oddsConfigured);
 
+  const directFeedsFullyReady =
+    sportmonksConfigured &&
+    oddsConfigured &&
+    oddsSportKeysConfigured;
+
   const mode: DataPlaneRuntimeStatus["mode"] =
     !persistenceConfigured
       ? "OFFLINE"
-      : feedCount === 0
-        ? "STORAGE_ONLY"
-        : feedCount < 2 || !ingestionSecretConfigured
+      : directFeedsFullyReady && ingestionSecretConfigured
+        ? "LIVE_READY"
+        : feedCount > 0
           ? "PARTIAL_FEEDS"
-          : "LIVE_READY";
+          : canonicalGatewayConfigured
+            ? "PUSH_READY"
+            : "STORAGE_ONLY";
 
   return {
     persistenceConfigured,
     sportmonksConfigured,
     oddsConfigured,
+    oddsSportKeysConfigured,
+    oddsSportKeysCount: oddsSportKeys.length,
     ingestionSecretConfigured,
+    canonicalGatewayConfigured,
     mode,
     blockers,
+    directAdapterGaps,
   };
 };
