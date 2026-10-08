@@ -15,6 +15,7 @@ import { ModelGovernancePanel } from "@/components/ModelGovernancePanel";
 import { LiveCommandCenter } from "@/components/LiveCommandCenter";
 import { ParallaxCore } from "@/components/ParallaxCore";
 import { SpecialistSportSurface } from "@/components/SpecialistSportSurface";
+import { VetoMark, VetoWordmark } from "@/components/VetoMark";
 import { WorkspaceChrome, type WorkspaceView } from "@/components/WorkspaceChrome";
 import { MatchRoom } from "@/components/MatchRoom";
 import { SystemStatusPanel } from "@/components/SystemStatusPanel";
