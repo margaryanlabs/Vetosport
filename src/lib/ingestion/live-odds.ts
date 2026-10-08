@@ -4,6 +4,7 @@ import { journalizeMarketQuotes } from "@/lib/data-plane/journalize";
 import { getPersistence } from "@/lib/persistence/factory";
 import { getTheOddsApiClient } from "@/lib/providers/factory";
 import { sportFromOddsApiKey } from "@/lib/providers/sport-map";
+import { runFootballShadowCycle } from "@/lib/live/football-shadow-cycle";
 
 export const ingestLiveOdds = async (input: {
   sportKey: string;
@@ -27,6 +28,7 @@ export const ingestLiveOdds = async (input: {
   let quotesPersisted = 0;
   let journalRows = 0;
   const warnings: string[] = [];
+  const shadowCycles: Awaited<ReturnType<typeof runFootballShadowCycle>>[] = [];
 
   for (const externalEvent of envelope.data) {
     eventsSeen += 1;
@@ -75,6 +77,21 @@ export const ingestLiveOdds = async (input: {
     );
 
     quotesPersisted += await persistence.appendQuotes(eventId, quotes);
+
+    if (sport === "football") {
+      try {
+        shadowCycles.push(await runFootballShadowCycle(eventId));
+      } catch (error) {
+        shadowCycles.push({
+          status: "SKIPPED",
+          eventId,
+          reason:
+            error instanceof Error
+              ? `Shadow cycle failed safely: ${error.message}`
+              : "Shadow cycle failed safely.",
+        });
+      }
+    }
   }
 
   await persistence.appendProviderHealth({
@@ -92,6 +109,7 @@ export const ingestLiveOdds = async (input: {
       quotesPersisted,
       journalRows,
       warnings,
+      shadowCycles: shadowCycles.map((row) => row.status),
     },
   });
 
@@ -108,5 +126,6 @@ export const ingestLiveOdds = async (input: {
     quotesPersisted,
     journalRows,
     warnings,
+    shadowCycles,
   };
 };
