@@ -7,6 +7,8 @@ type Plane = {
     mode?: string;
     sportmonksConfigured?: boolean;
     oddsConfigured?: boolean;
+    oddsSportKeysConfigured?: boolean;
+    oddsSportKeysCount?: number;
     canonicalGatewayConfigured?: boolean;
     blockers?: string[];
     directAdapterGaps?: string[];
@@ -21,7 +23,12 @@ type Providers = {
   providers?: {
     canonicalGateway?: { configured?: boolean };
     sportmonks?: { configured?: boolean };
-    theOddsApi?: { configured?: boolean };
+    theOddsApi?: {
+      configured?: boolean;
+      sportKeysConfigured?: boolean;
+      sportKeysCount?: number;
+      ingestionReady?: boolean;
+    };
   };
 };
 
@@ -63,6 +70,11 @@ export function SystemStatusPanel() {
     providers?.providers?.theOddsApi?.configured ??
     plane?.runtime?.oddsConfigured ??
     false;
+  const oddsAllowlist =
+    providers?.providers?.theOddsApi?.sportKeysConfigured ??
+    plane?.runtime?.oddsSportKeysConfigured ??
+    false;
+  const marketReady = odds && oddsAllowlist;
   const gateway =
     providers?.providers?.canonicalGateway?.configured ??
     plane?.runtime?.canonicalGatewayConfigured ??
@@ -97,16 +109,24 @@ export function SystemStatusPanel() {
 
         <article id="system-providers">
           <span>SPORT DATA</span>
-          <strong>{sportmonks ? "CONNECTED" : "PENDING"}</strong>
-          <small>Sportmonks live event-state adapter.</small>
-          <i className={sportmonks ? "ok" : "pending"} />
+          <strong>{sportmonks ? "DIRECT READY" : gateway ? "GATEWAY ONLY" : "PENDING"}</strong>
+          <small>SportMonks direct football adapter is optional when canonical push is used.</small>
+          <i className={sportmonks || gateway ? "ok" : "pending"} />
         </article>
 
         <article>
           <span>MARKET DATA</span>
-          <strong>{odds ? "CONNECTED" : "PENDING"}</strong>
-          <small>The Odds API market-price adapter.</small>
-          <i className={odds ? "ok" : "pending"} />
+          <strong>{marketReady ? "DIRECT READY" : odds ? "NEEDS ALLOWLIST" : gateway ? "GATEWAY ONLY" : "PENDING"}</strong>
+          <small>
+            {marketReady
+              ? `Odds adapter armed · ${providers?.providers?.theOddsApi?.sportKeysCount ?? plane?.runtime?.oddsSportKeysCount ?? 0} sport keys allowed.`
+              : odds
+                ? "API key exists, but VETO_ODDS_SPORT_KEYS is empty. Polling remains disabled."
+                : gateway
+                  ? "Market quotes can arrive through the canonical gateway."
+                  : "No market-data ingress is configured."}
+          </small>
+          <i className={marketReady || gateway ? "ok" : "pending"} />
         </article>
 
         <article>
