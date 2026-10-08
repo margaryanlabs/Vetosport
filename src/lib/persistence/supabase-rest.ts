@@ -17,6 +17,7 @@ import type {
   DecisionProofRecord,
   EventStateSnapshot,
   HistoricalImportRecord,
+  LiveFeedEventRecord,
   PersistedEvent,
   PredictionRecord,
   ProviderHealthSample,
@@ -210,6 +211,107 @@ export class SupabaseRestPersistence implements VetoPersistence {
             }
           : undefined,
       },
+    }));
+  }
+
+  async listLiveFeedEvents(input?: {
+    statuses?: SportEvent["status"][];
+    limit?: number;
+  }): Promise<LiveFeedEventRecord[]> {
+    const statuses = input?.statuses?.length
+      ? input.statuses
+      : ["live", "scheduled", "suspended"];
+    const query = new URLSearchParams();
+    query.set("status", `in.(${statuses.join(",")})`);
+    query.set("canonical_key", "not.ilike.*selfcheck*");
+    query.set("order", "state_captured_at.desc.nullslast,updated_at.desc");
+    query.set("limit", String(Math.min(80, Math.max(1, input?.limit ?? 40))));
+    query.set(
+      "select",
+      [
+        "id",
+        "canonical_key",
+        "sport",
+        "competition_name",
+        "starts_at",
+        "status",
+        "home_participant_id",
+        "home_participant_name",
+        "away_participant_id",
+        "away_participant_name",
+        "provider_refs",
+        "updated_at",
+        "state_captured_at",
+        "state_source_provider",
+        "source_latency_ms",
+        "latest_state",
+        "quote_count",
+        "market_count",
+        "latest_quote_at",
+        "decision_count",
+        "latest_decision",
+        "latest_decision_at",
+        "latest_opportunity_score",
+      ].join(","),
+    );
+
+    const rows = await this.request<Array<{
+      id: string;
+      canonical_key: string;
+      sport: LiveFeedEventRecord["sport"];
+      competition_name: string;
+      starts_at: string;
+      status: LiveFeedEventRecord["status"];
+      home_participant_id?: string | null;
+      home_participant_name?: string | null;
+      away_participant_id?: string | null;
+      away_participant_name?: string | null;
+      provider_refs?: Record<string, string> | null;
+      updated_at: string;
+      state_captured_at?: string | null;
+      state_source_provider?: string | null;
+      source_latency_ms?: number | null;
+      latest_state?: Record<string, unknown> | null;
+      quote_count?: number | string | null;
+      market_count?: number | string | null;
+      latest_quote_at?: string | null;
+      decision_count?: number | string | null;
+      latest_decision?: LiveFeedEventRecord["latestDecision"] | null;
+      latest_decision_at?: string | null;
+      latest_opportunity_score?: number | string | null;
+    }>>(
+      this.tablePath("live_event_feed", query.toString()),
+      { method: "GET" },
+    );
+
+    return rows.map((row) => ({
+      id: row.id,
+      canonicalKey: row.canonical_key,
+      sport: row.sport,
+      competition: row.competition_name,
+      startsAt: row.starts_at,
+      status: row.status,
+      homeParticipantId: row.home_participant_id ?? undefined,
+      homeParticipantName: row.home_participant_name ?? undefined,
+      awayParticipantId: row.away_participant_id ?? undefined,
+      awayParticipantName: row.away_participant_name ?? undefined,
+      providerRefs: row.provider_refs ?? {},
+      updatedAt: row.updated_at,
+      stateCapturedAt: row.state_captured_at ?? undefined,
+      stateSourceProvider: row.state_source_provider ?? undefined,
+      sourceLatencyMs:
+        row.source_latency_ms == null ? undefined : Number(row.source_latency_ms),
+      latestState: row.latest_state ?? undefined,
+      quoteCount: Number(row.quote_count ?? 0),
+      marketCount: Number(row.market_count ?? 0),
+      latestQuoteAt: row.latest_quote_at ?? undefined,
+      decisionCount: Number(row.decision_count ?? 0),
+      latestDecision: row.latest_decision ?? undefined,
+      latestDecisionAt: row.latest_decision_at ?? undefined,
+      latestOpportunityScore:
+        row.latest_opportunity_score == null
+          ? undefined
+          : Number(row.latest_opportunity_score),
     }));
   }
 

@@ -18,6 +18,32 @@ export interface PersistedEvent {
   event: SportEvent;
 }
 
+export interface LiveFeedEventRecord {
+  id: string;
+  canonicalKey: string;
+  sport: SportEvent["sport"];
+  competition: string;
+  startsAt: string;
+  status: SportEvent["status"];
+  homeParticipantId?: string;
+  homeParticipantName?: string;
+  awayParticipantId?: string;
+  awayParticipantName?: string;
+  providerRefs: Record<string, string>;
+  updatedAt: string;
+  stateCapturedAt?: string;
+  stateSourceProvider?: string;
+  sourceLatencyMs?: number;
+  latestState?: Record<string, unknown>;
+  quoteCount: number;
+  marketCount: number;
+  latestQuoteAt?: string;
+  decisionCount: number;
+  latestDecision?: DecisionLedgerEntry["decision"];
+  latestDecisionAt?: string;
+  latestOpportunityScore?: number;
+}
+
 export interface EventStateSnapshot {
   eventId: string;
   sourceProvider: string;
@@ -140,6 +166,11 @@ export interface VetoPersistence {
     startsAt: string;
     toleranceMinutes?: number;
   }): Promise<PersistedEvent[]>;
+
+  listLiveFeedEvents(input?: {
+    statuses?: SportEvent["status"][];
+    limit?: number;
+  }): Promise<LiveFeedEventRecord[]>;
 
   appendEventState(snapshot: EventStateSnapshot): Promise<void>;
 
