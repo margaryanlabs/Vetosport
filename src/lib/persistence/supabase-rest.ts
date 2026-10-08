@@ -524,6 +524,29 @@ export class SupabaseRestPersistence implements VetoPersistence {
     return rows.length;
   }
 
+  async findFeatureSnapshot(input: {
+    eventId: string;
+    version: string;
+    capturedAt: string;
+  }): Promise<string | null> {
+    const query = new URLSearchParams();
+    query.set("event_id", `eq.${input.eventId}`);
+    query.set("feature_version", `eq.${input.version}`);
+    query.set(
+      "captured_at",
+      `eq.${new Date(input.capturedAt).toISOString()}`,
+    );
+    query.set("limit", "1");
+    query.set("select", "id");
+
+    const rows = await this.request<Array<{ id: string }>>(
+      this.tablePath("feature_snapshots", query.toString()),
+      { method: "GET" },
+    );
+
+    return rows[0]?.id ?? null;
+  }
+
   async appendFeatureSnapshot(input: {
     eventId: string;
     version: string;

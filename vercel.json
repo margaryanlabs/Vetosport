@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/live-odds",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/shadow-football",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

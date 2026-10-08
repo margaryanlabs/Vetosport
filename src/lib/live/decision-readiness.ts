@@ -9,6 +9,19 @@ import type {
   LiveDecisionRequirement,
 } from "@/lib/live/types";
 
+export interface FootballDecisionInput {
+  scoreHome: number;
+  scoreAway: number;
+  elapsedSeconds: number;
+  prematchExpectedHomeGoals: number;
+  prematchExpectedAwayGoals: number;
+  liveXgHome?: number;
+  liveXgAway?: number;
+  tempoIndex?: number;
+  homeRedCards?: number;
+  awayRedCards?: number;
+}
+
 const modelForSport = (sport: PersistedEvent["event"]["sport"]) =>
   sport === "football"
     ? { id: "football.goal-state", version: "football.goal-state.v1" }
@@ -71,7 +84,7 @@ const isProductionAuthorized = (version: string | undefined) => {
   return allowlist.has("*") || allowlist.has(version);
 };
 
-const footballMarketMappable = (marketKey: string) =>
+export const footballMarketMappable = (marketKey: string) =>
   [
     "football.1x2",
     "football.total_goals",
@@ -87,6 +100,111 @@ const requirement = (
   passed: boolean,
   detail: string,
 ): LiveDecisionRequirement => ({ id, label, passed, detail });
+
+export const extractFootballDecisionInput = (
+  stateRecord: PersistedEventStateRecord | undefined,
+): FootballDecisionInput | null => {
+  if (!stateRecord) return null;
+
+  const state = stateRecord.state ?? {};
+  const stateEvent = objectValue(state.event);
+  const score =
+    objectValue(state.score) ??
+    objectValue(stateEvent?.score);
+  const clock =
+    objectValue(state.clock) ??
+    objectValue(stateEvent?.clock);
+  const baseline =
+    objectValue(state.baseline) ??
+    objectValue(state.prematchBaseline) ??
+    objectValue(state.vetoBaseline);
+  const features = objectValue(state.features) ?? {};
+
+  const scoreHome = firstFinite(
+    score?.home,
+    state.score_home,
+    state.home_score,
+    features.score_home,
+  );
+  const scoreAway = firstFinite(
+    score?.away,
+    state.score_away,
+    state.away_score,
+    features.score_away,
+  );
+  const elapsedSeconds = firstFinite(
+    clock?.elapsedSeconds,
+    state.elapsedSeconds,
+    state.elapsed_seconds,
+    features.elapsed_seconds,
+  );
+  const prematchExpectedHomeGoals = firstPositive(
+    baseline?.prematchExpectedHomeGoals,
+    baseline?.homeExpectedGoals,
+    state.prematchExpectedHomeGoals,
+    state.prematch_expected_home_goals,
+    state.baseline_home_xg,
+    features.prematch_expected_home_goals,
+    features.baseline_home_xg,
+  );
+  const prematchExpectedAwayGoals = firstPositive(
+    baseline?.prematchExpectedAwayGoals,
+    baseline?.awayExpectedGoals,
+    state.prematchExpectedAwayGoals,
+    state.prematch_expected_away_goals,
+    state.baseline_away_xg,
+    features.prematch_expected_away_goals,
+    features.baseline_away_xg,
+  );
+
+  if (
+    scoreHome == null ||
+    scoreAway == null ||
+    elapsedSeconds == null ||
+    elapsedSeconds < 0 ||
+    prematchExpectedHomeGoals == null ||
+    prematchExpectedAwayGoals == null
+  ) {
+    return null;
+  }
+
+  return {
+    scoreHome,
+    scoreAway,
+    elapsedSeconds,
+    prematchExpectedHomeGoals,
+    prematchExpectedAwayGoals,
+    liveXgHome: firstFinite(
+      state.xg_home,
+      state.liveXgHome,
+      state.live_xg_home,
+      features.xg_home,
+      features.live_xg_home,
+    ),
+    liveXgAway: firstFinite(
+      state.xg_away,
+      state.liveXgAway,
+      state.live_xg_away,
+      features.xg_away,
+      features.live_xg_away,
+    ),
+    tempoIndex: firstFinite(
+      state.tempo_index,
+      state.tempoIndex,
+      features.tempo_index,
+    ),
+    homeRedCards: firstFinite(
+      state.home_red_cards,
+      state.homeRedCards,
+      features.home_red_cards,
+    ),
+    awayRedCards: firstFinite(
+      state.away_red_cards,
+      state.awayRedCards,
+      features.away_red_cards,
+    ),
+  };
+};
 
 export const evaluateLiveDecisionReadiness = (input: {
   event: PersistedEvent;
@@ -110,6 +228,7 @@ export const evaluateLiveDecisionReadiness = (input: {
       modelId: model?.id,
       modelVersion: model?.version,
       productionAuthorized: authorized,
+      shadowPredictionEligible: false,
       autoDecisionEligible: false,
       blockers: [],
       requirements: [
@@ -146,6 +265,7 @@ export const evaluateLiveDecisionReadiness = (input: {
     return {
       status: "MODEL_ADAPTER_MISSING",
       productionAuthorized: false,
+      shadowPredictionEligible: false,
       autoDecisionEligible: false,
       blockers: [
         `No persisted-state decision adapter exists for ${input.event.event.sport}.`,
@@ -160,6 +280,7 @@ export const evaluateLiveDecisionReadiness = (input: {
       modelId: model.id,
       modelVersion: model.version,
       productionAuthorized: authorized,
+      shadowPredictionEligible: false,
       autoDecisionEligible: false,
       blockers: [
         `${model.id} exists as a research engine, but persisted-state → production decision wiring is not implemented yet.`,
@@ -188,21 +309,25 @@ export const evaluateLiveDecisionReadiness = (input: {
     objectValue(state.baseline) ??
     objectValue(state.prematchBaseline) ??
     objectValue(state.vetoBaseline);
+  const features = objectValue(state.features) ?? {};
 
   const scoreHome = firstFinite(
     score?.home,
     state.score_home,
     state.home_score,
+    features.score_home,
   );
   const scoreAway = firstFinite(
     score?.away,
     state.score_away,
     state.away_score,
+    features.score_away,
   );
   const elapsedSeconds = firstFinite(
     clock?.elapsedSeconds,
     state.elapsedSeconds,
     state.elapsed_seconds,
+    features.elapsed_seconds,
   );
   const baselineHome = firstPositive(
     baseline?.prematchExpectedHomeGoals,
@@ -210,6 +335,8 @@ export const evaluateLiveDecisionReadiness = (input: {
     state.prematchExpectedHomeGoals,
     state.prematch_expected_home_goals,
     state.baseline_home_xg,
+    features.prematch_expected_home_goals,
+    features.baseline_home_xg,
   );
   const baselineAway = firstPositive(
     baseline?.prematchExpectedAwayGoals,
@@ -217,6 +344,8 @@ export const evaluateLiveDecisionReadiness = (input: {
     state.prematchExpectedAwayGoals,
     state.prematch_expected_away_goals,
     state.baseline_away_xg,
+    features.prematch_expected_away_goals,
+    features.baseline_away_xg,
   );
 
   const scoreReady = scoreHome != null && scoreAway != null;
@@ -225,6 +354,13 @@ export const evaluateLiveDecisionReadiness = (input: {
   const mappingReady = eventQuotes.some((quote) =>
     footballMarketMappable(quote.marketKey),
   );
+  const shadowPredictionEligible =
+    Boolean(input.state) &&
+    eventQuotes.length > 0 &&
+    scoreReady &&
+    clockReady &&
+    baselineReady &&
+    mappingReady;
 
   const requirements: LiveDecisionRequirement[] = [
     ...baseRequirements,
@@ -266,7 +402,7 @@ export const evaluateLiveDecisionReadiness = (input: {
       authorized,
       authorized
         ? `${model.version} is explicitly authorized for production decisions.`
-        : `${model.version} is not in VETO_PRODUCTION_MODEL_ALLOWLIST; research output must not become EDGE.`,
+        : `${model.version} is not in VETO_PRODUCTION_MODEL_ALLOWLIST; research output may be stored only in shadow mode and must not become EDGE.`,
     ),
   ];
 
@@ -276,6 +412,7 @@ export const evaluateLiveDecisionReadiness = (input: {
       modelId: model.id,
       modelVersion: model.version,
       productionAuthorized: authorized,
+      shadowPredictionEligible: false,
       autoDecisionEligible: false,
       blockers: requirements.filter((item) => !item.passed).map((item) => item.detail),
       requirements,
@@ -288,6 +425,7 @@ export const evaluateLiveDecisionReadiness = (input: {
       modelId: model.id,
       modelVersion: model.version,
       productionAuthorized: authorized,
+      shadowPredictionEligible: false,
       autoDecisionEligible: false,
       blockers: requirements.filter((item) => !item.passed).map((item) => item.detail),
       requirements,
@@ -300,6 +438,7 @@ export const evaluateLiveDecisionReadiness = (input: {
       modelId: model.id,
       modelVersion: model.version,
       productionAuthorized: authorized,
+      shadowPredictionEligible: false,
       autoDecisionEligible: false,
       blockers: requirements.filter((item) => !item.passed).map((item) => item.detail),
       requirements,
@@ -312,6 +451,7 @@ export const evaluateLiveDecisionReadiness = (input: {
       modelId: model.id,
       modelVersion: model.version,
       productionAuthorized: false,
+      shadowPredictionEligible,
       autoDecisionEligible: false,
       blockers: requirements.filter((item) => !item.passed).map((item) => item.detail),
       requirements,
@@ -323,6 +463,7 @@ export const evaluateLiveDecisionReadiness = (input: {
     modelId: model.id,
     modelVersion: model.version,
     productionAuthorized: true,
+    shadowPredictionEligible,
     autoDecisionEligible: true,
     blockers: [],
     requirements,
