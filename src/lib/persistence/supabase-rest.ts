@@ -13,6 +13,7 @@ import type {
 import type {
   DecisionHistoryRecord,
   DecisionOutcomeRecord,
+  DecisionProofRecord,
   EventStateSnapshot,
   HistoricalImportRecord,
   PersistedEvent,
@@ -457,6 +458,95 @@ export class SupabaseRestPersistence implements VetoPersistence {
       capturedAt: row.captured_at,
       immutableFingerprint: row.immutable_fingerprint,
       modelVersionSet: row.model_version_set ?? [],
+    }));
+  }
+
+  async listDecisionProof(input: {
+    eventId: string;
+    marketKey?: string;
+    selectionKey?: string;
+    limit?: number;
+  }): Promise<DecisionProofRecord[]> {
+    const query = new URLSearchParams();
+    query.set("event_id", `eq.${input.eventId}`);
+    if (input.marketKey) query.set("market_key", `eq.${input.marketKey}`);
+    if (input.selectionKey) query.set("selection_key", `eq.${input.selectionKey}`);
+    query.set("order", "prediction_at.asc");
+    query.set("limit", String(Math.min(250, Math.max(1, input.limit ?? 80))));
+    query.set(
+      "select",
+      [
+        "decision_id",
+        "event_id",
+        "sport",
+        "competition",
+        "market_key",
+        "selection_key",
+        "selection_line",
+        "selection_side",
+        "prediction_at",
+        "event_starts_at",
+        "settled_at",
+        "model_version_set",
+        "decision_mode",
+        "decision",
+        "fair_probability",
+        "entry_odds",
+        "closing_odds",
+        "result",
+        "model_agreement",
+        "uncertainty",
+      ].join(","),
+    );
+
+    const rows = await this.request<Array<{
+      decision_id: string;
+      event_id: string;
+      sport: string;
+      competition: string;
+      market_key: string;
+      selection_key: string;
+      selection_line?: number | null;
+      selection_side?: DecisionProofRecord["selectionSide"] | null;
+      prediction_at: string;
+      event_starts_at: string;
+      settled_at: string;
+      model_version_set?: string[] | null;
+      decision_mode: string;
+      decision: DecisionProofRecord["decision"];
+      fair_probability: number;
+      entry_odds: number;
+      closing_odds?: number | null;
+      result: DecisionProofRecord["result"];
+      model_agreement: number;
+      uncertainty: number;
+    }>>(
+      this.tablePath("veto_backtest_rows", query.toString()),
+      { method: "GET" },
+    );
+
+    return rows.map((row) => ({
+      decisionId: row.decision_id,
+      eventId: row.event_id,
+      sport: row.sport,
+      competition: row.competition,
+      marketKey: row.market_key,
+      selectionKey: row.selection_key,
+      selectionLine: row.selection_line ?? undefined,
+      selectionSide: row.selection_side ?? undefined,
+      predictionAt: row.prediction_at,
+      eventStartsAt: row.event_starts_at,
+      settledAt: row.settled_at,
+      modelVersionSet: row.model_version_set ?? [],
+      decisionMode: row.decision_mode,
+      decision: row.decision,
+      fairProbability: Number(row.fair_probability),
+      entryOdds: Number(row.entry_odds),
+      closingOdds:
+        row.closing_odds == null ? undefined : Number(row.closing_odds),
+      result: row.result,
+      modelAgreement: Number(row.model_agreement),
+      uncertainty: Number(row.uncertainty),
     }));
   }
 

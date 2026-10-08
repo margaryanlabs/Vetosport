@@ -79,6 +79,29 @@ export interface DecisionHistoryRecord {
   modelVersionSet: string[];
 }
 
+export interface DecisionProofRecord {
+  decisionId: string;
+  eventId: string;
+  sport: string;
+  competition: string;
+  marketKey: string;
+  selectionKey: string;
+  selectionLine?: number;
+  selectionSide?: MarketSelection["side"];
+  predictionAt: string;
+  eventStartsAt: string;
+  settledAt: string;
+  modelVersionSet: string[];
+  decisionMode: string;
+  decision: DecisionLedgerEntry["decision"];
+  fairProbability: number;
+  entryOdds: number;
+  closingOdds?: number;
+  result: "win" | "half_win" | "push" | "half_loss" | "loss" | "void";
+  modelAgreement: number;
+  uncertainty: number;
+}
+
 export interface DecisionOutcomeRecord {
   decisionId: string;
   result: "win" | "half_win" | "push" | "half_loss" | "loss" | "void";
@@ -144,6 +167,13 @@ export interface VetoPersistence {
     selectionKey?: string;
     limit?: number;
   }): Promise<DecisionHistoryRecord[]>;
+
+  listDecisionProof(input: {
+    eventId: string;
+    marketKey?: string;
+    selectionKey?: string;
+    limit?: number;
+  }): Promise<DecisionProofRecord[]>;
 
   appendDecisionOutcome(outcome: DecisionOutcomeRecord): Promise<void>;
 
