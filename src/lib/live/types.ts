@@ -33,6 +33,7 @@ export interface LiveDecisionReadiness {
   modelId?: string;
   modelVersion?: string;
   productionAuthorized: boolean;
+  shadowPredictionEligible: boolean;
   autoDecisionEligible: boolean;
   blockers: string[];
   requirements: LiveDecisionRequirement[];

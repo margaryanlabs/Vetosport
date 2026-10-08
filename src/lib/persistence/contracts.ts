@@ -192,6 +192,12 @@ export interface VetoPersistence {
 
   appendEvidence(eventId: string, evidence: Evidence[]): Promise<number>;
 
+  findFeatureSnapshot(input: {
+    eventId: string;
+    version: string;
+    capturedAt: string;
+  }): Promise<string | null>;
+
   appendFeatureSnapshot(input: {
     eventId: string;
     version: string;
