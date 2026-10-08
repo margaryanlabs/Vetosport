@@ -5,6 +5,7 @@ import "./veto-brand.css";
 import "./workspace-shell.css";
 import "./match-room.css";
 import "./observed-room.css";
+import "./veto-terminal-v3.css";
 
 const montserrat = Montserrat({
   subsets: ["latin", "cyrillic"],

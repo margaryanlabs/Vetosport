@@ -1,0 +1,640 @@
+/* ==========================================================================
+   VETO TERMINAL V3 — decision-first visual system
+   This file intentionally loads last and normalizes the currently active shell.
+   ========================================================================== */
+
+:root {
+  --v3-bg: #07090c;
+  --v3-surface: rgba(12, 15, 19, .92);
+  --v3-surface-2: rgba(17, 20, 25, .88);
+  --v3-line: rgba(255,255,255,.085);
+  --v3-line-strong: rgba(255,255,255,.14);
+  --v3-text: #f6f7f8;
+  --v3-text-2: #c7ccd2;
+  --v3-muted: #8b929d;
+  --v3-muted-2: #666e79;
+  --v3-red: #ff3b3b;
+  --v3-green: #8ee3bc;
+  --v3-amber: #d2af73;
+}
+
+.matchShell {
+  background:
+    radial-gradient(circle at 78% 12%, rgba(255,59,59,.035), transparent 30rem),
+    radial-gradient(circle at 20% 75%, rgba(142,227,188,.025), transparent 34rem),
+    var(--v3-bg);
+}
+
+.matchShellTop {
+  height: 70px;
+  padding: 0 24px;
+  grid-template-columns: 205px 1fr auto;
+  border-bottom-color: var(--v3-line);
+  background: rgba(7,9,12,.92);
+  box-shadow: 0 8px 34px rgba(0,0,0,.18);
+}
+
+.matchShellBrand { min-height: 44px; }
+.matchShellWordmark { width: 80px; }
+.matchShellBrand > span { color: #9aa0a8; font-size: 8px; }
+
+.matchShellNav {
+  gap: 7px;
+  padding: 5px;
+  border: 1px solid rgba(255,255,255,.055);
+  border-radius: 14px;
+  background: rgba(255,255,255,.015);
+}
+.matchShellNav button {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  color: #737b86;
+  font-size: 10px;
+  letter-spacing: .055em;
+  transition: background .18s ease, color .18s ease, transform .18s ease;
+}
+.matchShellNav button:hover { color: #d9dde2; background: rgba(255,255,255,.025); }
+.matchShellNav button.active {
+  color: #fff;
+  background: rgba(255,255,255,.06);
+}
+.matchShellNav button.active::after {
+  left: 14px;
+  right: 14px;
+  bottom: 3px;
+  height: 1px;
+  background: var(--v3-red);
+}
+
+.matchShellTools { gap: 10px; }
+.matchShellSports {
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid rgba(255,255,255,.055);
+  border-radius: 12px;
+  background: rgba(255,255,255,.012);
+}
+.matchShellSports button {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  color: #69717c;
+}
+.matchShellSports button:hover { color: #d8dce1; background: rgba(255,255,255,.025); }
+.matchShellSports button.active {
+  color: #fff;
+  background: rgba(255,255,255,.075);
+  box-shadow: inset 0 -1px 0 rgba(255,59,59,.8);
+}
+
+.matchShellStatus {
+  min-height: 30px;
+  padding: 0 9px;
+  border: 1px solid rgba(255,255,255,.055);
+  border-radius: 999px;
+  color: #8b929c;
+  background: rgba(255,255,255,.015);
+  font-size: 8px;
+  font-weight: 720;
+  letter-spacing: .08em;
+}
+.matchShellStatus i { background: #777f89; box-shadow: none; }
+.matchShellStatus.ready { color: #b9dacb; border-color: rgba(142,227,188,.13); background: rgba(142,227,188,.035); }
+.matchShellStatus.ready i { background: var(--v3-green); box-shadow: 0 0 10px rgba(142,227,188,.25); }
+.matchShellStatus.checking { color: #cbb78d; }
+.matchShellStatus.checking i { background: var(--v3-amber); animation: breathe 1.8s ease-in-out infinite; }
+.matchShellStatus.demo { color: #b68e8e; border-color: rgba(255,59,59,.11); }
+.matchShellStatus.demo i { background: var(--v3-red); }
+
+.matchShellLang {
+  padding: 3px;
+  border: 1px solid rgba(255,255,255,.055);
+  border-radius: 10px;
+}
+.matchShellLang button {
+  min-width: 29px;
+  min-height: 28px;
+  padding: 0 7px;
+  border-radius: 7px;
+  color: #69717b;
+  font-size: 8px;
+  font-weight: 760;
+}
+.matchShellLang button.active { color: #fff; background: rgba(255,255,255,.06); }
+
+.matchShell button:focus-visible,
+.matchRoom button:focus-visible,
+.liveCommand button:focus-visible {
+  outline: 2px solid rgba(255,255,255,.72);
+  outline-offset: 2px;
+}
+
+.matchShellCanvas {
+  width: min(1500px, calc(100% - 42px));
+  padding: 22px 0 46px;
+}
+
+.workspaceSceneIntro {
+  min-height: 82px;
+  padding: 12px 4px 16px;
+  grid-template-columns: 130px minmax(0,1fr) minmax(220px,auto);
+  gap: 20px;
+}
+.workspaceSceneIntro > span {
+  color: #808894;
+  font-size: 9px;
+  letter-spacing: .14em;
+}
+.workspaceSceneIntro > strong {
+  color: var(--v3-text);
+  font-size: clamp(20px,1.8vw,27px);
+  line-height: 1.08;
+}
+.workspaceSceneIntro > small {
+  max-width: 390px;
+  color: #818894;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+/* LIVE / MATCHES */
+.liveCommand {
+  border-color: var(--v3-line);
+  border-radius: 22px;
+  background: rgba(10,12,15,.88);
+  box-shadow: 0 26px 70px rgba(0,0,0,.2);
+}
+.liveCommandHead {
+  min-height: 68px;
+  padding: 14px 18px;
+  border-bottom-color: var(--v3-line);
+}
+.liveCommandHead h2 { font-size: 12px; letter-spacing: .1em; }
+.liveCommandHead p { margin-top: 5px; color: #7f8791; font-size: 10px; }
+.liveCommandStats span { color: #7d858f; font-size: 8px; }
+.liveCommandStats b { color: #eef0f2; font-size: 11px; }
+
+.liveCommandEvents { background: rgba(255,255,255,.004); }
+.liveCommandEvent {
+  min-height: 190px;
+  padding: 17px 18px 16px;
+  border-bottom-color: rgba(255,255,255,.055);
+}
+.liveCommandEvent:hover { background: rgba(255,255,255,.018); }
+.liveCommandEvent.active {
+  background: linear-gradient(90deg, rgba(255,59,59,.025), rgba(255,255,255,.008));
+  box-shadow: inset 2px 0 0 var(--v3-red);
+}
+.liveCommandEventTop { min-height: 25px; }
+.liveSportIdentity { color: #949ca6; font-size: 9px; gap: 7px; }
+.liveSportIdentity em {
+  margin-left: 3px;
+  padding: 4px 7px;
+  font-size: 7px;
+  font-weight: 780;
+}
+.liveSportIdentity em.sourceLive {
+  color: #bfe7d5;
+  border-color: rgba(142,227,188,.18);
+  background: rgba(142,227,188,.045);
+}
+.liveSportIdentity em.sourceDemo {
+  color: #d29b9b;
+  border-color: rgba(255,59,59,.14);
+  background: rgba(255,59,59,.035);
+}
+.liveCommandEventTop > b { color: #d6dae0; font-size: 10px; }
+.liveCommandScore { margin-top: 16px; }
+.liveCommandScore span { color: #7e8690; font-size: 9px; }
+.liveCommandScore strong { font-size: 38px; }
+.liveCommandEvent > small { margin-top: 10px; color: #747c86; font-size: 9px; }
+.liveCommandPrimary { margin-top: 16px; padding: 12px 0 0; }
+.liveCommandPrimary span { color: #69717b; font-size: 7px; letter-spacing: .11em; }
+.liveCommandPrimary strong { margin-top: 5px; font-size: 11px; }
+.liveCommandPrimary b { font-size: 8px; }
+.liveCommandPrimary em { margin-top: 5px; font-size: 9px; }
+
+.signalRadarHead { min-height: 68px; padding: 14px 16px; }
+.signalRadarHead span { font-size: 8px; }
+.signalRadarHead strong { margin-top: 5px; font-size: 11px; }
+.signalRadarHead small { font-size: 7px; }
+.signalRadarRow {
+  min-height: 69px;
+  grid-template-columns: 30px minmax(0,1fr) 74px 68px 54px 42px;
+  padding: 0 14px;
+  gap: 10px;
+}
+.signalRadarRow.source-sandbox { background: rgba(255,59,59,.006); }
+.signalRadarRank { font-size: 8px; }
+.signalRadarIdentity span { color: #6f7781; font-size: 8px; }
+.signalRadarIdentity strong { color: #c9ced3; font-size: 10px; }
+.signalRadarProbability b,
+.signalRadarEdge b,
+.signalRadarScore { font-size: 10px; }
+.signalRadarProbability small,
+.signalRadarEdge small { font-size: 7px; }
+.signalRadarRow > em { font-size: 7px; }
+.signalRadarEmpty span { font-size: 9px; }
+.signalRadarEmpty p { color: #777f89; font-size: 10px; }
+
+/* MATCH ROOM */
+.matchRoom {
+  border-color: var(--v3-line);
+  border-radius: 22px;
+  background: rgba(10,12,15,.9);
+  box-shadow: 0 28px 78px rgba(0,0,0,.22);
+}
+.matchRoomHeroV2 {
+  min-height: 238px;
+  padding: 29px 34px 62px;
+  background:
+    radial-gradient(circle at 50% 118%, rgba(255,59,59,.055), transparent 25rem),
+    linear-gradient(180deg, rgba(255,255,255,.022), transparent 76%);
+}
+.matchRoomMeta { top: 20px; color: #7e8691; font-size: 9px; gap: 12px; }
+.matchRoomSource {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid rgba(255,255,255,.065);
+  border-radius: 999px;
+  font-size: 8px;
+  font-weight: 780;
+  letter-spacing: .09em;
+}
+.matchRoomSource i { width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; }
+.matchRoomSource.live { color: #bce2d0; border-color: rgba(142,227,188,.14); background: rgba(142,227,188,.035); }
+.matchRoomSource.live i { background: var(--v3-green); box-shadow: 0 0 10px rgba(142,227,188,.25); }
+.matchRoomSource.demo { color: #d6a0a0; border-color: rgba(255,59,59,.14); background: rgba(255,59,59,.035); }
+.matchRoomSource.demo i { background: var(--v3-red); }
+.matchRoomScore > div > strong { font-size: clamp(22px,2vw,32px); }
+.matchRoomScore small { color: #7e8690; font-size: 9px; }
+.matchRoomScoreCore b { font-size: clamp(58px,6vw,88px); }
+.matchRoomScoreCore em { color: #d8a5a5; font-size: 10px; }
+
+.scoreboardTelemetry { gap: 8px; bottom: 16px; }
+.scoreboardTelemetry > div {
+  min-height: 50px;
+  padding: 9px 11px;
+  border-color: rgba(255,255,255,.065);
+  background: rgba(255,255,255,.016);
+}
+.scoreboardTelemetry span { color: #707884; font-size: 7px; }
+.scoreboardTelemetry strong { font-size: 10px; }
+.scoreboardTelemetry b { color: #8c939c; font-size: 9px; }
+.sourceTelemetry.demo strong { color: #d69b9b; }
+
+.matchRoomTabs {
+  min-height: 60px;
+  padding: 0 20px;
+  gap: 6px;
+  border-bottom-color: var(--v3-line);
+  background: rgba(8,10,13,.72);
+}
+.matchRoomTabs > button {
+  min-height: 38px;
+  padding: 0 13px;
+  border-radius: 10px;
+  color: #7c848f;
+  font-size: 10px;
+}
+.matchRoomTabs > button:hover { color: #d9dde2; background: rgba(255,255,255,.025); }
+.matchRoomTabs > button.active {
+  color: #fff;
+  background: rgba(255,255,255,.07);
+  box-shadow: inset 0 -1px 0 var(--v3-red);
+}
+.matchRoomTabs .matchRoomLabButton {
+  color: #b9bec5;
+  border: 1px solid rgba(255,255,255,.065);
+  background: rgba(255,255,255,.018);
+}
+
+.matchWorld { padding: 26px; }
+.matchWorldColumns { gap: 9px; }
+.matchWorldColumns article {
+  min-height: 126px;
+  padding: 17px;
+  border-color: rgba(255,255,255,.07);
+  background: rgba(255,255,255,.015);
+}
+.matchWorldColumns article > span { color: #747c86; font-size: 8px; }
+.matchWorldColumns article > strong { margin-top: 16px; font-size: 30px; }
+.matchWorldColumns article > p { color: #858c96; font-size: 10px; line-height: 1.5; }
+
+.matchTimeline article { min-height: 62px; }
+.matchTimeline article > span { color: #737b85; font-size: 8px; }
+.matchTimeline small { color: #717984; font-size: 7px; }
+.matchTimeline article strong { color: #cbd0d5; font-size: 10px; }
+.matchTimeline article > b { font-size: 9px; }
+
+.vetoDecisionPanel { padding: 27px; }
+.decisionPanelTop > span { color: #7c848e; font-size: 8px; }
+.decisionPanelTop em { font-size: 8px; }
+.decisionSelection small { color: #737b85; font-size: 8px; }
+.decisionSelection strong { font-size: 23px; }
+.decisionNumbers span { color: #707883; font-size: 7px; }
+.decisionNumbers strong { font-size: 20px; }
+.decisionThesis { color: #b1b6bc; font-size: 11px; }
+.decisionReasons span { font-size: 8px; }
+.decisionReasons p { color: #8d949e; font-size: 10px; }
+.decisionConfidence > span { font-size: 7px; }
+.decisionConfidence > strong { font-size: 9px; }
+
+/* OBSERVED / persisted event room */
+.observedRoom {
+  border-color: var(--v3-line);
+  border-radius: 22px;
+  background: rgba(10,12,15,.9);
+}
+.observedMeta { color: #7f8792; font-size: 9px; }
+.observedMeta > span:first-child { color: #c8ddd3; }
+.observedStatusBand span,
+.observedStateGrid span,
+.observedDecisionNumbers span,
+.observedLineage span { color: #727a85; font-size: 8px; }
+.observedStatusBand strong { font-size: 15px; }
+.observedStatusBand small,
+.observedMarketTape article small,
+.observedDecision > p,
+.observedAwaiting p { color: #858c96; font-size: 9px; }
+.observedState > header span,
+.observedMarketTape > header span { font-size: 8px; }
+.observedState > header strong { font-size: 18px; }
+.observedState > header small,
+.observedMarketTape > header small { font-size: 8px; }
+.observedStateGrid strong { font-size: 11px; }
+.observedMarketTape article > span { font-size: 8px; }
+.observedMarketTape article strong { font-size: 10px; }
+.observedMarketTape article > b { font-size: 12px; }
+.observedMarketTape article > em { font-size: 8px; }
+.observedDecisionHead > span,
+.observedDecisionHead em { font-size: 8px; }
+.observedDecisionTitle { font-size: 22px; }
+.observedDecisionNumbers strong { font-size: 16px; }
+.observedAwaiting span { font-size: 8px; }
+.observedAwaiting strong { font-size: 21px; }
+.observedLineage strong { font-size: 10px; }
+.observedReadinessChecks span { font-size: 9px; }
+.observedReadinessChecks b { font-size: 8px; }
+
+/* RESEARCH: keep depth, remove the microscope feeling */
+.workspaceResearch .panel,
+.workspaceResearch .intelligenceSurface,
+.workspaceResearch .ledgerSurface {
+  border-color: var(--v3-line);
+  background: rgba(10,12,15,.76);
+}
+.panelHeader h2,
+.intelligenceSurfaceHead h2,
+.intelligenceSubhead h2,
+.ledgerSurfaceHead h2 { font-size: 11px; letter-spacing: .1em; }
+.panelHeader p,
+.intelligenceSurfaceHead p,
+.intelligenceSubhead p,
+.ledgerSurfaceHead p { font-size: 9px; color: #7d858f; }
+.panelIndex { font-size: 9px; color: #69717b; }
+.councilNodeTop span,
+.councilNodeTop small,
+.councilNodeMeta span,
+.councilNodeFoot span,
+.councilNodeFoot b { font-size: 8px; }
+.councilNode > strong { font-size: 24px; }
+.councilLineageRail span { font-size: 7px; }
+.councilLineageRail strong { font-size: 12px; }
+.scenarioBranchLead strong,
+.marketTapeAsset strong { font-size: 10px; }
+.scenarioBranchOutcomes span,
+.marketTapeAsset small,
+.marketTapeTime,
+.marketTapeRow em { font-size: 8px; }
+.ledgerMetaRail span { font-size: 8px; }
+.ledgerEntryTime strong,
+.ledgerEntryBody strong,
+.ledgerEntryImpact strong,
+.ledgerEntryReliability strong { font-size: 10px; }
+.ledgerEntryTime span,
+.ledgerEntryBody small,
+.ledgerEntryImpact span,
+.ledgerEntryReliability span,
+.ledgerEntryHash span { font-size: 8px; }
+
+/* SYSTEM */
+.systemHero {
+  min-height: 220px;
+  padding: 32px 34px;
+  border-color: var(--v3-line);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(142,227,188,.07), transparent 24rem),
+    linear-gradient(145deg, rgba(17,20,25,.96), rgba(9,11,14,.97));
+}
+.systemHero > span { color: #8eb9a4; font-size: 9px; }
+.systemHero h2 { max-width: 720px; margin-top: 15px; font-size: clamp(34px,3.4vw,52px); }
+.systemHero p { max-width: 720px; margin-top: 15px; color: #8c939d; font-size: 11px; }
+.systemHeroSummary {
+  margin-top: 22px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.systemHeroSummary > div {
+  min-width: 170px;
+  padding: 11px 13px;
+  border: 1px solid rgba(255,255,255,.065);
+  border-radius: 12px;
+  background: rgba(255,255,255,.015);
+}
+.systemHeroSummary span { color: #707883; font-size: 7px; letter-spacing: .11em; }
+.systemHeroSummary strong { display: block; margin-top: 6px; font-size: 11px; }
+.systemHeroPulse { width: 125px; height: 125px; opacity: .72; }
+.systemHeroPulse i { border-color: rgba(142,227,188,.11); }
+
+.systemStatusGrid {
+  grid-template-columns: repeat(auto-fit, minmax(210px,1fr));
+  gap: 9px;
+}
+.systemStatusGrid article {
+  min-height: 142px;
+  padding: 18px;
+  border-color: var(--v3-line);
+  border-radius: 16px;
+  background: rgba(255,255,255,.014);
+}
+.systemStatusGrid article > span { font-size: 8px; color: #737b86; }
+.systemStatusGrid article strong { margin-top: 27px; font-size: 17px; }
+.systemStatusGrid article small { max-width: none; color: #858c96; font-size: 9px; }
+.systemStatusGrid article > i { width: 8px; height: 8px; }
+.systemModeBand {
+  min-height: 84px;
+  grid-template-columns: 210px 1fr;
+  border-color: var(--v3-line);
+}
+.systemModeBand span { font-size: 8px; }
+.systemModeBand strong { font-size: 13px; }
+.systemModeBand p { color: #838b95; font-size: 9px; }
+
+/* Footer */
+.signalFooter { border-top-color: var(--v3-line); }
+.signalFooter p { color: #727a84; }
+
+/* Tablet */
+@media (max-width: 1080px) {
+  .matchShellTop { grid-template-columns: 178px 1fr auto; padding: 0 16px; gap: 10px; }
+  .matchShellNav { gap: 2px; }
+  .matchShellNav button { padding: 0 9px; font-size: 9px; }
+  .matchShellStatus { display: none; }
+  .matchShellCanvas { width: min(100% - 24px, 1500px); }
+  .workspaceSceneIntro { grid-template-columns: 110px 1fr; }
+  .workspaceSceneIntro > small { display: none; }
+  .signalRadarRow {
+    grid-template-columns: 28px minmax(0,1fr) 68px 62px 48px 40px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 720px) {
+  .matchShell { padding-bottom: 74px; }
+  .matchShellTop {
+    height: 60px;
+    padding: 0 12px;
+    grid-template-columns: 1fr auto;
+    border-bottom-color: rgba(255,255,255,.075);
+  }
+  .matchShellBrand > svg:first-child { width: 29px; height: 29px; }
+  .matchShellWordmark { width: 69px; }
+  .matchShellSports {
+    padding: 2px;
+    max-width: 172px;
+    overflow-x: auto;
+  }
+  .matchShellSports button { width: 34px; height: 34px; flex: 0 0 auto; }
+  .matchShellCanvas { padding: 10px 9px 24px; }
+  .matchShellMobile {
+    left: 9px;
+    right: 9px;
+    bottom: 9px;
+    height: 58px;
+    padding: 5px;
+    border-color: rgba(255,255,255,.085);
+    border-radius: 18px;
+    background: rgba(9,11,14,.94);
+  }
+  .matchShellMobile button {
+    min-height: 46px;
+    font-size: 8px;
+    letter-spacing: .055em;
+  }
+  .matchShellMobile button.active { background: rgba(255,255,255,.07); }
+
+  .workspaceSceneIntro {
+    min-height: auto;
+    padding: 5px 2px 12px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  .workspaceSceneIntro > span { font-size: 8px; }
+  .workspaceSceneIntro > strong { font-size: 19px; }
+  .workspaceSceneIntro > small { display: block; font-size: 9px; text-align: left; }
+
+  .liveCommand { border-radius: 17px; }
+  .liveCommandHead { padding: 13px 14px; }
+  .liveCommandHead h2 { font-size: 11px; }
+  .liveCommandHead p { font-size: 9px; }
+  .liveCommandStats span { font-size: 7px; }
+  .liveCommandEvents { grid-template-columns: repeat(3, 84vw); }
+  .liveCommandEvent { min-width: 84vw; min-height: 184px; padding: 16px; }
+  .liveCommandScore strong { font-size: 36px; }
+  .signalRadarHead { padding: 13px; }
+  .signalRadarHead strong { font-size: 10px; }
+  .signalRadarRow {
+    min-height: 68px;
+    grid-template-columns: 24px minmax(0,1fr) 54px 38px;
+    padding: 0 11px;
+  }
+  .signalRadarProbability,
+  .signalRadarRow > em { display: none; }
+  .signalRadarIdentity span { font-size: 7px; }
+  .signalRadarIdentity strong { font-size: 9px; }
+
+  .matchRoom { border-radius: 17px; }
+  .matchRoomHeroV2 {
+    min-height: 300px;
+    padding: 36px 15px 118px;
+  }
+  .matchRoomMeta { left: 15px; right: 15px; top: 13px; font-size: 8px; }
+  .matchRoomMeta > span:nth-child(2) { display: none; }
+  .matchRoomScore { gap: 7px; }
+  .matchRoomScore > div > strong { font-size: 14px; }
+  .matchRoomScore small { font-size: 7px; }
+  .matchRoomScoreCore b { font-size: 49px; }
+  .matchRoomScoreCore em { font-size: 8px; }
+  .scoreboardTelemetry {
+    left: 14px;
+    right: 14px;
+    bottom: 12px;
+    grid-template-columns: repeat(2,1fr);
+    gap: 6px;
+  }
+  .scoreboardTelemetry > div { min-height: 48px; padding: 8px 9px; }
+  .scoreboardTelemetry span { font-size: 7px; }
+  .scoreboardTelemetry strong { font-size: 9px; }
+  .scoreboardTelemetry b { font-size: 8px; }
+  .matchRoomTabs { min-height: 56px; padding: 0 8px; }
+  .matchRoomTabs > button { min-height: 36px; padding: 0 10px; font-size: 9px; }
+
+  .matchRoomOverview { display: block; min-height: 0; }
+  .matchWorld { padding: 13px; }
+  .matchWorldColumns { grid-template-columns: 1fr; gap: 7px; }
+  .matchWorldColumns article { min-height: 0; padding: 14px; }
+  .matchWorldColumns article > span { font-size: 8px; }
+  .matchWorldColumns article > strong { margin-top: 10px; font-size: 24px; }
+  .matchWorldColumns article > p { margin-top: 6px; font-size: 10px; }
+  .vetoDecisionPanel { padding: 18px; }
+  .decisionSelection small { font-size: 8px; }
+  .decisionSelection strong { font-size: 20px; }
+  .decisionNumbers span { font-size: 7px; }
+  .decisionNumbers strong { font-size: 16px; }
+  .decisionThesis { font-size: 10px; }
+  .decisionReasons p { font-size: 10px; }
+
+  .observedRoom { border-radius: 17px; }
+  .observedHero { padding-left: 16px; padding-right: 16px; }
+  .observedStatusBand span,
+  .observedStateGrid span { font-size: 7px; }
+  .observedStatusBand small,
+  .observedDecision > p,
+  .observedAwaiting p { font-size: 9px; }
+
+  .systemHero { min-height: 0; padding: 25px 20px 28px; }
+  .systemHero h2 { font-size: 34px; line-height: 1; }
+  .systemHero p { font-size: 10px; }
+  .systemHeroPulse { display: none; }
+  .systemHeroSummary { display: grid; grid-template-columns: 1fr 1fr; }
+  .systemHeroSummary > div { min-width: 0; }
+  .systemStatusGrid { grid-template-columns: 1fr; }
+  .systemStatusGrid article { min-height: 118px; }
+  .systemModeBand { grid-template-columns: 1fr; gap: 9px; padding: 15px 5px; }
+  .systemModeBand p { font-size: 9px; }
+
+  .workspaceResearch .v2ResearchBody { overflow: hidden; }
+  .councilStrip,
+  .ledgerTimeline { overflow-x: auto; }
+}
+
+@media (max-width: 430px) {
+  .matchShellSports { max-width: 148px; }
+  .liveCommandEvents { grid-template-columns: repeat(3, 88vw); }
+  .liveCommandEvent { min-width: 88vw; }
+  .signalRadarEdge { display: none; }
+  .signalRadarRow { grid-template-columns: 22px minmax(0,1fr) 36px; }
+  .systemHeroSummary { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .matchShellNav button,
+  .matchShellSports button { transition: none; }
+}

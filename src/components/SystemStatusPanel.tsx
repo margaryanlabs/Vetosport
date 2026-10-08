@@ -79,16 +79,30 @@ export function SystemStatusPanel() {
     providers?.providers?.canonicalGateway?.configured ??
     plane?.runtime?.canonicalGatewayConfigured ??
     false;
+  const operational =
+    Boolean(selfcheck?.passed) &&
+    Boolean(plane?.storageReachable) &&
+    gateway;
 
   return (
     <section className="systemScene">
       <div className="systemHero" id="system-health">
         <span>SYSTEM / HEALTH</span>
-        <h2>{selfcheck?.passed ? "Core is healthy." : "Running system checks…"}</h2>
+        <h2>{operational ? "Operational core is ready." : "Validating the decision stack…"}</h2>
         <p>
-          Storage, provider connectivity and the intelligence engine are shown here
-          without mixing infrastructure into the live sports workspace.
+          One view for model health, immutable storage and live-ingress readiness.
+          Direct data vendors are optional when the canonical gateway is active.
         </p>
+        <div className="systemHeroSummary">
+          <div>
+            <span>RUNTIME</span>
+            <strong>{plane?.runtime?.mode ?? "CHECKING"}</strong>
+          </div>
+          <div>
+            <span>LIVE INGRESS</span>
+            <strong>{gateway ? "GATEWAY READY" : "PENDING"}</strong>
+          </div>
+        </div>
         <div className="systemHeroPulse" aria-hidden><i /><i /><i /></div>
       </div>
 

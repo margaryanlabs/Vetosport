@@ -67,11 +67,13 @@ const replayDecisionFromGap = (gap: number): Opportunity["decision"] =>
 export function MatchRoom({
   workspace,
   selected,
+  source,
   onSelectSignal,
   onOpenLab,
 }: {
   workspace: LiveWorkspace;
   selected: Opportunity;
+  source: "persisted" | "sandbox";
   onSelectSignal: (selectionId: string) => void;
   onOpenLab: () => void;
 }) {
@@ -122,6 +124,7 @@ export function MatchRoom({
       : selected.freshnessSeconds <= 60
         ? "AGING"
         : "STALE";
+  const liveSource = source === "persisted";
 
   useEffect(() => {
     const controller = new AbortController();
@@ -439,7 +442,9 @@ export function MatchRoom({
     <section className={`matchRoom matchRoom-${workspace.sport}`}>
       <header className="matchRoomHero matchRoomHeroV2">
         <div className="matchRoomMeta">
-          <span className="matchRoomLive"><i /> LIVE</span>
+          <span className={`matchRoomSource ${liveSource ? "live" : "demo"}`}>
+            <i /> {liveSource ? "LIVE DATA" : "DEMO DATA"}
+          </span>
           <span>{workspace.competition}</span>
           <span>{workspace.period}</span>
         </div>
@@ -479,11 +484,19 @@ export function MatchRoom({
             <strong>{authority}</strong>
             <b>{selected.modelAgreement}/100</b>
           </div>
-          <div className={`freshness ${freshness.toLowerCase()}`}>
-            <span>FRESHNESS</span>
-            <strong>{freshness}</strong>
-            <b>{selected.freshnessSeconds}s</b>
-          </div>
+          {liveSource ? (
+            <div className={`freshness ${freshness.toLowerCase()}`}>
+              <span>FRESHNESS</span>
+              <strong>{freshness}</strong>
+              <b>{selected.freshnessSeconds}s</b>
+            </div>
+          ) : (
+            <div className="sourceTelemetry demo">
+              <span>DATA SOURCE</span>
+              <strong>SIMULATION</strong>
+              <b>demo</b>
+            </div>
+          )}
         </div>
 
         <div className="scoreboardPulse" aria-hidden>

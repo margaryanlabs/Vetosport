@@ -227,11 +227,13 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
     providerStatus?.providers?.canonicalGateway?.configured,
   );
   const providerMode =
-    configuredProviders > 0
-      ? "ADAPTERS CONFIGURED"
-      : gatewayReady
-        ? "GATEWAY READY"
-        : "SANDBOX";
+    providerStatus == null
+      ? "CHECKING"
+      : configuredProviders > 0
+        ? "DIRECT DATA READY"
+        : gatewayReady
+          ? "GATEWAY READY"
+          : "DEMO MODE";
   const selectSport = (sport: Sport) => {
     const persisted = eventSummaries.find(
       (item) => item.sport === sport && item.source === "persisted",
@@ -287,16 +289,20 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
       {activeView === "live" && (
         <div className="workspaceScene workspaceLive">
           <div className="workspaceSceneIntro">
-            <span>LIVE ARENA</span>
-            <strong>Follow the game. Catch the market reaction.</strong>
+            <span>{liveSourceMode === "persisted" ? "LIVE FEED" : "DEMO FEED"}</span>
+            <strong>
+              {liveSourceMode === "persisted"
+                ? "Read the match state before the market fully reacts."
+                : "Explore VETO on a clearly labeled simulation."}
+            </strong>
             <small>
               {liveSourceMode === "persisted"
-                ? "Persisted live window · storage-first"
+                ? "Persisted live data · source lineage preserved"
                 : configuredProviders > 0
-                  ? `${configuredProviders}/2 direct live adapters configured`
+                  ? `${configuredProviders}/2 direct adapters configured · demo events remain labeled`
                   : gatewayReady
                     ? "Gateway ready · waiting for the first real event"
-                    : "Sandbox fallback · live ingestion not configured"}
+                    : "Demo fallback · live ingestion not configured"}
             </small>
           </div>
 
@@ -317,6 +323,7 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
             <MatchRoom
               workspace={activeWorkspace}
               selected={selected}
+              source={activeSummary?.source ?? "sandbox"}
               onSelectSignal={(selectionId) => setSelectedId(selectionId)}
               onOpenLab={() => setActiveView("research")}
             />
@@ -329,7 +336,11 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
           <div className="workspaceSceneIntro researchIntro">
             <span>RESEARCH LAB</span>
             <strong>PARALLAX · probability surface · model council · validation</strong>
-            <small>Deep layers stay here, away from the live operating surface.</small>
+            <small>
+              {activeSummary?.source === "persisted"
+                ? "Research layers linked to the selected observed event."
+                : "Simulation dataset · research logic only · not a live-market claim."}
+            </small>
           </div>
 
           <div className="v2ResearchBody">
