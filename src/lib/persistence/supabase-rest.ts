@@ -18,6 +18,8 @@ import type {
   EventStateSnapshot,
   HistoricalImportRecord,
   PersistedEvent,
+  PersistedEventStateRecord,
+  PersistedMarketQuoteRecord,
   PredictionRecord,
   ProviderHealthSample,
   UnsettledDecision,
@@ -210,6 +212,249 @@ export class SupabaseRestPersistence implements VetoPersistence {
             }
           : undefined,
       },
+    }));
+  }
+
+  async listRecentEvents(input: {
+    from: string;
+    to: string;
+    statuses?: SportEvent["status"][];
+    limit?: number;
+  }): Promise<PersistedEvent[]> {
+    const query = new URLSearchParams();
+    query.set("starts_at", `gte.${new Date(input.from).toISOString()}`);
+    query.append("starts_at", `lte.${new Date(input.to).toISOString()}`);
+    if (input.statuses?.length) {
+      query.set("status", `in.(${input.statuses.join(",")})`);
+    }
+    query.set("order", "starts_at.asc");
+    query.set("limit", String(Math.min(100, Math.max(1, input.limit ?? 30))));
+    query.set(
+      "select",
+      "id,canonical_key,sport,competition_name,starts_at,status,home_participant_id,home_participant_name,away_participant_id,away_participant_name",
+    );
+
+    const rows = await this.request<Array<{
+      id: string;
+      canonical_key: string;
+      sport: SportEvent["sport"];
+      competition_name: string;
+      starts_at: string;
+      status: SportEvent["status"];
+      home_participant_id?: string | null;
+      home_participant_name?: string | null;
+      away_participant_id?: string | null;
+      away_participant_name?: string | null;
+    }>>(this.tablePath("sports_events", query.toString()), { method: "GET" });
+
+    return rows.map((row) => ({
+      id: row.id,
+      canonicalKey: row.canonical_key,
+      event: {
+        id: row.id,
+        sport: row.sport,
+        competition: row.competition_name,
+        startsAt: row.starts_at,
+        status: row.status,
+        home: row.home_participant_name
+          ? {
+              id: row.home_participant_id ?? row.home_participant_name,
+              name: row.home_participant_name,
+            }
+          : undefined,
+        away: row.away_participant_name
+          ? {
+              id: row.away_participant_id ?? row.away_participant_name,
+              name: row.away_participant_name,
+            }
+          : undefined,
+      },
+    }));
+  }
+
+  async getEventById(eventId: string): Promise<PersistedEvent | null> {
+    const query = new URLSearchParams();
+    query.set("id", `eq.${eventId}`);
+    query.set("limit", "1");
+    query.set(
+      "select",
+      "id,canonical_key,sport,competition_name,starts_at,status,home_participant_id,home_participant_name,away_participant_id,away_participant_name",
+    );
+
+    const rows = await this.request<Array<{
+      id: string;
+      canonical_key: string;
+      sport: SportEvent["sport"];
+      competition_name: string;
+      starts_at: string;
+      status: SportEvent["status"];
+      home_participant_id?: string | null;
+      home_participant_name?: string | null;
+      away_participant_id?: string | null;
+      away_participant_name?: string | null;
+    }>>(this.tablePath("sports_events", query.toString()), { method: "GET" });
+
+    const row = rows[0];
+    if (!row) return null;
+
+    return {
+      id: row.id,
+      canonicalKey: row.canonical_key,
+      event: {
+        id: row.id,
+        sport: row.sport,
+        competition: row.competition_name,
+        startsAt: row.starts_at,
+        status: row.status,
+        home: row.home_participant_name
+          ? {
+              id: row.home_participant_id ?? row.home_participant_name,
+              name: row.home_participant_name,
+            }
+          : undefined,
+        away: row.away_participant_name
+          ? {
+              id: row.away_participant_id ?? row.away_participant_name,
+              name: row.away_participant_name,
+            }
+          : undefined,
+      },
+    };
+  }
+
+  async listRecentEventStates(input: {
+    eventIds: string[];
+    limit?: number;
+  }): Promise<PersistedEventStateRecord[]> {
+    if (input.eventIds.length === 0) return [];
+    const query = new URLSearchParams();
+    query.set("event_id", `in.(${input.eventIds.join(",")})`);
+    query.set("order", "captured_at.desc");
+    query.set(
+      "limit",
+      String(Math.min(2000, Math.max(1, input.limit ?? input.eventIds.length * 12))),
+    );
+    query.set(
+      "select",
+      "event_id,source_provider,captured_at,source_latency_ms,state,fingerprint",
+    );
+
+    const rows = await this.request<Array<{
+      event_id: string;
+      source_provider: string;
+      captured_at: string;
+      source_latency_ms?: number | null;
+      state: Record<string, unknown>;
+      fingerprint?: string | null;
+    }>>(this.tablePath("event_state_snapshots", query.toString()), { method: "GET" });
+
+    return rows.map((row) => ({
+      eventId: row.event_id,
+      sourceProvider: row.source_provider,
+      capturedAt: row.captured_at,
+      sourceLatencyMs: row.source_latency_ms ?? undefined,
+      state: row.state ?? {},
+      fingerprint: row.fingerprint ?? undefined,
+    }));
+  }
+
+  async listRecentQuotesForEvents(input: {
+    eventIds: string[];
+    limit?: number;
+  }): Promise<PersistedMarketQuoteRecord[]> {
+    if (input.eventIds.length === 0) return [];
+    const query = new URLSearchParams();
+    query.set("event_id", `in.(${input.eventIds.join(",")})`);
+    query.set("order", "captured_at.desc");
+    query.set("limit", String(Math.min(5000, Math.max(1, input.limit ?? 2000))));
+    query.set(
+      "select",
+      "event_id,provider,bookmaker,market_key,selection_key,selection_label,line,decimal_odds,captured_at,provider_last_update,liquidity,suspended",
+    );
+
+    const rows = await this.request<Array<{
+      event_id: string;
+      provider: string;
+      bookmaker: string;
+      market_key: string;
+      selection_key: string;
+      selection_label: string;
+      line?: number | null;
+      decimal_odds: number;
+      captured_at: string;
+      provider_last_update?: string | null;
+      liquidity?: number | null;
+      suspended?: boolean | null;
+    }>>(this.tablePath("market_quotes", query.toString()), { method: "GET" });
+
+    return rows.map((row) => ({
+      eventId: row.event_id,
+      provider: row.provider,
+      bookmaker: row.bookmaker,
+      marketKey: row.market_key,
+      selectionKey: row.selection_key,
+      selectionLabel: row.selection_label,
+      line: row.line ?? undefined,
+      decimalOdds: Number(row.decimal_odds),
+      capturedAt: row.captured_at,
+      providerLastUpdate: row.provider_last_update ?? undefined,
+      liquidity: row.liquidity == null ? undefined : Number(row.liquidity),
+      suspended: row.suspended ?? undefined,
+    }));
+  }
+
+  async listDecisionHeads(eventIds: string[]): Promise<DecisionHistoryRecord[]> {
+    if (eventIds.length === 0) return [];
+    const query = new URLSearchParams();
+    query.set("event_id", `in.(${eventIds.join(",")})`);
+    query.set("order", "captured_at.desc");
+    query.set("limit", String(Math.min(2000, Math.max(20, eventIds.length * 20))));
+    query.set(
+      "select",
+      [
+        "id",
+        "event_id",
+        "market_key",
+        "selection_key",
+        "decision",
+        "decision_mode",
+        "market_odds",
+        "fair_probability",
+        "opportunity_score",
+        "captured_at",
+        "immutable_fingerprint",
+        "model_version_set",
+      ].join(","),
+    );
+
+    const rows = await this.request<Array<{
+      id: string;
+      event_id: string;
+      market_key: string;
+      selection_key: string;
+      decision: DecisionHistoryRecord["decision"];
+      decision_mode: string;
+      market_odds: number;
+      fair_probability: number;
+      opportunity_score: number;
+      captured_at: string;
+      immutable_fingerprint: string;
+      model_version_set?: string[] | null;
+    }>>(this.tablePath("decision_ledger", query.toString()), { method: "GET" });
+
+    return rows.map((row) => ({
+      id: row.id,
+      eventId: row.event_id,
+      marketKey: row.market_key,
+      selectionKey: row.selection_key,
+      decision: row.decision,
+      decisionMode: row.decision_mode,
+      marketOdds: Number(row.market_odds),
+      fairProbability: Number(row.fair_probability),
+      opportunityScore: Number(row.opportunity_score),
+      capturedAt: row.captured_at,
+      immutableFingerprint: row.immutable_fingerprint,
+      modelVersionSet: row.model_version_set ?? [],
     }));
   }
 

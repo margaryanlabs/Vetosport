@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import type { Opportunity } from "@/lib/domain/types";
-import type { LiveWorkspace } from "@/lib/sandbox/workspaces";
+import type { Decision } from "@/lib/domain/types";
+import type { LiveEventSummary } from "@/lib/live/types";
 import { SportGlyph } from "@/components/SportGlyph";
 
 const pp = (value: number) =>
@@ -10,44 +10,38 @@ const pp = (value: number) =>
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 
-const decisionClass = (decision: Opportunity["decision"]) =>
+const decisionClass = (decision: Decision) =>
   decision === "EDGE" ? "edge" : decision === "WATCH" ? "watch" : "pass";
 
 export function LiveCommandCenter({
-  workspaces,
-  activeWorkspaceId,
+  events,
+  activeEventId,
   onSelectEvent,
   onSelectSignal,
 }: {
-  workspaces: LiveWorkspace[];
-  activeWorkspaceId: string;
+  events: LiveEventSummary[];
+  activeEventId: string;
   onSelectEvent: (id: string) => void;
   onSelectSignal: (eventId: string, selectionId: string) => void;
 }) {
   const signals = useMemo(
     () =>
-      workspaces
-        .flatMap((workspace) =>
-          workspace.opportunities
-            .filter((opportunity) => opportunity.decision !== "PASS")
-            .map((opportunity) => ({ workspace, opportunity })),
+      events
+        .flatMap((event) =>
+          event.primarySignal && event.primarySignal.decision !== "PASS"
+            ? [{ event, signal: event.primarySignal }]
+            : [],
         )
-        .sort(
-          (a, b) =>
-            b.opportunity.opportunityScore - a.opportunity.opportunityScore,
-        )
+        .sort((a, b) => b.signal.score - a.signal.score)
         .slice(0, 7),
-    [workspaces],
+    [events],
   );
 
-  const totalMarkets = workspaces.reduce(
-    (sum, workspace) => sum + workspace.markets,
+  const totalMarkets = events.reduce(
+    (sum, event) => sum + event.markets,
     0,
   );
-  const totalRepriced = workspaces.reduce(
-    (sum, workspace) => sum + workspace.repriced,
-    0,
-  );
+  const ready = events.filter((event) => event.intelligenceReady).length;
 
   return (
     <section className="liveCommand" id="live">
@@ -56,61 +50,77 @@ export function LiveCommandCenter({
           <span className="panelIndex">01</span>
           <div>
             <h2>LIVE COMMAND</h2>
-            <p>Event twins · signal radar · instant sport switching</p>
+            <p>Observed events · persisted decisions · no synthetic live claims</p>
           </div>
         </div>
 
         <div className="liveCommandStats">
-          <span><b>{workspaces.length}</b> LIVE</span>
+          <span><b>{events.length}</b> EVENTS</span>
           <span><b>{totalMarkets}</b> MARKETS</span>
-          <span><b>{totalRepriced}</b> REPRICED</span>
+          <span><b>{ready}</b> VETO READY</span>
         </div>
       </div>
 
       <div className="liveCommandBody">
         <div className="liveCommandEvents">
-          {workspaces.map((workspace) => {
-            const primary = workspace.opportunities[0];
+          {events.map((event) => {
+            const primary = event.primarySignal;
             return (
               <button
-                className={`liveCommandEvent ${activeWorkspaceId === workspace.id ? "active" : ""}`}
-                key={workspace.id}
-                onClick={() => onSelectEvent(workspace.id)}
+                className={`liveCommandEvent ${activeEventId === event.id ? "active" : ""}`}
+                key={event.id}
+                onClick={() => onSelectEvent(event.id)}
                 type="button"
               >
                 <div className="liveCommandEventTop">
                   <span className="liveSportIdentity">
-                    <SportGlyph sport={workspace.sport} size={16} />
-                    <i className={workspace.pulse} />
-                    {workspace.sportLabel}
+                    <SportGlyph sport={event.sport} size={16} />
+                    <i className={event.pulse} />
+                    {event.sportLabel}
+                    {event.source === "persisted" && <em>LIVE DATA</em>}
                   </span>
-                  <b>{workspace.clock}</b>
+                  <b>{event.clock}</b>
                 </div>
 
                 <div className="liveCommandScore">
                   <div>
-                    <span>{workspace.homeCode}</span>
-                    <strong>{workspace.homeScore}</strong>
+                    <span>{event.homeCode}</span>
+                    <strong>{event.homeScore}</strong>
                   </div>
                   <em>:</em>
                   <div>
-                    <span>{workspace.awayCode}</span>
-                    <strong>{workspace.awayScore}</strong>
+                    <span>{event.awayCode}</span>
+                    <strong>{event.awayScore}</strong>
                   </div>
                 </div>
 
-                <small>{workspace.competition}</small>
+                <small>{event.competition}</small>
 
-                <div className="liveCommandPrimary">
-                  <div>
-                    <span>TOP SIGNAL</span>
-                    <strong>{primary.selection.label}</strong>
+                {primary ? (
+                  <div className="liveCommandPrimary">
+                    <div>
+                      <span>TOP SIGNAL</span>
+                      <strong>{primary.label}</strong>
+                    </div>
+                    <div>
+                      <b className={decisionClass(primary.decision)}>
+                        {primary.decision}
+                      </b>
+                      <em>{pp(primary.edge)}</em>
+                    </div>
                   </div>
-                  <div>
-                    <b className={decisionClass(primary.decision)}>{primary.decision}</b>
-                    <em>{pp(primary.probabilityEdge)}</em>
+                ) : (
+                  <div className="liveCommandPrimary awaiting">
+                    <div>
+                      <span>VETO STATUS</span>
+                      <strong>AWAITING VETO</strong>
+                    </div>
+                    <div>
+                      <b>OBSERVED</b>
+                      <em>{event.markets} markets</em>
+                    </div>
                   </div>
-                </div>
+                )}
               </button>
             );
           })}
@@ -120,53 +130,59 @@ export function LiveCommandCenter({
           <div className="signalRadarHead">
             <div>
               <span>SIGNAL RADAR</span>
-              <strong>Cross-sport opportunity queue</strong>
+              <strong>Persisted or explicit sandbox decisions only</strong>
             </div>
             <small>RANKED BY VETO SCORE</small>
           </div>
 
           <div className="signalRadarList">
-            {signals.map(({ workspace, opportunity }, index) => (
-              <button
-                className={`signalRadarRow ${
-                  activeWorkspaceId === workspace.id
-                    ? "sameEvent"
-                    : ""
-                }`}
-                key={`${workspace.id}-${opportunity.selection.id}`}
-                onClick={() =>
-                  onSelectSignal(workspace.id, opportunity.selection.id)
-                }
-                type="button"
-              >
-                <span className="signalRadarRank">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <div className="signalRadarIdentity">
-                  <span className="signalRadarSport">
-                    <SportGlyph sport={workspace.sport} size={14} />
-                    {workspace.sportLabel} · {workspace.homeCode}/{workspace.awayCode}
+            {signals.length > 0 ? (
+              signals.map(({ event, signal }, index) => (
+                <button
+                  className={`signalRadarRow ${activeEventId === event.id ? "sameEvent" : ""}`}
+                  key={`${event.id}-${signal.selectionId}`}
+                  onClick={() =>
+                    onSelectSignal(event.id, signal.selectionId)
+                  }
+                  type="button"
+                >
+                  <span className="signalRadarRank">
+                    {String(index + 1).padStart(2, "0")}
                   </span>
-                  <strong>{opportunity.selection.label}</strong>
-                </div>
-                <span className="signalRadarProbability">
-                  <b>{pct(opportunity.fairProbability)}</b>
-                  <small>FAIR</small>
-                </span>
-                <span className="signalRadarEdge">
-                  <b className={opportunity.probabilityEdge >= 0 ? "positive" : "negative"}>
-                    {pp(opportunity.probabilityEdge)}
-                  </b>
-                  <small>GAP</small>
-                </span>
-                <em className={decisionClass(opportunity.decision)}>
-                  {opportunity.decision}
-                </em>
-                <strong className="signalRadarScore">
-                  {opportunity.opportunityScore}
-                </strong>
-              </button>
-            ))}
+                  <div className="signalRadarIdentity">
+                    <span className="signalRadarSport">
+                      <SportGlyph sport={event.sport} size={14} />
+                      {event.sportLabel} · {event.homeCode}/{event.awayCode}
+                    </span>
+                    <strong>{signal.label}</strong>
+                  </div>
+                  <span className="signalRadarProbability">
+                    <b>{pct(signal.fairProbability)}</b>
+                    <small>FAIR</small>
+                  </span>
+                  <span className="signalRadarEdge">
+                    <b className={signal.edge >= 0 ? "positive" : "negative"}>
+                      {pp(signal.edge)}
+                    </b>
+                    <small>GAP</small>
+                  </span>
+                  <em className={decisionClass(signal.decision)}>
+                    {signal.decision}
+                  </em>
+                  <strong className="signalRadarScore">
+                    {Math.round(signal.score)}
+                  </strong>
+                </button>
+              ))
+            ) : (
+              <div className="signalRadarEmpty">
+                <span>NO VERIFIED SIGNALS YET</span>
+                <p>
+                  VETO can observe an event before it emits a decision. The
+                  radar stays empty rather than inventing an EDGE.
+                </p>
+              </div>
+            )}
           </div>
         </aside>
       </div>

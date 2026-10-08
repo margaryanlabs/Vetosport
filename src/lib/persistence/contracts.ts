@@ -18,6 +18,30 @@ export interface PersistedEvent {
   event: SportEvent;
 }
 
+export interface PersistedEventStateRecord {
+  eventId: string;
+  sourceProvider: string;
+  capturedAt: string;
+  sourceLatencyMs?: number;
+  state: Record<string, unknown>;
+  fingerprint?: string;
+}
+
+export interface PersistedMarketQuoteRecord {
+  eventId: string;
+  provider: string;
+  bookmaker: string;
+  marketKey: string;
+  selectionKey: string;
+  selectionLabel: string;
+  line?: number;
+  decimalOdds: number;
+  capturedAt: string;
+  providerLastUpdate?: string;
+  liquidity?: number;
+  suspended?: boolean;
+}
+
 export interface EventStateSnapshot {
   eventId: string;
   sourceProvider: string;
@@ -140,6 +164,27 @@ export interface VetoPersistence {
     startsAt: string;
     toleranceMinutes?: number;
   }): Promise<PersistedEvent[]>;
+
+  listRecentEvents(input: {
+    from: string;
+    to: string;
+    statuses?: SportEvent["status"][];
+    limit?: number;
+  }): Promise<PersistedEvent[]>;
+
+  getEventById(eventId: string): Promise<PersistedEvent | null>;
+
+  listRecentEventStates(input: {
+    eventIds: string[];
+    limit?: number;
+  }): Promise<PersistedEventStateRecord[]>;
+
+  listRecentQuotesForEvents(input: {
+    eventIds: string[];
+    limit?: number;
+  }): Promise<PersistedMarketQuoteRecord[]>;
+
+  listDecisionHeads(eventIds: string[]): Promise<DecisionHistoryRecord[]>;
 
   appendEventState(snapshot: EventStateSnapshot): Promise<void>;
 

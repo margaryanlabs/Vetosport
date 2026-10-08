@@ -1,46 +1,33 @@
 import { NextResponse } from "next/server";
-import { liveWorkspaces } from "@/lib/sandbox/workspaces";
+import { persistenceConfiguration } from "@/lib/persistence/factory";
+import { listPersistedLiveEvents } from "@/lib/live/persisted-events";
+import { sandboxEventSummaries } from "@/lib/live/sandbox";
 import { sportEngineRegistry } from "@/lib/sports/registry";
 
 export const dynamic = "force-dynamic";
 
-export function GET() {
+export async function GET() {
+  if (persistenceConfiguration().supabaseConfigured) {
+    try {
+      const events = await listPersistedLiveEvents();
+      if (events.length > 0) {
+        return NextResponse.json({
+          mode: "persisted",
+          generatedAt: new Date().toISOString(),
+          engines: sportEngineRegistry,
+          events,
+        });
+      }
+    } catch {
+      // Fall through to an explicitly labelled sandbox response.
+    }
+  }
+
   return NextResponse.json({
-    mode: "sandbox",
+    mode: "sandbox-fallback",
     generatedAt: new Date().toISOString(),
-    warning:
-      "Synthetic workspaces are explicit placeholders until live provider keys and persistence are connected.",
+    warning: "No persisted live events are available in the active window.",
     engines: sportEngineRegistry,
-    events: liveWorkspaces.map((workspace) => ({
-      id: workspace.id,
-      sport: workspace.sport,
-      sportLabel: workspace.sportLabel,
-      competition: workspace.competition,
-      clock: workspace.clock,
-      period: workspace.period,
-      home: {
-        code: workspace.homeCode,
-        name: workspace.homeName,
-        score: workspace.homeScore,
-      },
-      away: {
-        code: workspace.awayCode,
-        name: workspace.awayName,
-        score: workspace.awayScore,
-      },
-      pulse: workspace.pulse,
-      markets: workspace.markets,
-      repriced: workspace.repriced,
-      stateId: workspace.stateId,
-      modelVersion: workspace.modelVersion,
-      primarySignal: {
-        label: workspace.opportunities[0].selection.label,
-        decision: workspace.opportunities[0].decision,
-        probability: workspace.opportunities[0].fairProbability,
-        marketOdds: workspace.opportunities[0].marketOdds,
-        fairOdds: workspace.opportunities[0].fairOdds,
-        edge: workspace.opportunities[0].probabilityEdge,
-      },
-    })),
+    events: sandboxEventSummaries,
   });
 }

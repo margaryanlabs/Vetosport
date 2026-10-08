@@ -1,0 +1,99 @@
+.liveSportIdentity em{margin-left:6px;padding:3px 5px;border:1px solid rgba(255,45,45,.12);border-radius:999px;color:#c98a8a;font-size:5px;font-style:normal;letter-spacing:.08em}
+.liveCommandPrimary.awaiting{border-color:rgba(255,255,255,.045);background:rgba(255,255,255,.007)}
+.liveCommandPrimary.awaiting b{color:#777e88;background:rgba(255,255,255,.04)}
+.signalRadarEmpty{min-height:210px;padding:28px;display:flex;flex-direction:column;justify-content:center;border:1px dashed rgba(255,255,255,.055);border-radius:14px;background:rgba(255,255,255,.004)}
+.signalRadarEmpty span{color:#7b828c;font-size:7px;font-weight:780;letter-spacing:.11em}
+.signalRadarEmpty p{max-width:360px;margin:10px 0 0;color:#5f6670;font-size:8px;line-height:1.55}
+
+.observedRoom{border:1px solid rgba(255,255,255,.065);border-radius:26px;overflow:hidden;background:rgba(10,11,14,.82);box-shadow:0 34px 100px rgba(0,0,0,.25)}
+.observedHero{position:relative;min-height:220px;padding:28px 34px;display:grid;align-content:center;border-bottom:1px solid rgba(255,255,255,.055);background:radial-gradient(circle at 50% 110%,rgba(255,45,45,.035),transparent 22rem),linear-gradient(180deg,rgba(255,255,255,.018),transparent)}
+.observedMeta{position:absolute;left:34px;right:34px;top:22px;display:flex;gap:14px;color:#626974;font-size:7px;letter-spacing:.08em}
+.observedMeta>span:first-child{color:#c98d8d}
+.observedMeta i{display:inline-block;width:6px;height:6px;margin-right:5px;border-radius:50%;background:#ff2d2d;box-shadow:0 0 10px rgba(255,45,45,.24)}
+.observedScore{display:grid;grid-template-columns:minmax(180px,1fr) auto minmax(180px,1fr);align-items:center;gap:30px}
+.observedScore>div:first-child,.observedScore>.away{display:grid;gap:6px}
+.observedScore>.away{text-align:right}
+.observedScore small{color:#626974;font-size:8px;letter-spacing:.12em}
+.observedScore>div>strong{font-size:clamp(20px,2vw,31px);font-weight:650;letter-spacing:-.03em}
+.observedScoreCore{display:grid;grid-template-columns:auto auto auto;align-items:center;gap:10px;text-align:center}
+.observedScoreCore b{font:650 clamp(54px,6vw,86px)/.9 var(--font-veto-tech),sans-serif;letter-spacing:-.07em}
+.observedScoreCore i{color:#4e5560;font-style:normal;font-size:27px}
+.observedScoreCore em{grid-column:1/4;margin-top:9px;color:#ffb0b0;font:650 9px/1 var(--font-veto-tech),sans-serif;font-style:normal}
+.observedSportMark{position:absolute;right:20px;bottom:-18px;color:rgba(255,255,255,.024);transform:rotate(-9deg)}
+
+.observedStatusBand{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid rgba(255,255,255,.05)}
+.observedStatusBand>div{min-height:82px;padding:14px 18px;border-right:1px solid rgba(255,255,255,.045)}
+.observedStatusBand>div:last-child{border-right:0}
+.observedStatusBand span{color:#565d67;font-size:6px;font-weight:760;letter-spacing:.1em}
+.observedStatusBand strong{display:block;margin-top:9px;font:630 14px/1 var(--font-veto-tech),sans-serif}
+.observedStatusBand small{display:block;margin-top:6px;color:#626974;font-size:6px;line-height:1.4}
+
+.observedBody{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(310px,.62fr);min-height:560px}
+.observedState{padding:24px;border-right:1px solid rgba(255,255,255,.055)}
+.observedState>header,.observedMarketTape>header{display:flex;align-items:flex-end;justify-content:space-between;gap:18px}
+.observedState>header>div{display:grid;gap:5px}
+.observedState>header span,.observedMarketTape>header span{color:#ff8a8a;font-size:6px;font-weight:780;letter-spacing:.12em}
+.observedState>header strong{font-size:16px}
+.observedState>header small,.observedMarketTape>header small{color:#555c66;font-size:6px}
+.observedStateGrid{margin-top:17px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.observedStateGrid article{min-height:92px;padding:13px;border:1px solid rgba(255,255,255,.05);border-radius:12px;background:rgba(255,255,255,.006)}
+.observedStateGrid span{color:#565d67;font-size:6px;letter-spacing:.09em}
+.observedStateGrid strong{display:block;margin-top:15px;color:#d8dbe0;font-size:10px;line-height:1.35;word-break:break-word}
+.observedEmpty{margin-top:17px;min-height:130px;padding:20px;display:flex;flex-direction:column;justify-content:center;border:1px dashed rgba(255,255,255,.05);border-radius:13px}
+.observedEmpty.compact{min-height:90px}
+.observedEmpty span{color:#6d747e;font-size:7px;font-weight:760;letter-spacing:.1em}
+.observedEmpty p{margin:8px 0 0;color:#5c636d;font-size:8px}
+
+.observedMarketTape{margin-top:23px;padding-top:18px;border-top:1px solid rgba(255,255,255,.05)}
+.observedMarketTape article{min-height:50px;display:grid;grid-template-columns:110px 1fr 60px 72px;align-items:center;gap:12px;border-top:1px solid rgba(255,255,255,.035)}
+.observedMarketTape article>span{color:#5d646e;font-size:7px}
+.observedMarketTape article>div{display:grid;gap:3px}
+.observedMarketTape article strong{font-size:8px}
+.observedMarketTape article small{color:#555c66;font-size:6px}
+.observedMarketTape article>b{font:620 11px/1 var(--font-veto-tech),sans-serif}
+.observedMarketTape article>em{color:#585f69;font:600 7px/1 var(--font-veto-tech),sans-serif;font-style:normal;text-align:right}
+
+.observedDecision{padding:25px;background:linear-gradient(180deg,rgba(255,45,45,.014),transparent 40%)}
+.observedDecisionHead{display:flex;align-items:center;justify-content:space-between}
+.observedDecisionHead>span{color:#606772;font-size:7px;font-weight:800;letter-spacing:.13em}
+.observedDecisionHead em{padding:6px 9px;border-radius:999px;background:rgba(255,255,255,.04);color:#858b94;font-size:7px;font-weight:800;font-style:normal}
+.observedDecisionHead em.edge{background:#ff2d2d;color:#fff}
+.observedDecisionHead em.watch{background:rgba(209,169,110,.08);color:#d0b17f}
+.observedDecisionTitle{display:block;margin-top:29px;font-size:20px;line-height:1.2}
+.observedDecisionNumbers{margin-top:24px;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05)}
+.observedDecisionNumbers>div{padding:13px 8px;border-right:1px solid rgba(255,255,255,.04)}
+.observedDecisionNumbers>div:last-child{border-right:0}
+.observedDecisionNumbers span,.observedLineage span{color:#555c66;font-size:6px;letter-spacing:.1em}
+.observedDecisionNumbers strong{display:block;margin-top:8px;font:620 15px/1 var(--font-veto-tech),sans-serif}
+.observedDecision>p{margin:20px 0 0;color:#707781;font-size:8px;line-height:1.55}
+.observedAwaiting{margin-top:34px;padding:20px;border-left:2px solid rgba(255,45,45,.45);background:rgba(255,45,45,.015)}
+.observedAwaiting span{color:#ff8989;font-size:6px;font-weight:800;letter-spacing:.12em}
+.observedAwaiting strong{display:block;margin-top:9px;font-size:20px}
+.observedAwaiting p{margin:9px 0 0;color:#747b85;font-size:8px;line-height:1.55}
+.observedLineage{margin-top:28px;display:grid;gap:6px}
+.observedLineage>div{min-height:58px;padding:10px;border:1px solid rgba(255,255,255,.045);border-radius:10px}
+.observedLineage strong{display:block;margin-top:7px;color:#c5c8cd;font-size:8px}
+
+@media(max-width:980px){
+  .observedBody{grid-template-columns:1fr}
+  .observedState{border-right:0;border-bottom:1px solid rgba(255,255,255,.055)}
+  .observedStatusBand{grid-template-columns:1fr 1fr}
+  .observedStatusBand>div:nth-child(2){border-right:0}
+}
+@media(max-width:720px){
+  .observedRoom{border-radius:18px}
+  .observedHero{min-height:170px;padding:30px 15px 20px}
+  .observedMeta{left:15px;right:15px;top:14px}
+  .observedMeta span:nth-child(2),.observedMeta span:nth-child(3){display:none}
+  .observedScore{grid-template-columns:1fr auto 1fr;gap:8px}
+  .observedScore>div>strong{font-size:13px}
+  .observedScore small{font-size:6px}
+  .observedScoreCore b{font-size:46px}
+  .observedScoreCore em{font-size:7px}
+  .observedStatusBand>div{min-height:70px;padding:11px}
+  .observedState{padding:13px}
+  .observedStateGrid{grid-template-columns:1fr 1fr}
+  .observedMarketTape article{grid-template-columns:70px 1fr 45px}
+  .observedMarketTape article>em{display:none}
+  .observedDecision{padding:17px}
+}
