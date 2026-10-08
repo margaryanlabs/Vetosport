@@ -19,6 +19,9 @@ import { VetoMark, VetoWordmark } from "@/components/VetoMark";
 import { WorkspaceChrome, type WorkspaceView } from "@/components/WorkspaceChrome";
 import { MatchRoom } from "@/components/MatchRoom";
 import { SystemStatusPanel } from "@/components/SystemStatusPanel";
+import { ObservedEventRoom } from "@/components/ObservedEventRoom";
+import type { LiveEventSummary, LiveObservation } from "@/lib/live/types";
+import { sandboxEventSummaries } from "@/lib/live/sandbox";
 import { sandboxFootballBeforeSurface, sandboxFootballSurface } from "@/lib/sandbox/football-model";
 import { analyzeModelCouncil } from "@/lib/council/engine";
 import { buildCouncilInputs } from "@/lib/council/registry";
@@ -34,15 +37,19 @@ type ProviderStatus = {
 };
 
 export function Terminal({ initialEventId }: { initialEventId?: string }) {
-  const initialWorkspaceId =
-    initialEventId && workspaceById[initialEventId]
-      ? initialEventId
-      : liveWorkspaces[0].id;
+  const initialWorkspaceId = initialEventId ?? liveWorkspaces[0].id;
   const [locale, setLocale] = useState<Locale>("ru");
   const [selectedEventId, setSelectedEventId] = useState(initialWorkspaceId);
   const [selectedId, setSelectedId] = useState(liveWorkspaces[0].opportunities[0].selection.id);
   const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
   const [remoteWorkspace, setRemoteWorkspace] = useState<LiveWorkspace | null>(null);
+  const [remoteObservation, setRemoteObservation] = useState<LiveObservation | null>(null);
+  const [eventSummaries, setEventSummaries] = useState<LiveEventSummary[]>(
+    sandboxEventSummaries,
+  );
+  const [liveSourceMode, setLiveSourceMode] = useState<
+    "persisted" | "sandbox-fallback"
+  >("sandbox-fallback");
   const [activeView, setActiveView] = useState<WorkspaceView>("intelligence");
 
   useEffect(() => {
@@ -59,6 +66,47 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
 
     return () => {
       active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+
+    const refreshEvents = () => {
+      fetch("/api/live/events", {
+        cache: "no-store",
+        signal: controller.signal,
+      })
+        .then((response) => (response.ok ? response.json() : null))
+        .then(
+          (
+            payload:
+              | {
+                  mode?: "persisted" | "sandbox-fallback";
+                  events?: LiveEventSummary[];
+                }
+              | null,
+          ) => {
+            if (!active || !payload?.events?.length) return;
+            setEventSummaries(payload.events);
+            setLiveSourceMode(
+              payload.mode === "persisted"
+                ? "persisted"
+                : "sandbox-fallback",
+            );
+          },
+        )
+        .catch(() => {});
+    };
+
+    refreshEvents();
+    const interval = window.setInterval(refreshEvents, 15_000);
+
+    return () => {
+      active = false;
+      controller.abort();
+      window.clearInterval(interval);
     };
   }, []);
 
@@ -80,21 +128,32 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
         signal: controller.signal,
       })
         .then((response) => (response.ok ? response.json() : null))
-        .then((payload: { workspace?: LiveWorkspace } | null) => {
-          if (
-            active &&
-            payload?.workspace &&
-            payload.workspace.id === selectedEventId
-          ) {
-            setRemoteWorkspace(payload.workspace);
-          }
-        })
+        .then(
+          (
+            payload:
+              | {
+                  workspace?: LiveWorkspace;
+                  observation?: LiveObservation;
+                }
+              | null,
+          ) => {
+            if (!active || !payload) return;
+            if (payload.workspace?.id === selectedEventId) {
+              setRemoteWorkspace(payload.workspace);
+              setRemoteObservation(null);
+            } else if (payload.observation?.summary.id === selectedEventId) {
+              setRemoteWorkspace(null);
+              setRemoteObservation(payload.observation);
+            }
+          },
+        )
         .catch(() => {
           // Static server-rendered workspace remains the safe fallback.
         });
     };
 
     setRemoteWorkspace(null);
+    setRemoteObservation(null);
     refreshWorkspace();
     const interval = window.setInterval(refreshWorkspace, 15_000);
 
@@ -109,6 +168,18 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   const staticWorkspace = workspaceById[selectedEventId] ?? liveWorkspaces[0];
   const activeWorkspace =
     remoteWorkspace?.id === selectedEventId ? remoteWorkspace : staticWorkspace;
+  const activeSummary =
+    remoteObservation?.summary ??
+    eventSummaries.find((event) => event.id === selectedEventId);
+  const headerEvent = activeSummary ?? {
+    sport: activeWorkspace.sport,
+    competition: activeWorkspace.competition,
+    homeCode: activeWorkspace.homeCode,
+    awayCode: activeWorkspace.awayCode,
+    homeScore: activeWorkspace.homeScore,
+    awayScore: activeWorkspace.awayScore,
+    clock: activeWorkspace.clock,
+  };
 
   useEffect(() => {
     const selectionStillExists = activeWorkspace.opportunities.some(
@@ -142,7 +213,10 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   );
 
   const configuredProviders = providerStatus
-    ? Object.values(providerStatus.providers).filter((provider) => provider.configured).length
+    ? [
+        providerStatus.providers.sportmonks,
+        providerStatus.providers.theOddsApi,
+      ].filter((provider) => provider.configured).length
     : 0;
   const gatewayReady = Boolean(
     providerStatus?.providers?.canonicalGateway?.configured,
@@ -154,10 +228,18 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
         ? "GATEWAY READY"
         : "SANDBOX";
   const selectSport = (sport: Sport) => {
-    const workspace = liveWorkspaces.find((item) => item.sport === sport);
-    if (workspace) setSelectedEventId(workspace.id);
+    const persisted = eventSummaries.find(
+      (item) => item.sport === sport && item.source === "persisted",
+    );
+    const target =
+      persisted ?? eventSummaries.find((item) => item.sport === sport);
+    if (target) setSelectedEventId(target.id);
   };
   const switchView = (view: WorkspaceView) => {
+    if (remoteObservation && view === "research") {
+      setActiveView("intelligence");
+      return;
+    }
     setActiveView(view);
   };
   const jumpTo = (target: string) => {
@@ -169,12 +251,12 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
     });
   };
   const selectEvent = (eventId: string) => {
-    if (!workspaceById[eventId]) return;
+    if (!eventSummaries.some((event) => event.id === eventId)) return;
     setSelectedEventId(eventId);
     setActiveView("intelligence");
   };
   const selectSignal = (eventId: string, selectionId: string) => {
-    if (!workspaceById[eventId]) return;
+    if (!eventSummaries.some((event) => event.id === eventId)) return;
     setSelectedEventId(eventId);
     setSelectedId(selectionId);
     setActiveView("intelligence");
@@ -184,17 +266,17 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
     <WorkspaceChrome
       activeView={activeView}
       onViewChange={switchView}
-      activeSport={activeWorkspace.sport}
+      activeSport={headerEvent.sport}
       onSportChange={selectSport}
       onJump={jumpTo}
       locale={locale}
       onLocaleChange={setLocale}
-      homeCode={activeWorkspace.homeCode}
-      awayCode={activeWorkspace.awayCode}
-      homeScore={activeWorkspace.homeScore}
-      awayScore={activeWorkspace.awayScore}
-      clock={activeWorkspace.clock}
-      competition={activeWorkspace.competition}
+      homeCode={headerEvent.homeCode}
+      awayCode={headerEvent.awayCode}
+      homeScore={headerEvent.homeScore}
+      awayScore={headerEvent.awayScore}
+      clock={headerEvent.clock}
+      competition={headerEvent.competition}
       providerMode={providerMode}
     >
       {activeView === "live" && (
@@ -203,17 +285,19 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
             <span>LIVE ARENA</span>
             <strong>Follow the game. Catch the market reaction.</strong>
             <small>
-              {configuredProviders > 0
-                ? `${configuredProviders}/2 direct live adapters configured`
-                : gatewayReady
-                  ? "Canonical gateway ready · direct provider keys optional"
-                  : "Sandbox feed · live ingestion not configured"}
+              {liveSourceMode === "persisted"
+                ? "Persisted live window · storage-first"
+                : configuredProviders > 0
+                  ? `${configuredProviders}/2 direct live adapters configured`
+                  : gatewayReady
+                    ? "Gateway ready · waiting for the first real event"
+                    : "Sandbox fallback · live ingestion not configured"}
             </small>
           </div>
 
       <LiveCommandCenter
-        workspaces={liveWorkspaces}
-        activeWorkspaceId={activeWorkspace.id}
+        events={eventSummaries}
+        activeEventId={selectedEventId}
         onSelectEvent={selectEvent}
         onSelectSignal={selectSignal}
       />
@@ -222,12 +306,16 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
 
       {activeView === "intelligence" && (
         <div className="workspaceScene workspaceIntelligence">
-          <MatchRoom
-            workspace={activeWorkspace}
-            selected={selected}
-            onSelectSignal={(selectionId) => setSelectedId(selectionId)}
-            onOpenLab={() => setActiveView("research")}
-          />
+          {remoteObservation ? (
+            <ObservedEventRoom observation={remoteObservation} />
+          ) : (
+            <MatchRoom
+              workspace={activeWorkspace}
+              selected={selected}
+              onSelectSignal={(selectionId) => setSelectedId(selectionId)}
+              onOpenLab={() => setActiveView("research")}
+            />
+          )}
         </div>
       )}
 
