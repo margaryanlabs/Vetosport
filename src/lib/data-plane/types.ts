@@ -80,6 +80,8 @@ export interface DataPlaneRuntimeStatus {
   persistenceConfigured: boolean;
   sportmonksConfigured: boolean;
   oddsConfigured: boolean;
+  oddsSportKeysConfigured: boolean;
+  oddsSportKeysCount: number;
   ingestionSecretConfigured: boolean;
   mode: "OFFLINE" | "STORAGE_ONLY" | "PARTIAL_FEEDS" | "LIVE_READY";
   blockers: string[];

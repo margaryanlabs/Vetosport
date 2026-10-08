@@ -194,6 +194,11 @@ export const getDataPlaneRuntimeStatus = (): DataPlaneRuntimeStatus => {
     process.env.SPORTMONKS_API_TOKEN,
   );
   const oddsConfigured = Boolean(process.env.THE_ODDS_API_KEY);
+  const oddsSportKeys = (process.env.VETO_ODDS_SPORT_KEYS ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const oddsSportKeysConfigured = oddsSportKeys.length > 0;
   const ingestionSecretConfigured = Boolean(
     process.env.INGESTION_SECRET,
   );
@@ -205,6 +210,8 @@ export const getDataPlaneRuntimeStatus = (): DataPlaneRuntimeStatus => {
     blockers.push("SPORTMONKS_API_TOKEN is not configured.");
   if (!oddsConfigured)
     blockers.push("THE_ODDS_API_KEY is not configured.");
+  if (oddsConfigured && !oddsSportKeysConfigured)
+    blockers.push("VETO_ODDS_SPORT_KEYS is empty; market polling is disabled to protect provider quota.");
   if (!ingestionSecretConfigured)
     blockers.push("INGESTION_SECRET is not configured.");
 
@@ -216,7 +223,9 @@ export const getDataPlaneRuntimeStatus = (): DataPlaneRuntimeStatus => {
       ? "OFFLINE"
       : feedCount === 0
         ? "STORAGE_ONLY"
-        : feedCount < 2 || !ingestionSecretConfigured
+        : feedCount < 2 ||
+            !ingestionSecretConfigured ||
+            !oddsSportKeysConfigured
           ? "PARTIAL_FEEDS"
           : "LIVE_READY";
 
@@ -224,6 +233,8 @@ export const getDataPlaneRuntimeStatus = (): DataPlaneRuntimeStatus => {
     persistenceConfigured,
     sportmonksConfigured,
     oddsConfigured,
+    oddsSportKeysConfigured,
+    oddsSportKeysCount: oddsSportKeys.length,
     ingestionSecretConfigured,
     mode,
     blockers,
