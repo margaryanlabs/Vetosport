@@ -1,46 +1,19 @@
 import { NextResponse } from "next/server";
+import { getDataPlaneRuntimeStatus } from "@/lib/data-plane/engine";
 import { providerConfiguration } from "@/lib/providers/factory";
 import { persistenceConfiguration } from "@/lib/persistence/factory";
+
+export const dynamic = "force-dynamic";
 
 export function GET() {
   const providers = providerConfiguration();
   const persistence = persistenceConfiguration();
-  const sportKeys = (process.env.VETO_ODDS_SPORT_KEYS ?? "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
-  const markets = (process.env.VETO_ODDS_MARKETS ?? "h2h,spreads,totals")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
+  const runtime = getDataPlaneRuntimeStatus();
 
   const secrets = {
     cronSecretConfigured: Boolean(process.env.CRON_SECRET),
     ingestionSecretConfigured: Boolean(process.env.INGESTION_SECRET),
   };
-
-  const canonicalGatewayConfigured =
-    persistence.supabaseConfigured &&
-    secrets.ingestionSecretConfigured;
-
-  const directAdapterGaps: string[] = [];
-  if (!providers.sportmonks.configured) {
-    directAdapterGaps.push("SPORTMONKS_API_TOKEN is not configured.");
-  }
-  if (!providers.theOddsApi.configured) {
-    directAdapterGaps.push("THE_ODDS_API_KEY is not configured.");
-  }
-  if (sportKeys.length === 0) {
-    directAdapterGaps.push("VETO_ODDS_SPORT_KEYS is empty.");
-  }
-
-  const criticalBlockers: string[] = [];
-  if (!persistence.supabaseConfigured) {
-    criticalBlockers.push("Persistence is not configured.");
-  }
-  if (!secrets.ingestionSecretConfigured) {
-    criticalBlockers.push("INGESTION_SECRET is not configured.");
-  }
 
   const footballStateReady =
     providers.sportmonks.configured &&
@@ -49,44 +22,48 @@ export function GET() {
 
   const liveOddsReady =
     providers.theOddsApi.configured &&
-    sportKeys.length > 0 &&
+    providers.theOddsApi.sportKeysConfigured &&
     persistence.supabaseConfigured &&
     secrets.cronSecretConfigured;
 
-  const mode =
-    footballStateReady && liveOddsReady
+  const activationMode =
+    runtime.mode === "LIVE_READY"
       ? "live-ready"
-      : footballStateReady || liveOddsReady
-        ? "partially-configured"
-        : canonicalGatewayConfigured
-          ? "gateway-ready"
+      : runtime.mode === "PUSH_READY"
+        ? "gateway-ready"
+        : runtime.mode === "PARTIAL_FEEDS"
+          ? "partially-configured"
           : "sandbox";
 
   return NextResponse.json({
-    model: "veto.provider-activation.v3",
-    mode,
+    model: "veto.provider-activation.v4",
+    mode: activationMode,
+    runtimeMode: runtime.mode,
     generatedAt: new Date().toISOString(),
+    liveReady: runtime.mode === "LIVE_READY",
+    gatewayReady: runtime.canonicalGatewayConfigured,
     providers: {
       canonicalGateway: {
         role: "provider-neutral normalized live push",
-        configured: canonicalGatewayConfigured,
+        configured: runtime.canonicalGatewayConfigured,
         endpoint: "/api/ingest/live/canonical",
       },
       sportmonks: {
         role: "football events, live state and final score",
         configured: providers.sportmonks.configured,
+        ingestionReady: footballStateReady,
         keyRequired: true,
       },
       theOddsApi: {
         role: "multi-book live odds and historical snapshots",
         configured: providers.theOddsApi.configured,
+        ingestionReady: liveOddsReady,
         keyRequired: true,
-        regions: (process.env.THE_ODDS_API_REGIONS ?? "eu")
-          .split(",")
-          .map((value) => value.trim())
-          .filter(Boolean),
-        sportKeys,
-        markets,
+        regions: providers.theOddsApi.regions,
+        sportKeys: providers.theOddsApi.sportKeys,
+        sportKeysConfigured: providers.theOddsApi.sportKeysConfigured,
+        sportKeysCount: providers.theOddsApi.sportKeys.length,
+        markets: providers.theOddsApi.markets,
       },
     },
     storage: {
@@ -97,54 +74,58 @@ export function GET() {
     automation: {
       cronSecretConfigured: secrets.cronSecretConfigured,
       ingestionSecretConfigured: secrets.ingestionSecretConfigured,
-      canonicalGatewayReady: canonicalGatewayConfigured,
+      canonicalGatewayReady: runtime.canonicalGatewayConfigured,
       footballStateReady,
       liveOddsReady,
       autoSettlementReady: footballStateReady,
       terminalClosingConsensusReady:
         liveOddsReady && persistence.supabaseConfigured,
       decisionProofReady: persistence.supabaseConfigured,
+      quotaGuard:
+        "Odds cron refuses polling when VETO_ODDS_SPORT_KEYS is empty.",
       schedules: {
         footballState: "*/5 * * * *",
         liveOdds: "*/5 * * * *",
       },
     },
-    criticalBlockers,
-    directAdapterGaps,
-    blockers: [...criticalBlockers, ...directAdapterGaps],
+    criticalBlockers: runtime.blockers,
+    directAdapterGaps: runtime.directAdapterGaps,
     requiredEnvironment: [
+      {
+        key: "INGESTION_SECRET",
+        configured: secrets.ingestionSecretConfigured,
+        purpose: "Protect canonical gateway/manual ingestion/settlement routes",
+        critical: true,
+      },
+      {
+        key: "VETO_STORAGE_BRIDGE_* or SUPABASE_*",
+        configured: persistence.supabaseConfigured,
+        purpose: "Truth Journal, decision ledger, quotes and settlement storage",
+        critical: true,
+      },
       {
         key: "SPORTMONKS_API_TOKEN",
         configured: providers.sportmonks.configured,
-        purpose: "Football live state + final score",
+        purpose: "Optional direct football live state + final score adapter",
         optionalWhenUsingGateway: true,
       },
       {
         key: "THE_ODDS_API_KEY",
         configured: providers.theOddsApi.configured,
-        purpose: "Live and historical bookmaker odds",
+        purpose: "Optional direct live and historical bookmaker odds adapter",
         optionalWhenUsingGateway: true,
       },
       {
         key: "VETO_ODDS_SPORT_KEYS",
-        configured: sportKeys.length > 0,
-        purpose: "Explicit The Odds API competitions/sports to ingest",
+        configured: providers.theOddsApi.sportKeysConfigured,
+        purpose: "Explicit quota-safe The Odds API competitions/sports allowlist",
         optionalWhenUsingGateway: true,
       },
       {
         key: "CRON_SECRET",
         configured: secrets.cronSecretConfigured,
         purpose: "Protect scheduled direct-provider ingestion routes",
-      },
-      {
-        key: "INGESTION_SECRET",
-        configured: secrets.ingestionSecretConfigured,
-        purpose: "Protect canonical gateway/manual ingestion/settlement routes",
-      },
-      {
-        key: "VETO_STORAGE_BRIDGE_* or SUPABASE_*",
-        configured: persistence.supabaseConfigured,
-        purpose: "Truth Journal, decision ledger, quotes and settlement storage",
+        optionalWhenUsingGateway: true,
       },
     ],
   });

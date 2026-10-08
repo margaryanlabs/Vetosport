@@ -80,6 +80,8 @@ export interface DataPlaneRuntimeStatus {
   persistenceConfigured: boolean;
   sportmonksConfigured: boolean;
   oddsConfigured: boolean;
+  oddsSportKeysConfigured: boolean;
+  oddsSportKeysCount: number;
   ingestionSecretConfigured: boolean;
   canonicalGatewayConfigured: boolean;
   mode:
