@@ -90,7 +90,9 @@ export function LiveCommandCenter({
                     <SportGlyph sport={event.sport} size={16} />
                     <i className={event.pulse} />
                     {event.sportLabel}
-                    {event.source === "persisted" && <em>LIVE DATA</em>}
+                    <em className={event.source === "persisted" ? "sourceLive" : "sourceDemo"}>
+                      {event.source === "persisted" ? "LIVE DATA" : "DEMO"}
+                    </em>
                   </span>
                   <b>{event.clock}</b>
                 </div>
@@ -112,7 +114,7 @@ export function LiveCommandCenter({
                 {primary ? (
                   <div className="liveCommandPrimary">
                     <div>
-                      <span>TOP SIGNAL</span>
+                      <span>{event.source === "persisted" ? "TOP SIGNAL" : "DEMO SIGNAL"}</span>
                       <strong>{primary.label}</strong>
                     </div>
                     <div>
@@ -143,7 +145,7 @@ export function LiveCommandCenter({
           <div className="signalRadarHead">
             <div>
               <span>SIGNAL RADAR</span>
-              <strong>Persisted or explicit sandbox decisions only</strong>
+              <strong>Live decisions and demo signals are always source-labeled</strong>
             </div>
             <small>RANKED BY VETO SCORE</small>
           </div>
@@ -152,7 +154,7 @@ export function LiveCommandCenter({
             {signals.length > 0 ? (
               signals.map(({ event, signal }, index) => (
                 <button
-                  className={`signalRadarRow ${activeEventId === event.id ? "sameEvent" : ""}`}
+                  className={`signalRadarRow source-${event.source} ${activeEventId === event.id ? "sameEvent" : ""}`}
                   key={`${event.id}-${signal.selectionId}`}
                   onClick={() =>
                     onSelectSignal(event.id, signal.selectionId)
