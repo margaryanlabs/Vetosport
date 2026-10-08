@@ -198,15 +198,20 @@ export const getDataPlaneRuntimeStatus = (): DataPlaneRuntimeStatus => {
     process.env.INGESTION_SECRET,
   );
 
+  const canonicalGatewayConfigured =
+    persistenceConfigured && ingestionSecretConfigured;
+
   const blockers: string[] = [];
   if (!persistenceConfigured)
     blockers.push("Supabase persistence is not configured.");
-  if (!sportmonksConfigured)
-    blockers.push("SPORTMONKS_API_TOKEN is not configured.");
-  if (!oddsConfigured)
-    blockers.push("THE_ODDS_API_KEY is not configured.");
   if (!ingestionSecretConfigured)
     blockers.push("INGESTION_SECRET is not configured.");
+
+  const directAdapterGaps: string[] = [];
+  if (!sportmonksConfigured)
+    directAdapterGaps.push("SPORTMONKS_API_TOKEN is not configured.");
+  if (!oddsConfigured)
+    directAdapterGaps.push("THE_ODDS_API_KEY is not configured.");
 
   const feedCount =
     Number(sportmonksConfigured) + Number(oddsConfigured);
@@ -215,7 +220,9 @@ export const getDataPlaneRuntimeStatus = (): DataPlaneRuntimeStatus => {
     !persistenceConfigured
       ? "OFFLINE"
       : feedCount === 0
-        ? "STORAGE_ONLY"
+        ? canonicalGatewayConfigured
+          ? "PUSH_READY"
+          : "STORAGE_ONLY"
         : feedCount < 2 || !ingestionSecretConfigured
           ? "PARTIAL_FEEDS"
           : "LIVE_READY";
@@ -225,7 +232,9 @@ export const getDataPlaneRuntimeStatus = (): DataPlaneRuntimeStatus => {
     sportmonksConfigured,
     oddsConfigured,
     ingestionSecretConfigured,
+    canonicalGatewayConfigured,
     mode,
     blockers,
+    directAdapterGaps,
   };
 };

@@ -25,8 +25,9 @@ import { buildCouncilInputs } from "@/lib/council/registry";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 type ProviderStatus = {
-  mode: "sandbox" | "partially-configured";
+  mode: "sandbox" | "gateway-ready" | "partially-configured" | "live-ready";
   providers: {
+    canonicalGateway?: { role: string; configured: boolean };
     sportmonks: { role: string; configured: boolean };
     theOddsApi: { role: string; configured: boolean };
   };
@@ -143,7 +144,15 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   const configuredProviders = providerStatus
     ? Object.values(providerStatus.providers).filter((provider) => provider.configured).length
     : 0;
-  const providerMode = configuredProviders > 0 ? "ADAPTERS CONFIGURED" : "SANDBOX";
+  const gatewayReady = Boolean(
+    providerStatus?.providers?.canonicalGateway?.configured,
+  );
+  const providerMode =
+    configuredProviders > 0
+      ? "ADAPTERS CONFIGURED"
+      : gatewayReady
+        ? "GATEWAY READY"
+        : "SANDBOX";
   const selectSport = (sport: Sport) => {
     const workspace = liveWorkspaces.find((item) => item.sport === sport);
     if (workspace) setSelectedEventId(workspace.id);
@@ -193,7 +202,13 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
           <div className="workspaceSceneIntro">
             <span>LIVE ARENA</span>
             <strong>Follow the game. Catch the market reaction.</strong>
-            <small>{configuredProviders > 0 ? `${configuredProviders}/2 live adapters configured` : "Sandbox feed · live adapters awaiting keys"}</small>
+            <small>
+              {configuredProviders > 0
+                ? `${configuredProviders}/2 direct live adapters configured`
+                : gatewayReady
+                  ? "Canonical gateway ready · direct provider keys optional"
+                  : "Sandbox feed · live ingestion not configured"}
+            </small>
           </div>
 
       <LiveCommandCenter
