@@ -127,3 +127,20 @@
 @media(max-width:720px){
   .observedShadowList article{grid-template-columns:1fr 58px 58px}
 }
+
+
+.liveCommandEvents:empty{min-height:280px;display:grid;place-items:center;border:1px dashed rgba(255,255,255,.05);border-radius:14px;background:rgba(255,255,255,.003)}
+.liveCommandEvents:empty::before{content:"NO OBSERVED EVENTS · LIVE INGESTION IS READY";max-width:260px;color:#69717b;font-size:8px;font-weight:760;line-height:1.6;letter-spacing:.09em;text-align:center}
+.liveTruthEmpty{min-height:520px;padding:46px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;border:1px solid rgba(255,255,255,.055);border-radius:24px;background:radial-gradient(circle at 20% 50%,rgba(167,191,210,.035),transparent 28rem),rgba(10,11,14,.72)}
+.liveTruthEmpty>span{color:#a7bfd2;font-size:7px;font-weight:800;letter-spacing:.13em}
+.liveTruthEmpty>strong{max-width:760px;margin-top:14px;font:620 clamp(25px,3vw,44px)/1.08 var(--font-veto-tech),sans-serif;letter-spacing:-.04em}
+.liveTruthEmpty>p{max-width:620px;margin:18px 0 0;color:#6e7680;font-size:9px;line-height:1.65}
+.liveTruthEmpty>div{margin-top:28px;display:grid;grid-template-columns:8px auto 8px auto;align-items:center;gap:8px}
+.liveTruthEmpty>div i{width:7px;height:7px;border-radius:50%;background:#6a7079}
+.liveTruthEmpty>div i.ok{background:#72977d;box-shadow:0 0 10px rgba(114,151,125,.22)}
+.liveTruthEmpty>div span{margin-right:14px;color:#777f89;font-size:7px;font-weight:760;letter-spacing:.08em}
+@media(max-width:720px){
+  .liveTruthEmpty{min-height:400px;padding:26px 18px;border-radius:18px}
+  .liveTruthEmpty>strong{font-size:27px}
+  .liveTruthEmpty>div{grid-template-columns:8px 1fr}
+}

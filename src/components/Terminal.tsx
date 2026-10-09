@@ -21,7 +21,6 @@ import { MatchRoom } from "@/components/MatchRoom";
 import { SystemStatusPanel } from "@/components/SystemStatusPanel";
 import { ObservedEventRoom } from "@/components/ObservedEventRoom";
 import type { LiveEventSummary, LiveObservation } from "@/lib/live/types";
-import { sandboxEventSummaries } from "@/lib/live/sandbox";
 import { sandboxFootballBeforeSurface, sandboxFootballSurface } from "@/lib/sandbox/football-model";
 import { analyzeModelCouncil } from "@/lib/council/engine";
 import { buildCouncilInputs } from "@/lib/council/registry";
@@ -44,12 +43,10 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
   const [remoteWorkspace, setRemoteWorkspace] = useState<LiveWorkspace | null>(null);
   const [remoteObservation, setRemoteObservation] = useState<LiveObservation | null>(null);
-  const [eventSummaries, setEventSummaries] = useState<LiveEventSummary[]>(
-    sandboxEventSummaries,
-  );
+  const [eventSummaries, setEventSummaries] = useState<LiveEventSummary[]>([]);
   const [liveSourceMode, setLiveSourceMode] = useState<
-    "persisted" | "sandbox-fallback"
-  >("sandbox-fallback");
+    "checking" | "persisted" | "persisted-error" | "sandbox-fallback"
+  >("checking");
   const [activeView, setActiveView] = useState<WorkspaceView>("intelligence");
 
   useEffect(() => {
@@ -78,27 +75,35 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
         cache: "no-store",
         signal: controller.signal,
       })
-        .then((response) => (response.ok ? response.json() : null))
+        .then((response) => response.json().catch(() => null))
         .then(
           (
             payload:
               | {
-                  mode?: "persisted" | "sandbox-fallback";
+                  mode?:
+                    | "persisted"
+                    | "persisted-error"
+                    | "sandbox-fallback";
                   events?: LiveEventSummary[];
                 }
               | null,
           ) => {
-            if (!active || !payload?.events?.length) return;
-            setEventSummaries(payload.events);
-            const persistedMode = payload.mode === "persisted";
-            setLiveSourceMode(persistedMode ? "persisted" : "sandbox-fallback");
+            if (!active || !payload) return;
 
-            if (persistedMode) {
+            const nextEvents = payload.events ?? [];
+            const nextMode = payload.mode ?? "sandbox-fallback";
+            setEventSummaries(nextEvents);
+            setLiveSourceMode(nextMode);
+
+            if (nextEvents.length > 0) {
               setSelectedEventId((current) =>
-                payload.events!.some((event) => event.id === current)
+                nextEvents.some((event) => event.id === current)
                   ? current
-                  : payload.events![0].id,
+                  : nextEvents[0].id,
               );
+            } else {
+              setRemoteWorkspace(null);
+              setRemoteObservation(null);
             }
           },
         )
@@ -176,15 +181,36 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   const activeSummary =
     remoteObservation?.summary ??
     eventSummaries.find((event) => event.id === selectedEventId);
-  const headerEvent = activeSummary ?? {
-    sport: activeWorkspace.sport,
-    competition: activeWorkspace.competition,
-    homeCode: activeWorkspace.homeCode,
-    awayCode: activeWorkspace.awayCode,
-    homeScore: activeWorkspace.homeScore,
-    awayScore: activeWorkspace.awayScore,
-    clock: activeWorkspace.clock,
-  };
+  const truthLiveMode =
+    liveSourceMode === "persisted" ||
+    liveSourceMode === "persisted-error";
+  const checkingFeed = liveSourceMode === "checking";
+  const liveFeedEmpty = truthLiveMode && eventSummaries.length === 0;
+  const headerEvent =
+    activeSummary ??
+    (liveSourceMode === "sandbox-fallback"
+      ? {
+          sport: activeWorkspace.sport,
+          competition: activeWorkspace.competition,
+          homeCode: activeWorkspace.homeCode,
+          awayCode: activeWorkspace.awayCode,
+          homeScore: activeWorkspace.homeScore,
+          awayScore: activeWorkspace.awayScore,
+          clock: activeWorkspace.clock,
+        }
+      : {
+          sport: "football" as Sport,
+          competition: checkingFeed
+            ? "LIVE DATA · CHECKING"
+            : liveSourceMode === "persisted-error"
+              ? "LIVE DATA · READ ERROR"
+              : "LIVE DATA · NO EVENTS",
+          homeCode: "—",
+          awayCode: "—",
+          homeScore: "—",
+          awayScore: "—",
+          clock: checkingFeed ? "SYNC" : "OFF AIR",
+        });
 
   useEffect(() => {
     const selectionStillExists = activeWorkspace.opportunities.some(
@@ -289,20 +315,36 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
       {activeView === "live" && (
         <div className="workspaceScene workspaceLive">
           <div className="workspaceSceneIntro">
-            <span>{liveSourceMode === "persisted" ? "LIVE FEED" : "DEMO FEED"}</span>
+            <span>
+              {checkingFeed
+                ? "CHECKING LIVE FEED"
+                : truthLiveMode
+                  ? "LIVE FEED"
+                  : "DEMO FEED"}
+            </span>
             <strong>
-              {liveSourceMode === "persisted"
-                ? "Read the match state before the market fully reacts."
-                : "Explore VETO on a clearly labeled simulation."}
+              {checkingFeed
+                ? "Synchronizing with the persisted live data plane."
+                : liveSourceMode === "persisted-error"
+                  ? "Live ingress is ready, but the event read path is unavailable."
+                  : liveFeedEmpty
+                    ? "No observed live events in the active window."
+                    : truthLiveMode
+                      ? "Read the match state before the market fully reacts."
+                      : "Explore VETO on a clearly labeled simulation."}
             </strong>
             <small>
-              {liveSourceMode === "persisted"
-                ? "Persisted live data · source lineage preserved"
-                : configuredProviders > 0
-                  ? `${configuredProviders}/2 direct adapters configured · demo events remain labeled`
-                  : gatewayReady
-                    ? "Gateway ready · waiting for the first real event"
-                    : "Demo fallback · live ingestion not configured"}
+              {checkingFeed
+                ? "No demo data is shown while VETO verifies the live source."
+                : liveSourceMode === "persisted-error"
+                  ? "Gateway/storage are configured · retrying automatically."
+                  : liveFeedEmpty
+                    ? "Gateway ready · Truth Journal ready · waiting for the next real event."
+                    : truthLiveMode
+                      ? "Persisted live data · source lineage preserved"
+                      : configuredProviders > 0
+                        ? `${configuredProviders}/2 direct adapters configured · demo events remain labeled`
+                        : "Demo fallback · live ingestion not configured"}
             </small>
           </div>
 
@@ -317,7 +359,34 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
 
       {activeView === "intelligence" && (
         <div className="workspaceScene workspaceIntelligence">
-          {remoteObservation ? (
+          {checkingFeed || liveFeedEmpty ? (
+            <section className="liveTruthEmpty">
+              <span>
+                {checkingFeed
+                  ? "VERIFYING LIVE SOURCE"
+                  : liveSourceMode === "persisted-error"
+                    ? "LIVE READ PATH UNAVAILABLE"
+                    : "NO LIVE EVENTS"}
+              </span>
+              <strong>
+                {checkingFeed
+                  ? "VETO is checking the persisted data plane."
+                  : liveSourceMode === "persisted-error"
+                    ? "The live gateway is configured, but event reads are temporarily unavailable."
+                    : "The live stack is ready. There is simply no real event to inspect right now."}
+              </strong>
+              <p>
+                VETO will not replace an empty real feed with a synthetic match.
+                Demo events appear only when live ingestion itself is not configured.
+              </p>
+              <div>
+                <i className={gatewayReady ? "ok" : ""} />
+                <span>GATEWAY {gatewayReady ? "READY" : "PENDING"}</span>
+                <i className="ok" />
+                <span>PERSISTENCE READY</span>
+              </div>
+            </section>
+          ) : remoteObservation ? (
             <ObservedEventRoom observation={remoteObservation} />
           ) : (
             <MatchRoom
