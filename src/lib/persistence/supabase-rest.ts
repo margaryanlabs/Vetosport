@@ -20,6 +20,7 @@ import type {
   PersistedEvent,
   PersistedEventStateRecord,
   PersistedMarketQuoteRecord,
+  PersistedPredictionSnapshotRecord,
   PredictionRecord,
   ProviderHealthSample,
   UnsettledDecision,
@@ -400,6 +401,68 @@ export class SupabaseRestPersistence implements VetoPersistence {
       providerLastUpdate: row.provider_last_update ?? undefined,
       liquidity: row.liquidity == null ? undefined : Number(row.liquidity),
       suspended: row.suspended ?? undefined,
+    }));
+  }
+
+  async listRecentPredictionsForEvents(input: {
+    eventIds: string[];
+    limit?: number;
+  }): Promise<PersistedPredictionSnapshotRecord[]> {
+    if (input.eventIds.length === 0) return [];
+
+    const query = new URLSearchParams();
+    query.set("event_id", `in.(${input.eventIds.join(",")})`);
+    query.set("order", "captured_at.desc");
+    query.set(
+      "limit",
+      String(Math.min(5000, Math.max(1, input.limit ?? input.eventIds.length * 40))),
+    );
+    query.set(
+      "select",
+      [
+        "id",
+        "event_id",
+        "feature_snapshot_id",
+        "market_key",
+        "selection_key",
+        "fair_probability",
+        "fair_odds",
+        "model_agreement",
+        "uncertainty",
+        "model_signals",
+        "captured_at",
+      ].join(","),
+    );
+
+    const rows = await this.request<Array<{
+      id: string;
+      event_id: string;
+      feature_snapshot_id: string;
+      market_key: string;
+      selection_key: string;
+      fair_probability: number;
+      fair_odds: number;
+      model_agreement: number;
+      uncertainty: number;
+      model_signals?: unknown[] | null;
+      captured_at: string;
+    }>>(
+      this.tablePath("prediction_snapshots", query.toString()),
+      { method: "GET" },
+    );
+
+    return rows.map((row) => ({
+      id: row.id,
+      eventId: row.event_id,
+      featureSnapshotId: row.feature_snapshot_id,
+      marketKey: row.market_key,
+      selectionKey: row.selection_key,
+      fairProbability: Number(row.fair_probability),
+      fairOdds: Number(row.fair_odds),
+      modelAgreement: Number(row.model_agreement),
+      uncertainty: Number(row.uncertainty),
+      modelSignals: row.model_signals ?? [],
+      capturedAt: row.captured_at,
     }));
   }
 

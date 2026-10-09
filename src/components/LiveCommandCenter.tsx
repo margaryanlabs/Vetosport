@@ -128,11 +128,19 @@ export function LiveCommandCenter({
                   <div className="liveCommandPrimary awaiting">
                     <div>
                       <span>VETO STATUS</span>
-                      <strong>{readinessLabel(event.decisionReadiness?.status)}</strong>
+                      <strong>
+                        {event.shadowPredictionCount
+                          ? "SHADOW READY"
+                          : readinessLabel(event.decisionReadiness?.status)}
+                      </strong>
                     </div>
                     <div>
-                      <b>OBSERVED</b>
-                      <em>{event.markets} markets</em>
+                      <b>{event.shadowPredictionCount ? "RESEARCH" : "OBSERVED"}</b>
+                      <em>
+                        {event.shadowPredictionCount
+                          ? `${event.shadowPredictionCount} shadow lines`
+                          : `${event.markets} markets`}
+                      </em>
                     </div>
                   </div>
                 )}

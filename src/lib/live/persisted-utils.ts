@@ -69,6 +69,7 @@ export const buildPersistedSummary = (input: {
   state?: PersistedEventStateRecord;
   quotes: PersistedMarketQuoteRecord[];
   decision?: DecisionHistoryRecord;
+  shadowPredictionCount?: number;
 }): LiveEventSummary => {
   const eventQuotes = input.quotes.filter(
     (quote) => quote.eventId === input.event.id,
@@ -136,6 +137,7 @@ export const buildPersistedSummary = (input: {
     markets: new Set(eventQuotes.map((quote) => quote.marketKey)).size,
     repriced: 0,
     intelligenceReady: Boolean(input.decision),
+    shadowPredictionCount: input.shadowPredictionCount ?? 0,
     decisionReadiness,
     lastUpdatedAt,
     primarySignal: signalFromDecision(input.decision, eventQuotes),

@@ -59,6 +59,7 @@ export interface LiveEventSummary {
   markets: number;
   repriced: number;
   intelligenceReady: boolean;
+  shadowPredictionCount?: number;
   decisionReadiness?: LiveDecisionReadiness;
   lastUpdatedAt?: string;
   primarySignal?: LivePrimarySignal;
@@ -75,6 +76,18 @@ export interface LiveQuotePreview {
   suspended?: boolean;
 }
 
+export interface LiveShadowPrediction {
+  id: string;
+  marketKey: string;
+  selectionKey: string;
+  fairProbability: number;
+  fairOdds: number;
+  modelAgreement: number;
+  uncertainty: number;
+  modelVersion?: string;
+  capturedAt: string;
+}
+
 export interface LiveObservation {
   summary: LiveEventSummary;
   stateSource?: string;
@@ -83,6 +96,8 @@ export interface LiveObservation {
   state: Record<string, unknown>;
   quotes: LiveQuotePreview[];
   quoteCount: number;
+  shadowPredictions: LiveShadowPrediction[];
+  shadowPredictionCount: number;
   decisionCount: number;
   latestDecision?: LivePrimarySignal;
 }

@@ -64,6 +64,10 @@ export interface PredictionRecord {
   capturedAt: string;
 }
 
+export interface PersistedPredictionSnapshotRecord extends PredictionRecord {
+  id: string;
+}
+
 export interface ProviderHealthSample {
   providerId: string;
   status: "healthy" | "degraded" | "offline";
@@ -183,6 +187,11 @@ export interface VetoPersistence {
     eventIds: string[];
     limit?: number;
   }): Promise<PersistedMarketQuoteRecord[]>;
+
+  listRecentPredictionsForEvents(input: {
+    eventIds: string[];
+    limit?: number;
+  }): Promise<PersistedPredictionSnapshotRecord[]>;
 
   listDecisionHeads(eventIds: string[]): Promise<DecisionHistoryRecord[]>;
 

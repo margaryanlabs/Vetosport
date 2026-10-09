@@ -23,6 +23,7 @@ export const sandboxEventSummaries: LiveEventSummary[] = liveWorkspaces.map(
       markets: workspace.markets,
       repriced: workspace.repriced,
       intelligenceReady: true,
+      shadowPredictionCount: 0,
       primarySignal: {
         selectionId: primary.selection.id,
         label: primary.selection.label,

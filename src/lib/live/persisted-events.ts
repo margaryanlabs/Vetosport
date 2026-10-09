@@ -22,9 +22,13 @@ export const listPersistedLiveEvents =
     if (events.length === 0) return [];
 
     const eventIds = events.map((event) => event.id);
-    const [states, quotes, decisions] = await Promise.all([
+    const [states, quotes, predictions, decisions] = await Promise.all([
       persistence.listRecentEventStates({ eventIds }),
       persistence.listRecentQuotesForEvents({
+        eventIds,
+        limit: 4000,
+      }),
+      persistence.listRecentPredictionsForEvents({
         eventIds,
         limit: 4000,
       }),
@@ -33,6 +37,22 @@ export const listPersistedLiveEvents =
 
     const statesByEvent = latestByEvent(states);
     const decisionsByEvent = latestByEvent(decisions);
+    const shadowCountByEvent = new Map<string, number>();
+
+    for (const eventId of eventIds) {
+      const eventPredictions = predictions.filter(
+        (prediction) => prediction.eventId === eventId,
+      );
+      const latestCapturedAt = eventPredictions[0]?.capturedAt;
+      shadowCountByEvent.set(
+        eventId,
+        latestCapturedAt
+          ? eventPredictions.filter(
+              (prediction) => prediction.capturedAt === latestCapturedAt,
+            ).length
+          : 0,
+      );
+    }
 
     const statusRank = (status: LiveEventSummary["status"]) =>
       status === "live"
@@ -50,6 +70,7 @@ export const listPersistedLiveEvents =
           state: statesByEvent.get(event.id),
           quotes,
           decision: decisionsByEvent.get(event.id),
+          shadowPredictionCount: shadowCountByEvent.get(event.id) ?? 0,
         }),
       )
       .sort(
