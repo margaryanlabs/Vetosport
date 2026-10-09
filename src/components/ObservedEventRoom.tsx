@@ -69,8 +69,9 @@ export function ObservedEventRoom({
       <div className="observedStatusBand">
         <div><span>DATA STATE</span><strong>OBSERVED</strong><small>Persisted event path</small></div>
         <div><span>MARKETS</span><strong>{event.markets}</strong><small>{observation.quoteCount} quote rows</small></div>
+        <div><span>SHADOW</span><strong>{observation.shadowPredictionCount ? "READY" : "EMPTY"}</strong><small>{observation.shadowPredictionCount} research lines</small></div>
         <div><span>LEDGER</span><strong>{observation.decisionCount ? "PRESENT" : "EMPTY"}</strong><small>{observation.decisionCount} decisions</small></div>
-        <div><span>VETO STATUS</span><strong>{signal?.decision ?? readinessLabel(readiness?.status)}</strong><small>{signal ? "Persisted decision" : "Preflight · no synthetic forecast"}</small></div>
+        <div><span>VETO STATUS</span><strong>{signal?.decision ?? observation.shadowPredictionCount ? "RESEARCH ONLY" : readinessLabel(readiness?.status)}</strong><small>{signal ? "Persisted decision" : observation.shadowPredictionCount ? "Shadow output · no decision authority" : "Preflight · no synthetic forecast"}</small></div>
       </div>
 
       <div className="observedBody">
@@ -146,11 +147,55 @@ export function ObservedEventRoom({
             </div>
           )}
 
+          {!signal && observation.shadowPredictions.length ? (
+            <div className="observedShadowPanel">
+              <header>
+                <div>
+                  <span>SHADOW MODEL OUTPUT</span>
+                  <strong>RESEARCH ONLY · NO DECISION AUTHORITY</strong>
+                </div>
+                <small>
+                  {new Date(
+                    observation.shadowPredictions[0].capturedAt,
+                  ).toLocaleTimeString("en-GB")}
+                </small>
+              </header>
+              <p>
+                These probabilities come from the persisted shadow pipeline.
+                They are visible for research and validation only. VETO has not
+                emitted EDGE, WATCH or PASS for them.
+              </p>
+              <div className="observedShadowList">
+                {observation.shadowPredictions.slice(0, 8).map((prediction) => (
+                  <article key={prediction.id}>
+                    <div>
+                      <strong>
+                        {prediction.selectionKey
+                          .replaceAll("-", " ")
+                          .replaceAll("_", " ")}
+                      </strong>
+                      <small>{prediction.marketKey}</small>
+                    </div>
+                    <span>
+                      <b>{pct(prediction.fairProbability)}</b>
+                      <small>FAIR P</small>
+                    </span>
+                    <span>
+                      <b>{prediction.fairOdds.toFixed(2)}</b>
+                      <small>FAIR ODDS</small>
+                    </span>
+                  </article>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           <div className="observedLineage">
             <div><span>STATE SOURCE</span><strong>{observation.stateSource ?? "—"}</strong></div>
             <div><span>STATE LATENCY</span><strong>{observation.stateLatencyMs == null ? "—" : `${Math.round(observation.stateLatencyMs)} ms`}</strong></div>
             <div><span>SOURCE MODE</span><strong>PERSISTED</strong></div>
-            <div><span>MODEL</span><strong>{readiness?.modelVersion ?? "—"}</strong></div>
+            <div><span>MODEL</span><strong>{observation.shadowPredictions[0]?.modelVersion ?? readiness?.modelVersion ?? "—"}</strong></div>
+            <div><span>SHADOW SNAPSHOTS</span><strong>{observation.shadowPredictionCount}</strong></div>
             <div><span>PRODUCTION AUTHORITY</span><strong>{readiness?.productionAuthorized ? "AUTHORIZED" : "BLOCKED"}</strong></div>
           </div>
         </aside>
