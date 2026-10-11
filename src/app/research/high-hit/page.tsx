@@ -2,6 +2,7 @@
 import { useMemo,useState } from "react";
 import { HIGH_HIT_CATALOG, type HighHitSport } from "@/lib/research/high-hit/catalog";
 import { analyzeHighHitEvidence } from "@/lib/research/high-hit/engine";
+import { HighHitStructural } from "@/components/HighHitStructural";
 import "./high-hit.css";
 
 type Filter="all"|HighHitSport;
@@ -14,7 +15,6 @@ const sports:Array<{id:Filter,label:string}>=[
 const pct=(v:number)=>(100*v).toFixed(2).replace(".",",")+"%";
 const money=(v:number)=>(v>0?"+":v<0?"−":"")+"$"+Math.abs(v).toFixed(2);
 const hitLabel=(v:string)=>v==="HISTORICAL_MATCH_LEVEL"?"ИСТОРИЧЕСКАЯ ЧАСТОТА":v==="OFFICIAL_AGGREGATE"?"ОФИЦИАЛЬНЫЙ ПРИМЕР":"ТОЛЬКО ГИПОТЕЗА";
-const sort=(a:number,b:number)=>a-b;
 export default function HighHitScout(){
  const [filter,setFilter]=useState<Filter>("all");
  const [selected,setSelected]=useState(HIGH_HIT_CATALOG[1].id);
@@ -114,8 +114,9 @@ export default function HighHitScout(){
     </>:<p className="hitError">{results.error}</p>}
    </section>
   </div>
+  <HighHitStructural />
   <section className="hitChat">
-   <div><small>03 / CHATGPT BRIDGE</small><h2>Исследуем через этот чат</h2><p>Система собирает условия рынка и предупреждения в копируемый кейс. Без OpenAI API обмен ручной, автономного мониторинга нет.</p></div>
+   <div><small>04 / CHATGPT BRIDGE</small><h2>Исследуем через этот чат</h2><p>Система собирает условия рынка и предупреждения в копируемый кейс. Без OpenAI API обмен ручной, автономного мониторинга нет.</p></div>
    <div><textarea readOnly value={caseText} aria-label="Промпт для ChatGPT"/><button type="button" onClick={copy}>Скопировать исследовательский кейс ↗</button>{copyStatus&&<p role="status">{copyStatus}</p>}</div>
   </section>
   <footer className="hitFooter">ZERO–S · NO VERIFIED BETTING EDGE · NO AUTO-WAGER · ALL QUOTES ARE ILLUSTRATIVE</footer>
