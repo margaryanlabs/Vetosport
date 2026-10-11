@@ -77,6 +77,7 @@ export default function LateTailResearch() {
     <div style={{display:"flex",flexWrap:"wrap",gap:12,marginBottom:24}}>
       <a href="/research/goal-cascade" style={{color:"#b4cedd",border:"1px solid rgba(180,206,221,.2)",padding:"12px 15px",textDecoration:"none",fontSize:12}}>LAB 002 → Проверка гипотезы Goal Cascade</a>
       <a href="/research/shadow-journal" style={{color:"#b4cedd",border:"1px solid rgba(180,206,221,.2)",padding:"12px 15px",textDecoration:"none",fontSize:12}}>LAB 003 → Paper Journal</a>
+      <a href="/research/high-hit" style={{color:"#b4cedd",border:"1px solid rgba(180,206,221,.2)",padding:"12px 15px",textDecoration:"none",fontSize:12}}>LAB 004 → 90%+ Cross-Sport Research</a>
     </div>
     <div className="zeroS-grid">
       <section className="zeroS-card">
