@@ -27,6 +27,9 @@ const inputs: Array<{ key: keyof LateTailInput; label: string; step: number }> =
 
 export default function LateTailResearch() {
   const [input, setInput] = useState<LateTailInput>(initial);
+  const [matchLabel, setMatchLabel] = useState("");
+  const [quoteSource, setQuoteSource] = useState("");
+  const [copyStatus, setCopyStatus] = useState("");
   const calculation = useMemo(() => {
     try { return { result: evaluateLateTail(input), error: "" }; }
     catch (error) {
@@ -34,6 +37,30 @@ export default function LateTailResearch() {
     }
   }, [input]);
   const result = calculation.result;
+  const chatHandoff = [
+    "VETO SPORT · ZERO-S / CASE FOR CHATGPT",
+    "Режим: исследование, без рекомендации реальной ставки.",
+    "Матч / лига: " + (matchLabel.trim() || "не указан"),
+    "Счёт: " + input.scoreHome + ":" + input.scoreAway,
+    "Минута: " + input.elapsedMinutes,
+    "Рынок: Under " + input.underLine,
+    "Наблюдаемый коэффициент: " + input.decimalOdds,
+    "Источник котировки: " + (quoteSource.trim() || "НЕ УКАЗАН / НЕ ПОДТВЕРЖДЁН"),
+    "Условная сумма: $" + input.hypotheticalStake + " (PAPER ONLY)",
+    "Условная интенсивность: " + input.baselineGoalRatePerMinute + " голов/мин",
+    "Порог безубыточности: " + (100/input.decimalOdds).toFixed(2) + "%",
+    "Вывод модели: " + (result ? result.verdict : "INPUT_ERROR"),
+    "Запрос: проверь точный контракт рынка, источники, динамику минут, добавленное время, сценарии и риски; отделяй подтверждённые факты от допущений.",
+    "ВАЖНО: результаты модели ZERO-S не откалиброваны, и в чате нельзя утверждать наличие преимущества или гарантированного дохода.",
+  ].join("\n");
+  const copyCase = async () => {
+    try {
+      await navigator.clipboard.writeText(chatHandoff);
+      setCopyStatus("Структурированный кейс скопирован. Можно вставить его в чат.");
+    } catch {
+      setCopyStatus("Автокопирование заблокировано браузером. Выделите текст в поле ниже и скопируйте вручную.");
+    }
+  };
   const onField = (key: keyof LateTailInput, raw: string) =>
     setInput(old => ({ ...old, [key]: Number(raw) }));
   return <main className="zeroS">
@@ -54,6 +81,14 @@ export default function LateTailResearch() {
     <div className="zeroS-grid">
       <section className="zeroS-card">
         <div className="zeroS-heading"><small>01 / PARAMETERS</small><h2>Состояние матча</h2></div>
+        <div style={{marginBottom:17,display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          <label style={{display:"flex",flexDirection:"column",gap:9,color:"#98b0c0",fontSize:11}}>Матч / лига
+            <input type="text" value={matchLabel} onChange={e=>setMatchLabel(e.target.value)} placeholder="Команда А — Команда Б" maxLength={180} style={{background:"#0c141c",color:"#e6f1f8",padding:12,border:"1px solid #344858",width:"100%"}} />
+          </label>
+          <label style={{display:"flex",flexDirection:"column",gap:9,color:"#98b0c0",fontSize:11}}>Источник котировки
+            <input type="text" value={quoteSource} onChange={e=>setQuoteSource(e.target.value)} placeholder="Источник / ручной ввод" maxLength={120} style={{background:"#0c141c",color:"#e6f1f8",padding:12,border:"1px solid #344858",width:"100%"}} />
+          </label>
+        </div>
         <div className="zeroS-fields">
           {inputs.map(field => <label key={field.key}>
             <span>{field.label}</span>
@@ -82,6 +117,14 @@ export default function LateTailResearch() {
             <div><span>При проигрыше</span><b>{usd(-result.hypotheticalLossOnDefeat)}</b></div>
             <div><span>Условное ожидание</span><b>{usd(result.hypotheticalExpectedPnL)}</b></div>
           </div>
+          <section style={{padding:"20px 0",borderTop:"1px solid rgba(161,184,204,.14)"}}>
+            <small style={{color:"#9ebbd0",letterSpacing:".12em"}}>CHAT BRIDGE / NO OPENAI API</small>
+            <h3 style={{fontSize:16,margin:"12px 0"}}>Передать исследование в ChatGPT</h3>
+            <p className="zeroS-muted">Без API ключа передача происходит через копирование текста: автоматического фонового чата или live-потока здесь нет.</p>
+            <textarea aria-label="Структурированный кейс для ChatGPT" readOnly value={chatHandoff} style={{width:"100%",minHeight:155,resize:"vertical",background:"#0b151e",border:"1px solid #314654",padding:13,color:"#d3e1e9",fontSize:11,lineHeight:1.7}} />
+            <button type="button" onClick={copyCase} style={{background:"#c6d9e5",color:"#101b23",padding:"11px 15px",fontWeight:750,border:0,cursor:"pointer",marginTop:12}}>Скопировать кейс для ChatGPT</button>
+            {copyStatus&&<p role="status" className="zeroS-muted">{copyStatus}</p>}
+          </section>
           <p className="zeroS-warning">Неоткалиброванная модель. Даже положительное условное ожидание НЕ является доказательством прибыльной ставки. Исполнимость цены и вероятность не проверены.</p>
         </> : <p className="zeroS-muted">Исправьте ввод, чтобы получить сценарный расчёт.</p>}
       </section>
