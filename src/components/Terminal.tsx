@@ -347,7 +347,8 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
             {[
               {url:"/research/late-tail",no:"01",label:"CLOSING-TIME INTELLIGENCE",sub:"Хвост поздних голов · 12 сценариев"},
               {url:"/research/goal-cascade",no:"02",label:"GOAL CASCADE FALSIFICATION",sub:"Гипотеза и историческое опровержение"},
-              {url:"/research/shadow-journal",no:"03",label:"SHADOW JOURNAL",sub:"Ручной paper-журнал без ставок"}
+              {url:"/research/shadow-journal",no:"03",label:"SHADOW JOURNAL",sub:"Ручной paper-журнал без ставок"},
+              {url:"/research/high-hit",no:"04",label:"CROSS–SPORT HIGH-HIT RADAR",sub:"6 видов спорта · исторический порог 90% · проверка цены"}
             ].map(x=><a key={x.url} href={x.url} style={{display:"flex",flexDirection:"column",gap:10,padding:"18px",color:"#c8dce8",background:"linear-gradient(145deg,rgba(18,33,44,.95),rgba(9,18,26,.9))",border:"1px solid rgba(147,180,202,.25)",textDecoration:"none"}}>
               <small style={{fontSize:10,letterSpacing:".14em",color:"#93bbcc"}}>ZERO–S / LAB {x.no} · RESEARCH ONLY</small>
               <strong style={{fontSize:12,letterSpacing:".04em"}}>{x.label}</strong>
