@@ -47,6 +47,10 @@ export default function LateTailResearch() {
       <h1>Последние минуты.<br/><em>Настоящая цена риска.</em></h1>
       <p>Независимая лаборатория риска редких голов, дополнительного времени и маленьких коэффициентов. Математический симулятор, не реальный прогноз и не рекомендация делать ставку.</p>
     </section>
+    <div style={{display:"flex",flexWrap:"wrap",gap:12,marginBottom:24}}>
+      <a href="/research/goal-cascade" style={{color:"#b4cedd",border:"1px solid rgba(180,206,221,.2)",padding:"12px 15px",textDecoration:"none",fontSize:12}}>LAB 002 → Проверка гипотезы Goal Cascade</a>
+      <a href="/research/shadow-journal" style={{color:"#b4cedd",border:"1px solid rgba(180,206,221,.2)",padding:"12px 15px",textDecoration:"none",fontSize:12}}>LAB 003 → Paper Journal</a>
+    </div>
     <div className="zeroS-grid">
       <section className="zeroS-card">
         <div className="zeroS-heading"><small>01 / PARAMETERS</small><h2>Состояние матча</h2></div>
