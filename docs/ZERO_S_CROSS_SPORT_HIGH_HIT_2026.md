@@ -52,3 +52,18 @@ Verified source context:
 Select an idea at \`/research/high-hit\`; inspect provenance, change the **illustrative quote** if evaluating price sensitivity, and copy the case to ChatGPT. ChatGPT can look up public information and discuss match-specific uncertainty, but cannot see live sportsbook order acceptance without a verified source and cannot monitor autonomously without a configured recurring task.
 
 **Product aim:** sell auditable cross-sport uncertainty & statistics dashboards to sports media and analysts, rather than promise returns from gambling.
+
+
+## Independently solved scoring rules (structural, NOT measured)
+
+Research package \`src/lib/research/high-hit/structural.ts\` and public page \`/research/high-hit\` add two more conditional probability experiments with **closed-form Markov/deuce treatment**. Both assume independent successive rallies/points and a constant player-side probability \`p\`; they are NOT empirical historical rates, have no current odds, and assume standard rule variants only.
+
+1. **Tennis: winner of current game at 40:0**. Under classic advantage scoring the opponent must win three consecutive points to reach deuce, then win from deuce. Let \`q = 1-p\`. Deuce win chance for first side is \`D=p²/(p²+q²)\`. Thus \`P(first player wins game | 40:0)=1-q³(1-D)\`. At hypothetical p=0.50: **93.75%**, lower than 95.24% break-even at a hypothetical quote of 1.05. At p=0.45: **90.03%**; at p=0.35: **78.71%**. Therefore the entire claim hinges on knowing the player's actual point-win probability and the market settlement rules. ITF rule basis: https://www.itftennis.com/en/about-us/organisation/tennis-glossary/ .
+
+2. **Volleyball: winner of current (non-deciding) set at 24:18**. Under standard set-to-25 and win-by-2 rules, the opponent must win six consecutive rallies to reach 24:24 and then prevail in deuce play. \`P(first team wins set | 24:18)=1-q⁶(1-D)\` under iid rallies. Hypothetical p=.50: **99.21875%**, p=.45: **98.3419%**, p=.35: **94.1533%**. FIVB 2025–2028 standard: https://www.fivb.com/volleyball/the-game/basic-rules/ .
+
+3. **No price discovery was performed for either scenario.** Sportsbooks may suspend game/set markets near settlement; returns, voids and retirement differ per provider. A mathematically rare reversal says nothing about the return actually available on the market.
+
+Code offers both standalone calculators, six input p stress scenarios, read-only API \`GET /api/intelligence/research/high-hit/structural\`, and an explicit \`PASS_RESEARCH_ONLY\` verdict. Selfchecks include deuce symmetry, current tennis 40:0, volleyball 24:18 and post-deuce advancement and mathematical monotonicity.
+
+Scientific next steps: fit real point/rally win chances *before* observing outcome; account for serving side, game momentum, players, surface, score and fatigue; then backtest against as-of timestamps for each sport. Do not treat illustrative p=.50 as actual 2026 evidence.
