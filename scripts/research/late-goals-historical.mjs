@@ -54,7 +54,9 @@ const observations = valid.flatMap(fixture => [77,80,83,85].flatMap(minute => {
   const remaining = fixture.goalEvents.filter(e => e.minute > minute).length;
   const year = Number(fixture.date.slice(0,4));
   const month = Number(fixture.date.slice(5,7));
-  return [{ minute, remaining, season: month < 7 ? year-1 : year }];
+  const earlierGoals = fixture.goalEvents.filter(e => e.minute <= minute);
+  const lastGoalMinute = Math.max(...earlierGoals.map(e => e.minute));
+  return [{ minute, remaining, lastGoalMinute, season: month < 7 ? year-1 : year }];
 }));
 const stats = (subset) => {
   const n = subset.length, twoPlus = subset.filter(r => r.remaining >= 2).length;
@@ -64,6 +66,12 @@ const stats = (subset) => {
 };
 const byMinute = Object.fromEntries([77,80,83,85].map(m => [m, stats(observations.filter(r => r.minute === m))]));
 const bySeason = Object.fromEntries([2012,2013,2014].map(s => [s, stats(observations.filter(r => r.minute === 80 && r.season === s))]));
+const minute80 = observations.filter(row=>row.minute===80);
+const cascadeHypothesis = {
+  lastGoalMinutes76To80: stats(minute80.filter(row=>row.lastGoalMinute>=76)),
+  lastGoalBefore76: stats(minute80.filter(row=>row.lastGoalMinute<76)),
+  warning: "Exploratory association only; not a causal cascade effect, no bookmaker odds and no modern football calibration"
+};
 const p80 = byMinute[80].successProbabilityUnder35;
 console.log(JSON.stringify({
   source: "AndrewKinsman/Football-Goal-Time-Analysis (2012-2015)",
@@ -72,7 +80,7 @@ console.log(JSON.stringify({
   excludedFixtures: fixtures.size-valid.length,
   orphanGoalEvents,
   convention: "Conditioned on completed minute; goals labeled 90 include stoppage time with no precise clock",
-  byMinute, bySeason,
+  byMinute, bySeason, cascadeHypothesis,
   illustrativeConstantOdds: {
     odds: 1.05, breakEvenSuccess: 1/1.05,
     hypotheticalExpectedReturnPer200: p80 === null ? null : 200*(1.05*p80-1),
