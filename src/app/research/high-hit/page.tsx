@@ -108,7 +108,7 @@ export default function HighHitScout(){
       <div><span>Условный EV на наблюдение</span><strong>{money(result.hypotheticalEVIncludingVoids)}</strong></div>
       <div><span>EV по нижней границе</span><strong>{money(result.hypotheticalLowerBoundEVIncludingVoids)}</strong></div>
       <div><span>Выигрышей перекрывают один проигрыш</span><strong>{result.winsToOffsetOneLoss.toFixed(1)}</strong></div>
-      <div><span>Оценка 90%+ с поправкой на выборку</span><strong>{result.atLeast90Lower95?"ДА, ПО СТАРЫМ ДАННЫМ":"НЕ ПОДТВЕРЖДЕНО"}</strong></div>
+      <div><span>Оценка 90%+ с поправкой на выборку</span><strong>{result.atLeast90Lower95?(manual?"ДА, ТОЛЬКО ПО РУЧНЫМ ЧИСЛАМ":"ДА, ПО ИСТОРИЧЕСКОЙ ВЫБОРКЕ"):"НЕ ПОДТВЕРЖДЕНО"}</strong></div>
      </div>
      <p className="hitMuted">Нижняя граница 95% характеризует лишь статистическую неопределённость данной выборки. Она не учитывает смену эпохи, недоступные коэффициенты, выборочный отбор или другие риски.</p>
     </>:<p className="hitError">{results.error}</p>}
