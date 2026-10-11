@@ -72,6 +72,36 @@ const cascadeHypothesis = {
   lastGoalBefore76: stats(minute80.filter(row=>row.lastGoalMinute<76)),
   warning: "Exploratory association only; not a causal cascade effect, no bookmaker odds and no modern football calibration"
 };
+const holdout2024 = (() => {
+  // Forward validation: train on 2012 and 2013 seasonal starts; test strictly
+  // on the unseen 2014 season. One observation per match at minute 80.
+  const train = observations.filter(x=>x.minute===80&&x.season<=2013);
+  const test = observations.filter(x=>x.minute===80&&x.season===2014);
+  if(!train.length||!test.length)return {status:"INSUFFICIENT_ROWS"};
+  const trainTailCount=train.filter(x=>x.remaining>=2).length;
+  const testTailCount=test.filter(x=>x.remaining>=2).length;
+  // Jeffreys Beta(0.5,0.5) smoothing avoids 0/1 forecast probabilities.
+  const probabilityTwoPlus=(trainTailCount+.5)/(train.length+1);
+  const brier=test.reduce((sum,row)=>{
+    const y=Number(row.remaining>=2);
+    return sum+(probabilityTwoPlus-y)**2;
+  },0)/test.length;
+  const logLoss=test.reduce((sum,row)=>{
+    const y=Number(row.remaining>=2);
+    return sum-(y*Math.log(probabilityTwoPlus)+(1-y)*Math.log1p(-probabilityTwoPlus));
+  },0)/test.length;
+  return {
+    status:"OUT_OF_TIME_RESEARCH_BASELINE_NOT_A_BETTING_MODEL",
+    trainSeasons:[2012,2013],testSeason:2014,
+    trainN:train.length,trainRareEvents:trainTailCount,
+    predictedRareEventProbability:probabilityTwoPlus,
+    testN:test.length,testRareEvents:testTailCount,
+    realizedRareEventRate:testTailCount/test.length,
+    brier,logLoss,
+    validation:"One observation per match at minute 80, no lookahead into 2014, not a full competition adjustment.",
+    warning:"Old sample and 2014 regime drift invalidate use as modern 2026 price advantage."
+  };
+})();
 const p80 = byMinute[80].successProbabilityUnder35;
 console.log(JSON.stringify({
   source: "AndrewKinsman/Football-Goal-Time-Analysis (2012-2015)",
@@ -80,7 +110,7 @@ console.log(JSON.stringify({
   excludedFixtures: fixtures.size-valid.length,
   orphanGoalEvents,
   convention: "Conditioned on completed minute; goals labeled 90 include stoppage time with no precise clock",
-  byMinute, bySeason, cascadeHypothesis,
+  byMinute, bySeason, cascadeHypothesis, holdout2024,
   illustrativeConstantOdds: {
     odds: 1.05, breakEvenSuccess: 1/1.05,
     hypotheticalExpectedReturnPer200: p80 === null ? null : 200*(1.05*p80-1),
