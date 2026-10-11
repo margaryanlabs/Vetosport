@@ -60,7 +60,12 @@ const observations = valid.flatMap(fixture => [77,80,83,85].flatMap(minute => {
 }));
 const stats = (subset) => {
   const n = subset.length, twoPlus = subset.filter(r => r.remaining >= 2).length;
-  return { n, twoPlus, probabilityTwoPlus: n ? twoPlus/n : null,
+  const threePlus = subset.filter(r => r.remaining >= 3).length;
+  const fourPlus = subset.filter(r => r.remaining >= 4).length;
+  return { n, twoPlus, threePlus, fourPlus,
+    probabilityTwoPlus: n ? twoPlus/n : null,
+    under45: n ? {wins:n-threePlus, losses:threePlus, successRate:(n-threePlus)/n, wilson95ForWin:wilson(n-threePlus,n)} : null,
+    under55: n ? {wins:n-fourPlus, losses:fourPlus, successRate:(n-fourPlus)/n, wilson95ForWin:wilson(n-fourPlus,n)} : null,
     wilson95: wilson(twoPlus, n),
     successProbabilityUnder35: n ? 1-twoPlus/n : null };
 };
