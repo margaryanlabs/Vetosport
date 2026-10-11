@@ -1,5 +1,6 @@
 import {analyzeHighHitEvidence,wilson95} from "./engine";
 import {HIGH_HIT_CATALOG} from "./catalog";
+import {structuralSelfcheck} from "./structural";
 export function runHighHitSelfcheck(){
  const checks:Array<{name:string;passed:boolean}>=[];
  const add=(name:string,passed:boolean)=>checks.push({name,passed});
@@ -26,5 +27,7 @@ export function runHighHitSelfcheck(){
  try{analyzeHighHitEvidence({wins:0,losses:0,voids:100,decimalOdds:1.1,hypotheticalStake:100});}catch{badQuarter=true}
  add("All-void outcomes rejected",badQuarter);
  add("No production approval even when sampling and odds pass",u55.verdict==="PASS_RESEARCH_ONLY"&&u55.status==="RESEARCH_ONLY_NOT_TRADE_READY");
+ const structural=structuralSelfcheck();
+ checks.push(...structural.checks);
  return{passed:checks.every(x=>x.passed),checks};
 }
