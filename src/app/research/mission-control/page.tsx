@@ -3,6 +3,7 @@
 import {useEffect,useMemo,useState} from "react";
 import {BOARD_VERSION,MISSIONS,SOURCES,type Stage,type Mission,type Track} from "@/lib/research/mission-control/catalog";
 import {describeQuote,quoteBreakEven,type QuoteObservation} from "@/lib/research/mission-control/quotes";
+import type {SourceObservatoryReport} from "@/lib/research/mission-control/source-observatory";
 import {HIGH_HIT_CATALOG} from "@/lib/research/high-hit/catalog";
 import {analyzeHighHitEvidence} from "@/lib/research/high-hit/engine";
 import "./mission-control.css";
@@ -51,6 +52,9 @@ export default function MissionControlPage(){
  const [ready,setReady]=useState(false);
  const [health,setHealth]=useState<Readiness|null>(null);
  const [healthError,setHealthError]=useState("");
+ const [sourceReport,setSourceReport]=useState<SourceObservatoryReport|null>(null);
+ const [sourceError,setSourceError]=useState("");
+ const [sourceLoading,setSourceLoading]=useState(false);
  const [notice,setNotice]=useState("");
  const [time,setTime]=useState<Date|null>(null);
  useEffect(()=>{
@@ -81,11 +85,31 @@ export default function MissionControlPage(){
    .catch(()=>{if(active)setHealthError("Статус провайдера недоступен. Это не подтверждает наличие котировок.");});
   return()=>{active=false;};
  },[]);
+ useEffect(()=>{
+  let active=true;
+  fetch("/api/intelligence/research/source-observatory",{cache:"no-store"})
+   .then(async response=>{const report:SourceObservatoryReport=await response.json();return {report,ok:response.ok};})
+   .then(({report,ok})=>{if(active){setSourceReport(report);if(!ok)setSourceError("Источник данных временно недоступен.");}})
+   .catch(()=>{if(active)setSourceError("Источники данных не удалось проверить.");});
+  return()=>{active=false;};
+ },[]);
  const observed=MISSIONS.filter(x=>x.stage==="BUILT").length;
  const blockers=MISSIONS.filter(x=>x.stage==="BLOCKED").length;
  const personalComplete=Object.values(personal).filter(x=>x==="COMPLETE").length;
  const waiting=MISSIONS.filter(x=>x.priority===1&&x.stage!=="BUILT");
  const asOf=time?.toISOString()??new Date(0).toISOString();
+ async function refreshStoredSources(){
+   setSourceLoading(true);setSourceError("");
+   try{
+     const response=await fetch("/api/intelligence/research/source-observatory",{cache:"no-store"});
+     const report:SourceObservatoryReport=await response.json();
+     setSourceReport(report);
+     if(!response.ok)setSourceError("База временно недоступна; последние котировки не подтверждены.");
+   }catch{
+     setSourceReport(null);
+     setSourceError("Не удалось прочитать сохранённые источники. Это НЕ означает, что рынок доступен.");
+   }finally{setSourceLoading(false);}
+ }
  const quoteRows=useMemo(()=>quotes.map(q=>{
   try{return describeQuote(q,asOf);}
   catch{return null;}
@@ -178,6 +202,36 @@ export default function MissionControlPage(){
   </>}
   {tab==="ODDS"&&<>
    <div className="missionHead missionListHead"><div><small>05 / PRICE INVESTIGATION</small><h2>Кабинет коэффициентов</h2></div><span>Математические пороги, НЕ реальные цены букмекеров</span></div>
+   <section className="missionPanel">
+    <div className="missionHead"><div><small>05A / ACTUAL STORED SOURCE MARKS</small><h2>Источники котировок · фактические записи</h2></div>
+     <button type="button" className="missionButtonSub" onClick={()=>void refreshStoredSources()} disabled={sourceLoading}>{sourceLoading?"Проверяем хранилище…":"Обновить источники ↻"}</button>
+    </div>
+    <p className="missionMuted">Это снимки из существующего хранилища VETO, без новых платных запросов к букмекерам. Время провайдера не доказывает доступную цену, принятие ставки или статистическое преимущество.</p>
+    {sourceError&&<p className="missionNote" role="status">{sourceError}</p>}
+    {!sourceReport&&!sourceError&&<p className="missionMuted">{sourceLoading?"Читаем только сохранённые наблюдения.":"Открой «Обновить источники», чтобы проверить состояние."}</p>}
+    {sourceReport&&<>
+      <div className="missionHealth">
+       <div><span>Событий из хранилища</span><b>{sourceReport.eventCount}</b></div>
+       <div><span>Сохранённых снимков (в окне запроса)</span><b>{sourceReport.storedQuoteSnapshots}</b></div>
+       <div><span>Уникальных контрактов в выборке</span><b>{sourceReport.uniqueContracts}</b></div>
+       <div><span>Недавний timestamp поставщика ≤60 сек</span><b>{sourceReport.recentProviderTimestampCount}</b></div>
+       <div><span>Отметка «рынок приостановлен»</span><b>{sourceReport.suspendedCount}</b></div>
+       <div><span>Отсутствует timestamp поставщика</span><b>{sourceReport.missingProviderTimestampCount}</b></div>
+       <div><span>Последний timestamp поставщика</span><b>{sourceReport.lastProviderAt?new Date(sourceReport.lastProviderAt).toLocaleString("ru-RU"):"—"}</b></div>
+       <div><span>Подтверждено принятие ставки</span><b>НЕТ</b></div>
+      </div>
+      <p className="missionNote">{sourceReport.message} · Статус: {sourceReport.mode}. Реальные цены публично скрыты до проверки права их распространения.</p>
+      {sourceReport.displayedQuotes.length>0&&<div className="missionQuoteRows">
+       {sourceReport.displayedQuotes.map((q,i)=><article key={q.eventId+q.bookmaker+q.marketKey+q.selectionKey+i}>
+        <header><b>{q.eventLabel}</b><small>{q.sport} · {q.eventState}</small></header>
+        <p>{q.provider} / {q.bookmaker} · {q.marketKey} · {q.selectionLabel} {q.line??""}</p>
+        <div><strong>{q.decimalOdds.toFixed(3)}</strong><span>{q.status}</span></div>
+        <small>Источник: {q.providerLastUpdate??"нет времени"} · получено: {q.capturedAt}</small>
+        <em>НЕ ПОДТВЕРЖДЕНЫ ДОСТУПНОСТЬ, ЛИМИТЫ И ИСПОЛНЕНИЕ</em>
+       </article>)}
+      </div>}
+    </>}
+   </section>
    <section className="missionPanel"><div className="missionPriceStrip">
     {fixedPrices.map(v=><div key={v}><small>КОЭФ. {v.toFixed(2)}</small><strong>{fmt(quoteBreakEven(v))}</strong><span>порог безубыточности</span></div>)}
    </div>
@@ -219,6 +273,6 @@ export default function MissionControlPage(){
    <div className="missionSources">{SOURCES.map(x=><article key={x.id}><small>{x.kind}</small><h3>{x.name}</h3><p>{x.evidence}</p><div className="missionSourceLic">ПРАВА / ОГРАНИЧЕНИЯ<br/>{x.licensing}</div><a href={x.url} target="_blank" rel="noreferrer">Открыть официальный источник ↗</a></article>)}</div>
   </>}
   {notice&&tab!=="ODDS"&&<p role="status" className="missionMuted">{notice}</p>}
-  <footer className="missionFooter"><span>MISSION CONTROL · {BOARD_VERSION}</span><span>NO AUTONOMOUS LIVE PRICES · NO VERIFIED 2026 EDGE · RESEARCH ONLY</span><a href="/research/high-hit">HIGH-HIT LAB ↗</a></footer>
+  <footer className="missionFooter"><span>MISSION CONTROL · {BOARD_VERSION}</span><span>NO EXECUTABLE BOOKMAKER PRICES VERIFIED · NO VALIDATED EDGE · RESEARCH ONLY</span><a href="/research/high-hit">HIGH-HIT LAB ↗</a></footer>
  </main>;
 }
