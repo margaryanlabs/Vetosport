@@ -101,7 +101,7 @@ export default function HighHitScout(){
     <div className="hitVerdict"><span>MODEL DECISION</span><strong>PASS / RESEARCH ONLY</strong><small>Не проверено на актуальных доступных котировках</small></div>
     {result?<>
      <div className="hitPrimary"><span>Историческая/введённая частота выигрыша</span><strong>{pct(result.observedSuccess)}</strong><small>{result.n} исходов · {result.voids} возвратов · {manual?"НЕПОДТВЕРЖДЁННЫЙ ВВОД":"ИСТОРИЧЕСКИЕ ДАННЫЕ"}</small></div>
-     <div className="hitBars"><div><span>Нижняя граница Wilson 95%</span><b>{pct(result.wilson95.low)}</b></div><div className="hitTrack"><i style={{width:pct(result.wilson95.low)}}/></div><div><span>Порог безубыточности при условной цене</span><b>{pct(result.breakEvenProbability)}</b></div><div className="hitTrack"><i className="threshold" style={{width:pct(Math.min(1,result.breakEvenProbability))}}/></div></div>
+     <div className="hitBars"><div><span>Нижняя граница Wilson 95%</span><b>{pct(result.wilson95.low)}</b></div><div className="hitTrack"><i style={{width:(result.wilson95.low*100).toFixed(2)+"%"}}/></div><div><span>Порог безубыточности при условной цене</span><b>{pct(result.breakEvenProbability)}</b></div><div className="hitTrack"><i className="threshold" style={{width:(100*Math.min(1,result.breakEvenProbability)).toFixed(2)+"%"}}/></div></div>
      <div className="hitNumbers">
       <div><span>При выигрыше</span><strong>{money(result.hypotheticalWinProfit)}</strong></div>
       <div><span>При проигрыше</span><strong>{money(result.hypotheticalSingleLoss)}</strong></div>
