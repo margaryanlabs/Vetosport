@@ -3,6 +3,8 @@
 import {useEffect,useMemo,useState} from "react";
 import {BOARD_VERSION,MISSIONS,SOURCES,type Stage,type Mission,type Track} from "@/lib/research/mission-control/catalog";
 import {describeQuote,quoteBreakEven,type QuoteObservation} from "@/lib/research/mission-control/quotes";
+import {HIGH_HIT_CATALOG} from "@/lib/research/high-hit/catalog";
+import {analyzeHighHitEvidence} from "@/lib/research/high-hit/engine";
 import "./mission-control.css";
 
 type Tab="TODAY"|"MISSIONS"|"ODDS"|"SOURCES";
@@ -28,6 +30,14 @@ const nextSteps=[
  "Сверить условия расчёта с правилами вида спорта и историей котировок."
 ];
 const fixedPrices=[1.01,1.02,1.03,1.05,1.08,1.10,1.15,1.20];
+const historicalOddsFloors=HIGH_HIT_CATALOG.filter(x=>x.sport==="football"&&x.observed).map(x=>{
+ const obs=x.observed!;
+ const stats=analyzeHighHitEvidence({
+  wins:obs.wins,losses:obs.losses,voids:0,decimalOdds:1.05,hypotheticalStake:200,
+ });
+ return{label:x.selection,n:stats.n,hit:stats.observedSuccess,lower:stats.wilson95.low,
+  empiricalFair:stats.observedFairOdds,lowerBoundFair:stats.conservativeFairOdds};
+});
 const emptyRecord={
  sport:"football",match:"",market:"Total Under 4.5",selection:"Under",bookmaker:"",odds:"1.05",
 };
@@ -170,7 +180,14 @@ export default function MissionControlPage(){
    <div className="missionHead missionListHead"><div><small>05 / PRICE INVESTIGATION</small><h2>Кабинет коэффициентов</h2></div><span>Математические пороги, НЕ реальные цены букмекеров</span></div>
    <section className="missionPanel"><div className="missionPriceStrip">
     {fixedPrices.map(v=><div key={v}><small>КОЭФ. {v.toFixed(2)}</small><strong>{fmt(quoteBreakEven(v))}</strong><span>порог безубыточности</span></div>)}
-   </div><p className="missionNote">При 1.05 один проигрыш уничтожает прибыль от 20 выигрышей. Таблица показывает только обязательную вероятность для нулевого математического ожидания без комиссии. Это не доступные котировки и не торговые сигналы.</p></section>
+   </div>
+    <div className="missionHistorical"><h3>Какая цена вообще понадобилась бы по СТАРЫМ футбольным данным?</h3>
+     <p className="missionMuted">Это не реальные предложенные коэффициенты. Минимальные коэффициенты вычислены математически из старой частоты 2012–2015. Ни один из них не подтверждает наличие предложения букмекера в 2026 году.</p>
+     <div className="missionPriceMatrix"><div className="missionPriceMatrixHead"><span>ИСТОРИЧЕСКИЙ РЫНОК</span><span>НАБЛЮДЕНИЯ</span><span>ТОЧКА НОЛЯ</span><span>ПРИ НИЖНЕЙ 95% ГРАНИЦЕ</span></div>
+      {historicalOddsFloors.map(row=><div key={row.label} className="missionPriceMatrixRow"><strong>{row.label} · 1:1, 80′</strong><span>{fmt(row.hit)} · n={row.n}</span><b>{row.empiricalFair?.toFixed(3)??"—"}</b><b>{row.lowerBoundFair?.toFixed(3)??"—"}</b></div>)}
+     </div>
+    </div>
+    <p className="missionNote">При 1.05 один проигрыш уничтожает прибыль от 20 выигрышей. Таблица показывает только обязательную вероятность для нулевого математического ожидания без комиссии. Это не доступные котировки и не торговые сигналы.</p></section>
    <div className="missionGrid missionQuoteGrid">
     <section className="missionPanel"><div className="missionHead"><small>06 / MANUAL NOTEBOOK</small><h2>Записать увиденную котировку</h2></div>
      <p className="missionMuted">Запиши точный матч, рынок, исход, компанию и коэффициент. Время записи фиксируется браузером, но **не** подтверждает время публикации или принятия букмекером.</p>
