@@ -159,3 +159,19 @@ html[data-veto-sport-appearance="light"] .vetoSportAppearanceToggle {
 @media(min-width:900px){.vetoSportAppearanceToggle{bottom:22px;right:22px}}
 @media(max-width:540px){.vetoSportAppearanceToggle{width:48px;height:48px;padding:0}.vetoSportAppearanceToggle>span{display:none}}
 @media(prefers-reduced-motion:reduce){.vetoSportAppearanceToggle{transition:none}}
+
+/* Local paper ledger: light appearance must keep all explanatory text readable. */
+html[data-veto-sport-appearance="light"] :is(.paperStudio,.paperTicketEditor,.paperTicketHistory,.paperPerformance article,.paperEquityWrap,.paperRiskNotice,.paperOutcomeControls,.paperEquityEmpty){
+ background:linear-gradient(145deg,#fff,#f3f7f5)!important;
+ color:#172b21!important;border-color:rgba(31,64,44,.16)!important;box-shadow:0 8px 26px rgba(30,61,40,.045)
+}
+html[data-veto-sport-appearance="light"] :is(.paperLedger .observedStudioSectionHead h3,.paperTicketEditor h4,.paperPerformance strong,.paperEquityWrap>header strong,.paperEquityEmpty b,.paperRiskNotice strong,.paperTicketHistory article strong,.paperTicketHistory article b,.paperOutcomeNet){color:#1b3022!important}
+html[data-veto-sport-appearance="light"] :is(.paperLedger .observedStudioSectionHead p,.paperEquityWrap>header span,.paperEquityWrap>header small,.paperPerformance small,.paperPerformance span,.paperEquityChart p,.paperEquityEmpty,.paperRiskNotice p,.paperJournalCaveat,.paperTicketMessage,.paperQuoteCaveat,.paperTicketHistory article small,.paperTicketHistory article time){color:#4b6152!important}
+html[data-veto-sport-appearance="light"] :is(.paperControlBar select,.paperControlBar>button,.paperTicketEditor select,.paperTicketEditor input,.paperOutcomeControls select,.paperOutcomeControls button){
+ background:#f0f6f1!important;color:#173322!important;border-color:rgba(31,64,44,.24)!important
+}
+html[data-veto-sport-appearance="light"] :is(.paperTicketMetrics article,.paperControlBar,.paperOutcomeControls){background:#f3f7f3!important;color:#29432f!important}
+html[data-veto-sport-appearance="light"] :is(.paperTicketMetrics span,.paperControlBar span,.paperControlBar label,.paperTicketEditor label,.paperOutcomeControls label){color:#445b49!important}
+html[data-veto-sport-appearance="light"] .paperPerformance strong.positive{color:#0f7541!important}
+html[data-veto-sport-appearance="light"] .paperPerformance strong.negative{color:#b42e38!important}
+html[data-veto-sport-appearance="light"] .paperTicketCommit{color:#fff!important;background:#bd3542!important}
