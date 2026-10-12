@@ -20,6 +20,8 @@ import { WorkspaceChrome, type WorkspaceView } from "@/components/WorkspaceChrom
 import { MatchRoom } from "@/components/MatchRoom";
 import { SystemStatusPanel } from "@/components/SystemStatusPanel";
 import { ObservedEventRoom } from "@/components/ObservedEventRoom";
+import { TodayExperience } from "@/components/TodayExperience";
+import { ResearchDesk } from "@/components/ResearchDesk";
 import type { LiveEventSummary, LiveObservation } from "@/lib/live/types";
 import { sandboxEventSummaries } from "@/lib/live/sandbox";
 import { sandboxFootballBeforeSurface, sandboxFootballSurface } from "@/lib/sandbox/football-model";
@@ -36,7 +38,22 @@ type ProviderStatus = {
   };
 };
 
-export function Terminal({ initialEventId }: { initialEventId?: string }) {
+const validViews: WorkspaceView[] = [
+  "today",
+  "matches",
+  "check",
+  "history",
+  "research",
+  "system",
+];
+
+export function Terminal({
+  initialEventId,
+  initialView,
+}: {
+  initialEventId?: string;
+  initialView?: string;
+}) {
   const initialWorkspaceId = initialEventId ?? liveWorkspaces[0].id;
   const [locale, setLocale] = useState<Locale>("ru");
   const [selectedEventId, setSelectedEventId] = useState(initialWorkspaceId);
@@ -50,7 +67,11 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   const [liveSourceMode, setLiveSourceMode] = useState<
     "persisted" | "sandbox-fallback"
   >("sandbox-fallback");
-  const [activeView, setActiveView] = useState<WorkspaceView>("intelligence");
+  const [activeView, setActiveView] = useState<WorkspaceView>(
+    initialView && validViews.includes(initialView as WorkspaceView)
+      ? (initialView as WorkspaceView)
+      : "today",
+  );
 
   useEffect(() => {
     let active = true;
@@ -119,9 +140,12 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
     const url = new URL(window.location.href);
     if (url.searchParams.get("event") !== selectedEventId) {
       url.searchParams.set("event", selectedEventId);
-      window.history.replaceState({}, "", url);
     }
-  }, [selectedEventId]);
+    if (url.searchParams.get("view") !== activeView) {
+      url.searchParams.set("view", activeView);
+    }
+    window.history.replaceState({}, "", url);
+  }, [activeView, selectedEventId]);
 
   useEffect(() => {
     let active = true;
@@ -228,12 +252,12 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   );
   const providerMode =
     providerStatus == null
-      ? "CHECKING"
-      : configuredProviders > 0
-        ? "DIRECT DATA READY"
-        : gatewayReady
-          ? "GATEWAY READY"
-          : "DEMO MODE";
+      ? "CHECKING DATA"
+      : activeSummary?.source === "persisted"
+        ? "LIVE DATA"
+        : configuredProviders > 0 || gatewayReady
+          ? "AWAITING LIVE DATA"
+          : "DEMO DATA";
   const selectSport = (sport: Sport) => {
     const persisted = eventSummaries.find(
       (item) => item.sport === sport && item.source === "persisted",
@@ -244,7 +268,7 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   };
   const switchView = (view: WorkspaceView) => {
     if (remoteObservation && view === "research") {
-      setActiveView("intelligence");
+      setActiveView("check");
       return;
     }
     setActiveView(view);
@@ -260,13 +284,13 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   const selectEvent = (eventId: string) => {
     if (!eventSummaries.some((event) => event.id === eventId)) return;
     setSelectedEventId(eventId);
-    setActiveView("intelligence");
+    setActiveView("check");
   };
   const selectSignal = (eventId: string, selectionId: string) => {
     if (!eventSummaries.some((event) => event.id === eventId)) return;
     setSelectedEventId(eventId);
     setSelectedId(selectionId);
-    setActiveView("intelligence");
+    setActiveView("check");
   };
 
   return (
@@ -286,14 +310,25 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
       competition={headerEvent.competition}
       providerMode={providerMode}
     >
-      {activeView === "live" && (
+      {activeView === "today" && (
+        <TodayExperience
+          activeSport={headerEvent.sport}
+          events={eventSummaries}
+          onOpenMatches={() => setActiveView("matches")}
+          onOpenResearch={() => setActiveView("research")}
+          onSelectEvent={selectEvent}
+          onSportChange={selectSport}
+        />
+      )}
+
+      {activeView === "matches" && (
         <div className="workspaceScene workspaceLive">
           <div className="workspaceSceneIntro">
-            <span>{liveSourceMode === "persisted" ? "LIVE FEED" : "DEMO FEED"}</span>
+            <span>{liveSourceMode === "persisted" ? "LIVE EVENTS" : "DEMO EVENTS"}</span>
             <strong>
               {liveSourceMode === "persisted"
-                ? "Read the match state before the market fully reacts."
-                : "Explore VETO on a clearly labeled simulation."}
+                ? "Матчи с источником, свежестью и состоянием проверки."
+                : "Симуляции отмечены до открытия анализа."}
             </strong>
             <small>
               {liveSourceMode === "persisted"
@@ -315,12 +350,34 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
         </div>
       )}
 
-      {activeView === "intelligence" && (
+      {activeView === "check" && (
         <div className="workspaceScene workspaceIntelligence">
           {remoteObservation ? (
             <ObservedEventRoom observation={remoteObservation} />
           ) : (
             <MatchRoom
+              workspace={activeWorkspace}
+              selected={selected}
+              source={activeSummary?.source ?? "sandbox"}
+              onSelectSignal={(selectionId) => setSelectedId(selectionId)}
+              onOpenLab={() => setActiveView("research")}
+            />
+          )}
+        </div>
+      )}
+
+      {activeView === "history" && (
+        <div className="workspaceScene workspaceHistory">
+          <div className="workspaceSceneIntro">
+            <span>ИСТОРИЯ</span>
+            <strong>Вернитесь к тому, что было известно в конкретный момент.</strong>
+            <small>Леджер, replay и последующая проверка всегда отделены от текущей оценки.</small>
+          </div>
+          {remoteObservation ? (
+            <ObservedEventRoom observation={remoteObservation} />
+          ) : (
+            <MatchRoom
+              initialMode="replay"
               workspace={activeWorkspace}
               selected={selected}
               source={activeSummary?.source ?? "sandbox"}
@@ -343,10 +400,12 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
             </small>
           </div>
 
+          <ResearchDesk onJump={jumpTo} />
+
           <div className="v2ResearchBody">
       {activeWorkspace.sport === "football" ? (
         <>
-          <ParallaxCore locale={locale} />
+          <div id="parallax-lab"><ParallaxCore locale={locale} /></div>
 
           <div id="market-surface">
             <MarketSurfaceExplorer

@@ -2,9 +2,16 @@
 
 import type { Locale, Sport } from "@/lib/domain/types";
 import { SportGlyph } from "@/components/SportGlyph";
+import { useEffect, useState } from "react";
 import { VetoMark, VetoWordmark } from "@/components/VetoMark";
 
-export type WorkspaceView = "live" | "intelligence" | "research" | "system";
+export type WorkspaceView =
+  | "today"
+  | "matches"
+  | "check"
+  | "history"
+  | "research"
+  | "system";
 
 const nav: Array<{
   id: WorkspaceView;
@@ -12,10 +19,11 @@ const nav: Array<{
   mobile: string;
   aria: string;
 }> = [
-  { id: "live", desktop: "MATCHES", mobile: "LIVE", aria: "Live and observed matches" },
-  { id: "intelligence", desktop: "MATCH ROOM", mobile: "MATCH", aria: "Match intelligence room" },
-  { id: "research", desktop: "LAB", mobile: "LAB", aria: "Research laboratory" },
-  { id: "system", desktop: "SYSTEM", mobile: "SYSTEM", aria: "System status" },
+  { id: "today", desktop: "СЕГОДНЯ", mobile: "СЕГОДНЯ", aria: "Сегодня" },
+  { id: "matches", desktop: "МАТЧИ", mobile: "МАТЧИ", aria: "Матчи" },
+  { id: "check", desktop: "ПРОВЕРИТЬ", mobile: "ПРОВЕРИТЬ", aria: "Проверить матч" },
+  { id: "history", desktop: "ИСТОРИЯ", mobile: "ИСТОРИЯ", aria: "История" },
+  { id: "research", desktop: "ЛАБОРАТОРИЯ", mobile: "ЛАБ", aria: "Лаборатория" },
 ];
 
 const sports: Sport[] = ["football","basketball","tennis","hockey"];
@@ -55,17 +63,27 @@ export function WorkspaceChrome({
   providerMode: string;
   children: React.ReactNode;
 }) {
+  const [moreOpen, setMoreOpen] = useState(false);
   const providerTone =
-    /READY|CONFIGURED/.test(providerMode)
+    providerMode === "LIVE DATA"
       ? "ready"
-      : providerMode === "CHECKING"
+      : providerMode === "CHECKING DATA"
         ? "checking"
-        : "demo";
+        : "unavailable";
+
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [activeView]);
+
+  const selectView = (view: WorkspaceView) => {
+    setMoreOpen(false);
+    onViewChange(view);
+  };
 
   return (
     <main className={`matchShell matchShell-${activeSport}`}>
       <header className="matchShellTop">
-        <button className="matchShellBrand" onClick={() => onViewChange("intelligence")} type="button" aria-label="VETO Sport">
+        <button className="matchShellBrand" onClick={() => selectView("today")} type="button" aria-label="VETO Sport">
           <VetoMark size={31} />
           <VetoWordmark className="matchShellWordmark" />
           <span>SPORT</span>
@@ -76,7 +94,7 @@ export function WorkspaceChrome({
             <button
               className={activeView===item.id?"active":""}
               key={item.id}
-              onClick={() => onViewChange(item.id)}
+              onClick={() => selectView(item.id)}
               type="button"
               aria-current={activeView===item.id ? "page" : undefined}
               aria-label={item.aria}
@@ -118,11 +136,11 @@ export function WorkspaceChrome({
       <div className="matchShellCanvas">{children}</div>
 
       <nav className="matchShellMobile" aria-label="Mobile navigation">
-        {nav.map((item) => (
+        {nav.slice(0, 3).map((item) => (
           <button
             className={activeView===item.id?"active":""}
             key={item.id}
-            onClick={() => onViewChange(item.id)}
+            onClick={() => selectView(item.id)}
             type="button"
             aria-current={activeView===item.id ? "page" : undefined}
             aria-label={item.aria}
@@ -130,7 +148,48 @@ export function WorkspaceChrome({
             <span>{item.mobile}</span>
           </button>
         ))}
+        <button
+          aria-expanded={moreOpen}
+          className={moreOpen || ["history", "research", "system"].includes(activeView) ? "active" : ""}
+          onClick={() => setMoreOpen((open) => !open)}
+          type="button"
+        >
+          <span>ЕЩЁ</span>
+        </button>
       </nav>
+
+      {moreOpen && (
+        <div className="matchShellMore" role="dialog" aria-label="Дополнительная навигация">
+          <div className="matchShellMoreHead">
+            <span>VETO SPORT</span>
+            <button aria-label="Закрыть" onClick={() => setMoreOpen(false)} type="button">×</button>
+          </div>
+          <div className="matchShellMoreNav">
+            {["history", "research", "system"].map((id) => {
+              const item = nav.find((navItem) => navItem.id === id);
+              const label = id === "system" ? "СОСТОЯНИЕ ДАННЫХ" : item?.desktop;
+              return (
+                <button
+                  className={activeView === id ? "active" : ""}
+                  key={id}
+                  onClick={() => selectView(id as WorkspaceView)}
+                  type="button"
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="matchShellMoreMeta">
+            <span className={`matchShellStatus ${providerTone}`}><i />{providerMode}</span>
+            <div className="matchShellLang">
+              {(["ru","en","hy"] as Locale[]).map((item) => (
+                <button className={locale===item?"active":""} key={item} onClick={() => onLocaleChange(item)} type="button">{item.toUpperCase()}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

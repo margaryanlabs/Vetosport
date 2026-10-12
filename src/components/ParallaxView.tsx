@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import type { ProbabilityPoint } from "@/lib/sandbox/live";
 
 type XY = { x: number; y: number };
@@ -25,10 +27,27 @@ const path = (points: XY[]) =>
 export function ParallaxView({
   points,
   label,
+  provenance,
 }: {
   points: ProbabilityPoint[];
   label: string;
+  provenance?: string;
 }) {
+  const [selectedIndex, setSelectedIndex] = useState(Math.max(0, points.length - 1));
+
+  useEffect(() => {
+    setSelectedIndex(Math.max(0, points.length - 1));
+  }, [points]);
+
+  if (points.length === 0) {
+    return (
+      <section className="parallaxView parallaxEmpty">
+        <div className="parallaxViewHead"><div><span>VETO PARALLAX</span><strong>{label}</strong></div></div>
+        <div className="parallaxNoData"><strong>История вероятности ещё не получена.</strong><p>VETO не рисует линию, пока нет сохранённых точек состояния.</p></div>
+      </section>
+    );
+  }
+
   const values = points.flatMap((point) => [point.market, point.veto]);
   const rawMin = Math.min(...values);
   const rawMax = Math.max(...values);
@@ -45,6 +64,7 @@ export function ParallaxView({
   ].join(" ");
 
   const latest = points.at(-1);
+  const inspected = points[Math.min(selectedIndex, points.length - 1)] ?? latest;
   const previous = points.at(-2);
   const gap = latest ? latest.veto - latest.market : 0;
   const previousGap = previous ? previous.veto - previous.market : gap;
@@ -147,26 +167,52 @@ export function ParallaxView({
           )}
 
           {points.map((point, index) => (
-            <text
+            <g
+              className={`parallaxPoint ${selectedIndex === index ? "active" : ""}`}
               key={point.label}
-              x={24 + (index / Math.max(1, points.length - 1)) * (W - 48)}
-              y={H + 20}
-              textAnchor={index === 0 ? "start" : index === points.length - 1 ? "end" : "middle"}
-              className="parallaxAxisLabel"
+              onClick={() => setSelectedIndex(index)}
+              onFocus={() => setSelectedIndex(index)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setSelectedIndex(index);
+                }
+              }}
+              onMouseEnter={() => setSelectedIndex(index)}
+              role="button"
+              tabIndex={0}
             >
-              {point.label}
-            </text>
+              <circle cx={reality[index]?.x} cy={reality[index]?.y} r="12" className="parallaxPointTarget" />
+              <circle cx={market[index]?.x} cy={market[index]?.y} r="12" className="parallaxPointTarget" />
+              <text
+                x={24 + (index / Math.max(1, points.length - 1)) * (W - 48)}
+                y={H + 20}
+                textAnchor={index === 0 ? "start" : index === points.length - 1 ? "end" : "middle"}
+                className="parallaxAxisLabel"
+              >
+                {point.label}
+              </text>
+            </g>
           ))}
         </svg>
       </div>
 
+      {inspected && (
+        <div className="parallaxPointDetail" aria-live="polite">
+          <span>ВЫБРАННЫЙ МОМЕНТ · {inspected.label}</span>
+          <strong>VETO {(inspected.veto * 100).toFixed(1)}%</strong>
+          <strong>РЫНОК {(inspected.market * 100).toFixed(1)}%</strong>
+          <em>{provenance ?? "ИСТОЧНИК НЕ УКАЗАН"}</em>
+        </div>
+      )}
+
       <div className="parallaxReadout parallaxReadoutV2">
         <div>
-          <span>REALITY</span>
+          <span>VETO СЕЙЧАС</span>
           <strong>{latest ? (latest.veto * 100).toFixed(1) : "—"}%</strong>
         </div>
         <div>
-          <span>MARKET</span>
+          <span>РЫНОК СЕЙЧАС</span>
           <strong>{latest ? (latest.market * 100).toFixed(1) : "—"}%</strong>
         </div>
         <div>

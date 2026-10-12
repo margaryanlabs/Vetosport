@@ -7,6 +7,7 @@ import { ParallaxView } from "@/components/ParallaxView";
 import { SportGlyph } from "@/components/SportGlyph";
 
 type RoomMode = "overview" | "parallax" | "evidence" | "replay" | "proof";
+type ExplanationKey = "match" | "probability" | "risks" | "evidence" | "missing";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) => `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)} pp`;
@@ -70,14 +71,17 @@ export function MatchRoom({
   source,
   onSelectSignal,
   onOpenLab,
+  initialMode = "overview",
 }: {
   workspace: LiveWorkspace;
   selected: Opportunity;
   source: "persisted" | "sandbox";
   onSelectSignal: (selectionId: string) => void;
   onOpenLab: () => void;
+  initialMode?: RoomMode;
 }) {
-  const [mode, setMode] = useState<RoomMode>("overview");
+  const [mode, setMode] = useState<RoomMode>(initialMode);
+  const [explanation, setExplanation] = useState<ExplanationKey>("match");
   const [ledgerHistory, setLedgerHistory] = useState<LedgerDecision[]>([]);
   const [ledgerStatus, setLedgerStatus] = useState<
     "loading" | "verified" | "reconstructed"
@@ -438,15 +442,42 @@ export function MatchRoom({
     workspace.reasonSummary,
   ]);
 
+  const explanationCopy: Record<ExplanationKey, { title: string; body: string }> = {
+    match: {
+      title: "Что VETO видит в матче",
+      body: workspace.reasonSummary,
+    },
+    probability: {
+      title: "Почему различаются вероятности",
+      body: `VETO оценивает ${selected.selection.label} в ${pct(selected.fairProbability)}. Цена ${selected.marketOdds.toFixed(2)} соответствует рыночной вероятности ${pct(marketProbability)}. Разница ${pp(gap)} — это расхождение оценок, а не подтверждённая прибыль.`,
+    },
+    risks: {
+      title: "Что может изменить вывод",
+      body: `${workspace.invalidation} Уровень согласия моделей: ${selected.modelAgreement}/100; свежесть выбранного состояния: ${selected.freshnessSeconds} сек.; текущая полоса риска: ${selected.risk}.`,
+    },
+    evidence: {
+      title: "Какие данные использованы",
+      body: workspace.evidence.length
+        ? workspace.evidence.slice(0, 3).map((item) => `${item.kind}: ${item.title}`).join(" · ")
+        : "Для этой гипотезы пока нет доступного набора доказательств.",
+    },
+    missing: {
+      title: "Чего пока не хватает",
+      body: liveSource
+        ? "Проверьте свежесть котировок, полноту входов модели и статус леджера перед тем, как делать самостоятельный вывод."
+        : "Это демонстрационный сценарий: здесь нет независимого live-источника и подтверждённой актуальной рыночной цены.",
+    },
+  };
+
   return (
     <section className={`matchRoom matchRoom-${workspace.sport}`}>
       <header className="matchRoomHero matchRoomHeroV2">
         <div className="matchRoomMeta">
           <span className={`matchRoomSource ${liveSource ? "live" : "demo"}`}>
-            <i /> {liveSource ? "LIVE DATA" : "DEMO DATA"}
+            <i /> {liveSource ? "LIVE DATA" : "SIMULATION"}
           </span>
           <span>{workspace.competition}</span>
-          <span>{workspace.period}</span>
+          <span>{liveSource ? `${selected.freshnessSeconds} сек. назад` : "Не является live-рынком"}</span>
         </div>
 
         <div className="matchRoomScore matchRoomScoreV2">
@@ -510,9 +541,9 @@ export function MatchRoom({
 
       <nav className="matchRoomTabs" aria-label="Match room views">
         {([
-          ["overview","Overview"],
-          ["parallax","Parallax"],
-          ["evidence","Evidence"],
+          ["overview","Обзор"],
+          ["parallax","График"],
+          ["evidence","Данные"],
           ["replay","Replay"],
           ["proof","Proof"],
         ] as const).map(([id,label]) => (
@@ -521,7 +552,7 @@ export function MatchRoom({
           </button>
         ))}
         <button className="matchRoomLabButton" onClick={onOpenLab} type="button">
-          Open laboratory <span>↗</span>
+          Лаборатория <span>↗</span>
         </button>
       </nav>
 
@@ -549,6 +580,7 @@ export function MatchRoom({
             <ParallaxView
               points={workspace.probabilityHistory}
               label={workspace.probabilityLabel}
+              provenance={liveSource ? "LIVE DATA · ПОЛУЧЕНО ИЗ СОХРАНЁННОГО СОСТОЯНИЯ" : "SIMULATION · ДЕМОНСТРАЦИОННЫЙ НАБОР"}
             />
 
             <section className="causalTimeline">
@@ -579,14 +611,14 @@ export function MatchRoom({
 
           <aside className="vetoDecisionPanel vetoDecisionPanelV2">
             <div className="decisionPanelTop">
-              <span>VETO DECISION</span>
-              <em className={selected.decision.toLowerCase()}>{selected.decision}</em>
+              <span>VETO ANALYSIS</span>
+              <em className={liveSource ? selected.decision.toLowerCase() : "research"}>{liveSource ? selected.decision : "RESEARCH"}</em>
             </div>
 
             <div className="decisionHero">
               <small>{selected.selection.label}</small>
-              <strong>{selected.decision}</strong>
-              <p>{pp(gap)} dislocation</p>
+              <strong>{liveSource ? selected.decision : "СЦЕНАРИЙ"}</strong>
+              <p>{liveSource ? `${pp(gap)} расхождение оценок` : "Симуляция · не текущая котировка"}</p>
             </div>
 
             <div className="decisionWhyNow">
@@ -640,6 +672,28 @@ export function MatchRoom({
               </div>
             </div>
 
+            <section className="vetoExplanationAssistant" aria-live="polite">
+              <div className="vetoExplanationHead">
+                <span>VETO EXPLANATION</span>
+                <small>Структурированное объяснение · без AI-запроса</small>
+              </div>
+              <div className="vetoExplanationActions" aria-label="Быстрые объяснения">
+                {([
+                  ["match", "Объяснить матч"],
+                  ["probability", "Объяснить число"],
+                  ["risks", "Главные риски"],
+                  ["evidence", "Показать данные"],
+                  ["missing", "Чего не хватает"],
+                ] as const).map(([id, label]) => (
+                  <button className={explanation === id ? "active" : ""} key={id} onClick={() => setExplanation(id)} type="button">{label}</button>
+                ))}
+              </div>
+              <div className="vetoExplanationAnswer">
+                <strong>{explanationCopy[explanation].title}</strong>
+                <p>{explanationCopy[explanation].body}</p>
+              </div>
+            </section>
+
             <details className="decisionMarkets">
               <summary>Other monitored markets <span>+</span></summary>
               <div className="decisionMarketStrip">
@@ -663,7 +717,11 @@ export function MatchRoom({
 
       {mode === "parallax" && (
         <div className="matchRoomModePanel">
-          <ParallaxView points={workspace.probabilityHistory} label={workspace.probabilityLabel} />
+          <ParallaxView
+            points={workspace.probabilityHistory}
+            label={workspace.probabilityLabel}
+            provenance={liveSource ? "LIVE DATA · СОХРАНЁННОЕ СОСТОЯНИЕ" : "SIMULATION · ДЕМОНСТРАЦИОННЫЙ НАБОР"}
+          />
           <div className="parallaxExplanation">
             <span>WHAT VETO SEES</span>
             <h3>{workspace.reasonHeadline}</h3>
@@ -749,6 +807,7 @@ export function MatchRoom({
               <ParallaxView
                 points={replayPoints.length > 0 ? replayPoints : workspace.probabilityHistory.slice(0, 1)}
                 label={`${workspace.probabilityLabel} · ${replayCurrent.label}`}
+                provenance={replayCurrent.verified ? "IMMUTABLE LEDGER · СОХРАНЁННЫЙ МОМЕНТ" : "RECONSTRUCTED HISTORY · НЕ ЛЕДЖЕР"}
               />
 
               <div className="replayScrubber">
