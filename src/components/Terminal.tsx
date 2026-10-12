@@ -33,6 +33,7 @@ type ProviderStatus = {
   mode: "sandbox" | "gateway-ready" | "partially-configured" | "live-ready";
   providers: {
     canonicalGateway?: { role: string; configured: boolean };
+    apiFootball?: { role:string;configured:boolean;ingestionReady?:boolean };
     sportmonks: { role: string; configured: boolean };
     theOddsApi: { role: string; configured: boolean };
   };
@@ -245,7 +246,8 @@ export function Terminal({
     ? [
         providerStatus.providers.sportmonks,
         providerStatus.providers.theOddsApi,
-      ].filter((provider) => provider.configured).length
+        providerStatus.providers.apiFootball,
+      ].filter((provider) => provider?.configured).length
     : 0;
   const gatewayReady = Boolean(
     providerStatus?.providers?.canonicalGateway?.configured,
