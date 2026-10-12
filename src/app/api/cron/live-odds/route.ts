@@ -24,6 +24,8 @@ export async function GET(request: Request) {
       reason:budget.reason,estimatedCreditsPerRun:budget.creditsPerRun,
       estimatedCreditsPerDay:budget.estimatedDailyCredits,
       estimatedCreditsPer30Days:budget.estimatedMonthlyCredits30d,
+      estimatedCreditsPer31Days:budget.estimatedMonthlyCredits31d,
+      monthlyBudget:budget.monthlyBudget,
       configuredDailyBudgetCredits:budget.dailyBudget,
       note:"Estimate only. Verify actual quota with provider. No paid request was made.",
     }, {headers:{"Cache-Control":"no-store"}});
@@ -49,8 +51,16 @@ export async function GET(request: Request) {
   }
 
   const results = [];
-  for (const sportKey of sportKeys) {
-    results.push(await ingestLiveOdds({ sportKey, markets }));
+  try {
+    for (const sportKey of sportKeys) {
+      const result = await ingestLiveOdds({ sportKey, markets });
+      results.push(result);
+      // Stop other leagues when the provider reports very little quota left.
+      // This does not replace the 31-day schedule forecast.
+      if (result.quotaRemaining !== undefined && result.quotaRemaining <= 100) break;
+    }
+  } catch {
+    return NextResponse.json({ok:false,error:"Bookmaker polling failed; verify key, access rights and quota in The Odds API dashboard. No sample prices were fabricated."},{status:502,headers:{"Cache-Control":"no-store"}});
   }
 
   return NextResponse.json({
@@ -59,6 +69,8 @@ export async function GET(request: Request) {
     quotaProtected: true,
     estimatedCreditsPerDay:budget.estimatedDailyCredits,
     configuredDailyBudgetCredits:budget.dailyBudget,
+    estimatedCreditsPer31Days:budget.estimatedMonthlyCredits31d,
+    monthlyBudget:budget.monthlyBudget,
     actualChargesNotMeasured:true,
     sportKeys,
     markets,

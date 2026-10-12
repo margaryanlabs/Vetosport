@@ -51,3 +51,10 @@
 @media(max-width:940px){.watchRealHero{grid-template-columns:1fr;padding:40px 0}.watchRealHero h1{font-size:clamp(44px,8vw,68px)}.watchRealResearch{grid-template-columns:1fr}.watchReal .watchStats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:660px){.watchReal{padding:0 13px 45px}.watchRealHero{gap:24px}.watchRealHero h1{font-size:46px}.watchReal .watchMatches{grid-template-columns:1fr}.watchReal .watchStats article{min-height:132px}.watchReal .watchStats strong{font-size:29px}.watchRealHeroVision .pitchVisionArena{min-height:230px}.watchReal .watchBrand{font-size:15px}.watchReal .watchHeader>a:last-child{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.watchReal *{scroll-behavior:auto!important}}
+
+.watchRealQuote{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 15px;align-items:center;margin-top:10px;padding:12px;border-radius:11px;background:rgba(255,255,255,.035);border:1px solid rgba(224,239,232,.14)}
+.watchRealQuote span{grid-column:1/-1;font-size:11px;color:#b4c8be;letter-spacing:.01em}
+.watchRealQuote strong{font-size:14px;overflow-wrap:anywhere}
+.watchRealQuote b{font-size:21px;color:#eff8f1;font-variant-numeric:tabular-nums;text-align:right}
+.watchRealQuote small{grid-column:1/-1;color:#adc1b6;font-size:11px}
+@media(max-width:600px){.watchRealQuote{padding:12px}.watchRealQuote strong{font-size:13px}.watchRealQuote b{font-size:18px}}

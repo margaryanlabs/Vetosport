@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/live-odds",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 */4 * * *"
     },
     {
       "path": "/api/cron/shadow-football",
