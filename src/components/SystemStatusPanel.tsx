@@ -76,7 +76,7 @@ export function SystemStatusPanel() {
     providers?.providers?.theOddsApi?.sportKeysConfigured ??
     plane?.runtime?.oddsSportKeysConfigured ??
     false;
-  const marketReady = odds && oddsAllowlist;
+  const marketReady = odds && oddsAllowlist && Boolean(providers?.providers?.theOddsApi?.ingestionReady);
   const gateway =
     providers?.providers?.canonicalGateway?.configured ??
     plane?.runtime?.canonicalGatewayConfigured ??
@@ -132,12 +132,12 @@ export function SystemStatusPanel() {
 
         <article>
           <span>MARKET DATA</span>
-          <strong>{marketReady ? "DIRECT READY" : odds ? "NEEDS ALLOWLIST" : gateway ? "GATEWAY ONLY" : "PENDING"}</strong>
+          <strong>{marketReady ? "POLLING ENABLED" : odds ? "KEY ADDED / POLLING OFF" : gateway ? "GATEWAY ONLY" : "PENDING"}</strong>
           <small>
             {marketReady
-              ? `Odds adapter armed · ${providers?.providers?.theOddsApi?.sportKeysCount ?? plane?.runtime?.oddsSportKeysCount ?? 0} sport keys allowed.`
+              ? `Odds polling enabled for ${providers?.providers?.theOddsApi?.sportKeysCount ?? plane?.runtime?.oddsSportKeysCount ?? 0} leagues. Quotes are snapshots, not continuous live prices.`
               : odds
-                ? "API key exists, but VETO_ODDS_SPORT_KEYS is empty. Polling remains disabled."
+                ? "API key found. Needs a league allowlist, explicit cost budget and enabled server schedule."
                 : gateway
                   ? "Market quotes can arrive through the canonical gateway."
                   : "No market-data ingress is configured."}
