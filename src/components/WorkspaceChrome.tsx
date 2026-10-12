@@ -84,6 +84,7 @@ export function WorkspaceChrome({
               {item.desktop}
             </button>
           ))}
+          <a href="/research/watchlist" className="matchShellWatchNav" title="Какие рынки посмотреть: исследования, не ставки">WATCHLIST ↗</a>
         </nav>
 
         <div className="matchShellTools">
@@ -130,6 +131,7 @@ export function WorkspaceChrome({
             <span>{item.mobile}</span>
           </button>
         ))}
+        <a href="/research/watchlist" className="matchShellMobileWatch" title="Условия рынков для исследования"><span>CHECK</span></a>
       </nav>
     </main>
   );
