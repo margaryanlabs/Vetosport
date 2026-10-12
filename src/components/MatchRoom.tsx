@@ -5,6 +5,7 @@ import type { Opportunity } from "@/lib/domain/types";
 import type { LiveWorkspace } from "@/lib/sandbox/workspaces";
 import { ParallaxView } from "@/components/ParallaxView";
 import { SportGlyph } from "@/components/SportGlyph";
+import { ExplanationAssistant } from "@/components/ExplanationAssistant";
 
 type RoomMode = "overview" | "parallax" | "evidence" | "replay" | "proof";
 
@@ -443,7 +444,7 @@ export function MatchRoom({
       <header className="matchRoomHero matchRoomHeroV2">
         <div className="matchRoomMeta">
           <span className={`matchRoomSource ${liveSource ? "live" : "demo"}`}>
-            <i /> {liveSource ? "LIVE DATA" : "DEMO DATA"}
+            <i /> {liveSource ? "LIVE DATA" : "DEMO / SIMULATION"}
           </span>
           <span>{workspace.competition}</span>
           <span>{workspace.period}</span>
@@ -470,29 +471,29 @@ export function MatchRoom({
 
         <div className="scoreboardTelemetry">
           <div className={`scoreboardMomentum ${momentumState.toLowerCase()}`}>
-            <span>STATE MOMENTUM</span>
+            <span>ДИНАМИКА СОСТОЯНИЯ</span>
             <strong>{momentumState}</strong>
             <b>{pp(vetoMove)}</b>
           </div>
           <div>
-            <span>PARALLAX</span>
+            <span>РАСХОЖДЕНИЕ</span>
             <strong>{parallaxState}</strong>
             <b>{pp(gap)}</b>
           </div>
           <div>
-            <span>AUTHORITY</span>
+            <span>СОГЛАСИЕ</span>
             <strong>{authority}</strong>
             <b>{selected.modelAgreement}/100</b>
           </div>
           {liveSource ? (
             <div className={`freshness ${freshness.toLowerCase()}`}>
-              <span>FRESHNESS</span>
+              <span>СВЕЖЕСТЬ</span>
               <strong>{freshness}</strong>
               <b>{selected.freshnessSeconds}s</b>
             </div>
           ) : (
             <div className="sourceTelemetry demo">
-              <span>DATA SOURCE</span>
+              <span>ИСТОЧНИК ДАННЫХ</span>
               <strong>SIMULATION</strong>
               <b>demo</b>
             </div>
@@ -510,54 +511,56 @@ export function MatchRoom({
 
       <nav className="matchRoomTabs" aria-label="Match room views">
         {([
-          ["overview","Overview"],
-          ["parallax","Parallax"],
-          ["evidence","Evidence"],
-          ["replay","Replay"],
-          ["proof","Proof"],
+          ["overview","ГЛАВНОЕ"],
+          ["parallax","ГРАФИК"],
+          ["evidence","ДАННЫЕ"],
+          ["replay","REPLAY"],
+          ["proof","ПРОВЕРКА"],
         ] as const).map(([id,label]) => (
           <button className={mode===id?"active":""} key={id} onClick={() => setMode(id)} type="button">
             {label}
           </button>
         ))}
         <button className="matchRoomLabButton" onClick={onOpenLab} type="button">
-          Open laboratory <span>↗</span>
+          Лаборатория <span>↗</span>
         </button>
       </nav>
 
       {mode === "overview" && (
+        <>
         <div className="matchRoomOverview matchRoomOverviewV2">
           <section className="matchWorld">
             <div className="matchWorldColumns matchWorldColumnsV2">
               <article>
-                <span>GAME</span>
+                <span>СОСТОЯНИЕ МАТЧА</span>
                 <strong>{workspace.stateMetrics[0]?.value ?? workspace.period}</strong>
                 <p>{workspace.reasonHeadline}</p>
               </article>
               <article>
-                <span>MARKET</span>
+                <span>РЫНОК</span>
                 <strong>{pct(marketProbability)}</strong>
-                <p>What price currently implies for {selected.selection.label}.</p>
+                <p>Что текущая цена подразумевает для «{selected.selection.label}».</p>
               </article>
               <article className="veto">
-                <span>VETO</span>
+                <span>ОЦЕНКА VETO</span>
                 <strong>{pct(selected.fairProbability)}</strong>
-                <p>{gap >= 0 ? "Evidence-led reality is ahead of price." : "Price is ahead of the model."}</p>
+                <p>{gap >= 0 ? "Оценка VETO выше цены рынка." : "Цена рынка выше оценки VETO."}</p>
               </article>
             </div>
 
             <ParallaxView
               points={workspace.probabilityHistory}
               label={workspace.probabilityLabel}
+              sourceLabel={liveSource ? "Снимки выбранного наблюдения" : "DEMO / сохранённая шкала симуляции"}
             />
 
             <section className="causalTimeline">
               <header>
                 <div>
-                  <span>CAUSAL TIMELINE</span>
-                  <strong>How the current decision formed.</strong>
+                  <span>КАК СФОРМИРОВАЛАСЬ ОЦЕНКА</span>
+                  <strong>Состояние → модель → рынок → вывод VETO.</strong>
                 </div>
-                <small>STATE → MODEL → MARKET → VETO</small>
+                <small>ПРОВЕРЯЕМАЯ ЦЕПОЧКА</small>
               </header>
 
               <div className="causalTimelineFlow">
@@ -579,32 +582,32 @@ export function MatchRoom({
 
           <aside className="vetoDecisionPanel vetoDecisionPanelV2">
             <div className="decisionPanelTop">
-              <span>VETO DECISION</span>
+              <span>АНАЛИЗ VETO</span>
               <em className={selected.decision.toLowerCase()}>{selected.decision}</em>
             </div>
 
             <div className="decisionHero">
               <small>{selected.selection.label}</small>
               <strong>{selected.decision}</strong>
-              <p>{pp(gap)} dislocation</p>
+              <p>{pp(gap)} разница между оценками</p>
             </div>
 
             <div className="decisionWhyNow">
-              <span>WHY NOW?</span>
+              <span>ПОЧЕМУ ТАК?</span>
               <strong>{workspace.reasonHeadline}</strong>
               <p>{workspace.reasonSummary}</p>
             </div>
 
             <div className="decisionBeliefs">
               <article>
-                <span>MARKET BELIEVES</span>
+                <span>ОЦЕНКА РЫНКА</span>
                 <strong>{pct(marketProbability)}</strong>
-                <p>{selected.marketOdds.toFixed(2)} current market odds</p>
+                <p>Текущий коэффициент {selected.marketOdds.toFixed(2)}</p>
               </article>
               <article className="veto">
-                <span>VETO BELIEVES</span>
+                <span>ОЦЕНКА VETO</span>
                 <strong>{pct(selected.fairProbability)}</strong>
-                <p>{parallaxState.toLowerCase()} Reality ↔ Price state</p>
+                <p>{parallaxState.toLowerCase()} · состояние расхождения</p>
               </article>
             </div>
 
@@ -618,30 +621,30 @@ export function MatchRoom({
             </div>
 
             <div className="decisionBreak">
-              <span>WHAT BREAKS THE THESIS</span>
+              <span>ЧТО ОПРОВЕРГНЕТ ГИПОТЕЗУ</span>
               <p>{workspace.invalidation}</p>
             </div>
 
             <div className="decisionTrust">
               <div>
-                <span>CONFIDENCE</span>
+                <span>СОГЛАСИЕ</span>
                 <strong>{authority}</strong>
-                <small>{selected.modelAgreement}/100 agreement</small>
+                <small>{selected.modelAgreement}/100 согласие моделей</small>
               </div>
               <div>
-                <span>FRESHNESS</span>
+                <span>СВЕЖЕСТЬ</span>
                 <strong>{freshness}</strong>
-                <small>{selected.freshnessSeconds}s since refresh</small>
+                <small>{selected.freshnessSeconds}с с обновления</small>
               </div>
               <div>
-                <span>RISK</span>
+                <span>РИСК</span>
                 <strong>{selected.risk}</strong>
-                <small>Current thesis risk</small>
+                <small>Риск текущей гипотезы</small>
               </div>
             </div>
 
             <details className="decisionMarkets">
-              <summary>Other monitored markets <span>+</span></summary>
+              <summary>Другие наблюдаемые рынки <span>+</span></summary>
               <div className="decisionMarketStrip">
                 {workspace.opportunities.slice(0,4).map((item) => (
                   <button
@@ -659,11 +662,18 @@ export function MatchRoom({
             </details>
           </aside>
         </div>
+        <ExplanationAssistant
+          onOpenReplay={() => setMode("replay")}
+          selected={selected}
+          source={source}
+          workspace={workspace}
+        />
+        </>
       )}
 
       {mode === "parallax" && (
         <div className="matchRoomModePanel">
-          <ParallaxView points={workspace.probabilityHistory} label={workspace.probabilityLabel} />
+          <ParallaxView points={workspace.probabilityHistory} label={workspace.probabilityLabel} sourceLabel={liveSource ? "Снимки выбранного наблюдения" : "DEMO / сохранённая шкала симуляции"} />
           <div className="parallaxExplanation">
             <span>WHAT VETO SEES</span>
             <h3>{workspace.reasonHeadline}</h3>
@@ -749,6 +759,7 @@ export function MatchRoom({
               <ParallaxView
                 points={replayPoints.length > 0 ? replayPoints : workspace.probabilityHistory.slice(0, 1)}
                 label={`${workspace.probabilityLabel} · ${replayCurrent.label}`}
+                sourceLabel={ledgerStatus === "verified" ? "Проверяемый decision ledger" : "Реконструкция из шкалы вероятностей"}
               />
 
               <div className="replayScrubber">
