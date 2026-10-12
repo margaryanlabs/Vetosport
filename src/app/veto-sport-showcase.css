@@ -111,7 +111,9 @@
 .pitchVisionCompact .pitchVisionArena { min-height:280px; }
 .pitchVisionCompact .pitchVisionTop { min-height:40px; }
 .pitchVisionCompact .pitchVisionMatch { max-width:440px; }
-.matchRoomOverviewV2 { display:block; }
+.matchRoomOverviewV2 { display:grid;grid-template-columns:minmax(0,1.7fr) minmax(320px,.64fr); }
+.matchWorldPitch { margin-bottom:18px; }
+.matchWorldPitch .pitchVisionArena { min-height:275px; }
 .matchRoomOverviewV2 .matchWorld { border:0; border-bottom:1px solid rgba(255,255,255,.07); }
 .observedVisualFrame { padding:18px 20px; background:#0b0f0d; }
 .observedVisualFrame .pitchVision { max-width:990px;margin:auto; }
@@ -128,6 +130,7 @@
 .matchRoom .matchWorldColumns article>p { font-size:13px; }
 .observedRoom .observedStateGrid strong { overflow-wrap:anywhere; }
 @media(max-width:1140px) {
+  .matchRoomOverviewV2 { grid-template-columns:1fr; }
   .todayHeroBodyShowcase { grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px; }
   .todayHero .todayHeroCopy h1 { font-size:clamp(35px,4.2vw,56px); }
   .pitchVisionArena { min-height:275px; }
