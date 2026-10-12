@@ -9,6 +9,14 @@ import {screenPersistedResearchMatches} from "@/lib/research/watchlist/engine";
 import "./watchlist.css";
 
 type LiveResponse = {mode: string; generatedAt: string; events: LiveEventSummary[]};
+type ProviderReadiness = {
+  mode?: string;
+  providers?: {
+    sportmonks?: {configured?:boolean};
+    theOddsApi?: {configured?:boolean; sportKeysConfigured?:boolean};
+  };
+  storage?: {configured?:boolean};
+};
 const priority = [
  "football-late-under-45","football-late-under-35","baseball-late-ml",
  "tennis-late-set","volleyball-set","football-late-under-55",
@@ -28,6 +36,7 @@ export default function ResearchWatchlistPage(){
  const [odds,setOdds]=useState("1.05");
  const [live,setLive]=useState<LiveResponse|null>(null);
  const [report,setReport]=useState<SourceObservatoryReport|null>(null);
+ const [provider,setProvider]=useState<ProviderReadiness|null>(null);
  const [status,setStatus]=useState<"CHECKING"|"READY"|"UNAVAILABLE">("CHECKING");
  const [lastCheck,setLastCheck]=useState("");
  const [copyStatus,setCopyStatus]=useState("");
@@ -37,23 +46,26 @@ export default function ResearchWatchlistPage(){
   let active=true;
   async function refresh(){
    try{
-    const [eventsResult,sourceResult]=await Promise.all([
+    const [eventsResult,sourceResult,providerResult]=await Promise.all([
       fetch("/api/live/events",{cache:"no-store"}),
-      fetch("/api/intelligence/research/source-observatory",{cache:"no-store"})
+      fetch("/api/intelligence/research/source-observatory",{cache:"no-store"}),
+      fetch("/api/providers",{cache:"no-store"}).catch(()=>null)
     ]);
     if(!eventsResult.ok)throw new Error("Event source failed");
     const events:LiveResponse=await eventsResult.json();
     if(!events||!Array.isArray(events.events)||typeof events.mode!=="string")throw new Error("Invalid event response");
     const sources:SourceObservatoryReport|null=sourceResult.ok?await sourceResult.json():null;
+    const providerState:ProviderReadiness|null=providerResult?.ok?await providerResult.json().catch(()=>null):null;
     if(active){
      setLive(events);
      setReport(sources);
+     setProvider(providerState);
      setNow(new Date().toISOString());
      setLastCheck(new Date().toISOString());
      setStatus("READY");
     }
    }catch{
-    if(active){setLive(null);setReport(null);setStatus("UNAVAILABLE");setNow(new Date().toISOString());}
+    if(active){setLive(null);setReport(null);setProvider(null);setStatus("UNAVAILABLE");setNow(new Date().toISOString());}
    }
   }
   void refresh();
@@ -63,6 +75,9 @@ export default function ResearchWatchlistPage(){
  const candidates=useMemo(()=>live&&now?screenPersistedResearchMatches({
   mode:live.mode,events:live.events,asOf:now
  }):[],[live,now]);
+ // Old, un-timestamped matches are diagnostics only, NEVER today's actionable queue.
+ const freshCandidates=candidates.filter(row=>row.freshness==="RECENT_SNAPSHOT");
+ const staleCandidates=candidates.length-freshCandidates.length;
  const active=items.find(x=>x.id===selected)??items[0];
  const rawOdds=Number(odds);
  const threshold=Number.isFinite(rawOdds)&&rawOdds>1&&rawOdds<=1000?quoteBreakEven(rawOdds):null;
@@ -105,7 +120,7 @@ export default function ResearchWatchlistPage(){
   </section>
   <div className="watchStats">
    <article><small>ИССЛЕДОВАТЕЛЬСКИХ СЦЕНАРИЕВ</small><strong>{items.length}</strong><span>6 видов спорта</span></article>
-   <article><small>СОБЫТИЯ, СООТВЕТСТВУЮЩИЕ УСЛОВИЮ</small><strong>{status==="CHECKING"?"…":candidates.length}</strong><span>только сохранённые события, 1:1 после 80′</span></article>
+   <article><small>СОБЫТИЯ, СООТВЕТСТВУЮЩИЕ УСЛОВИЮ</small><strong>{status==="CHECKING"?"…":freshCandidates.length}</strong><span>только свежие сохранённые состояния; рынок не подтверждён</span></article>
    <article><small>ИСТОЧНИК МАТЧЕЙ</small><strong className="watchSmallNumber">{status==="UNAVAILABLE"?"НЕТ ДОСТУПА":status==="CHECKING"?"ПРОВЕРКА":hasActualData?"PERSISTED":"DEMO / НЕТ ДАННЫХ"}</strong><span>демо никогда не попадает в кандидаты</span></article>
    <article><small>ДОКАЗАННЫЙ ПОЛОЖИТЕЛЬНЫЙ EV</small><strong>0</strong><span>не подтверждён независимым тестом</span></article>
   </div>
@@ -113,10 +128,22 @@ export default function ResearchWatchlistPage(){
    <div className="watchSurfaceTitle"><div><small>01 / SOURCE-BOUND MATCH SCANNER</small><h2>Что найдено в хранилище</h2></div>
     <button type="button" className="watchRefresh" onClick={()=>{setStatus("CHECKING");setRefreshKey(x=>x+1);}}>Проверить заново ↻</button></div>
    <p className="watchSub">Экран не обращается напрямую к платным букмекерам и не выводит демо-матчи как реальные. Кандидат — лишь сохранённое состояние игры, а не ставка или подтверждённый live-коэффициент.</p>
+   <div className="watchLaunchHealth" aria-label="Готовность спортивных источников">
+     <div><small>ИСТОЧНИК СОБЫТИЙ</small><strong>{provider?.providers?.sportmonks?.configured?"КЛЮЧ ДОБАВЛЕН":hasActualData?"ЧЕРЕЗ GATEWAY":"НЕТ LIVE-ПОТОКА"}</strong></div>
+     <div><small>ИСТОЧНИК ЛИНИИ</small><strong>{provider?.providers?.theOddsApi?.configured?"КЛЮЧ ДОБАВЛЕН":"КОЭФФИЦИЕНТОВ НЕТ"}</strong></div>
+     <div><small>КОНТРОЛЬ РЫНКОВ</small><strong>{provider?.providers?.theOddsApi?.sportKeysConfigured?"ALLOWLIST ЕСТЬ":"НЕТ СПИСКА ТУРНИРОВ"}</strong></div>
+     <div><small>ГОТОВНОСТЬ К РЕАЛЬНЫМ СТАВКАМ</small><strong>НЕ ПОДТВЕРЖДЕНА</strong></div>
+   </div>
+   {(!provider?.providers?.sportmonks?.configured||!provider?.providers?.theOddsApi?.configured||!provider?.providers?.theOddsApi?.sportKeysConfigured)&&
+     <details className="watchSetup">
+       <summary>Почему не показываются реальные матчи и коэффициенты? Как подключить источники</summary>
+       <p>Текущий продукт читает сохранённые данные, но они не возникают сами. Для прямого футбольного потока требуется Sportmonks (ключ сервера SPORTMONKS_API_TOKEN). Для линии — The Odds API (THE_ODDS_API_KEY и ограниченный список VETO_ODDS_SPORT_KEYS). Ключи добавляются только в серверные секреты Vercel, не в браузере и не в этом чате. Наличие ключа ещё не означает, что конкретный рынок доступен или прибыльный.</p>
+       <div><a href="https://www.sportmonks.com/football-api/free-plan/" target="_blank" rel="noreferrer">Sportmonks Free (2 лиги) ↗</a><a href="https://the-odds-api.com/" target="_blank" rel="noreferrer">The Odds API ↗</a><a href="/research/mission-control">Диагностика источников VETO ↗</a></div>
+     </details>}
    {status==="UNAVAILABLE"?<div className="watchEmpty"><strong>Источник временно недоступен.</strong><p>Кандидаты скрыты. Не заменяем их вымышленными матчами или ценами.</p></div>:
     status==="CHECKING"?<div className="watchEmpty"><strong>Проверяем источник…</strong><p>Никаких сигналов до подтверждения данных.</p></div>:
-    candidates.length===0?<div className="watchEmpty"><strong>Подтверждённых совпадений сейчас нет.</strong><p>{hasActualData?"В сохранённом потоке не найден футбольный live-матч со счётом 1:1 после 80-й минуты.":"Система вернула демонстрационный fallback или пустой поток. Он не используется для этого экрана."} Посмотри ниже исследовательские условия, но не воспринимай их как сегодняшние ставки.</p></div>:
-    <div className="watchMatches">{candidates.map(row=><article key={row.event.id}>
+    freshCandidates.length===0?<div className="watchEmpty"><strong>Свежих совпадений сейчас нет.</strong><p>{hasActualData?"В сохранённом потоке нет актуального футбольного события 1:1 после 80-й минуты.":"Доступен только демонстрационный поток или данные отсутствуют."} {staleCandidates>0?"Найдено устаревших/без времени: "+staleCandidates+". Они скрыты из актуального списка.":""} Посмотри ниже исследовательские условия, но не воспринимай их как сегодняшние ставки.</p></div>:
+    <div className="watchMatches">{freshCandidates.map(row=><article key={row.event.id}>
      <div className="watchMatchTop"><span>⚽ {row.event.competition}</span><b>ТОЛЬКО ПРОВЕРКА</b></div>
      <h3>{row.event.homeName} — {row.event.awayName}</h3>
      <div className="watchScore"><strong>{row.event.homeScore}:{row.event.awayScore}</strong><span>{row.event.clock} · {row.event.period}</span></div>
@@ -129,7 +156,7 @@ export default function ResearchWatchlistPage(){
   </section>
   <section id="watchConditions" className="watchSurface watchIdeas">
    <div className="watchSurfaceTitle"><div><small>02 / HUMAN RESEARCH QUEUE</small><h2>Какие именно рынки смотреть</h2></div><span>Не текущие предложения букмекеров</span></div>
-   <div className="watchFilters">{sports.map(x=><button key={x.id} type="button" aria-pressed={sport===x.id} onClick={()=>setSport(x.id)} className={sport===x.id?"active":""}>{x.label}</button>)}</div>
+   <div className="watchFilters">{sports.map(x=><button key={x.id} type="button" aria-pressed={sport===x.id} onClick={()=>{setSport(x.id);if(x.id!=="all"){const first=items.find(item=>item.sport===x.id);if(first)setSelected(first.id);}setCopyStatus("");}} className={sport===x.id?"active":""}>{x.label}</button>)}</div>
    <div className="watchIdeaGrid">{items.filter(x=>sport==="all"||x.sport===sport).map((x,i)=>{
     const p=x.observed?x.observed.wins/(x.observed.wins+x.observed.losses):x.referenceRate??null;
     return <button className={"watchIdea "+(selected===x.id?"selected":"")} type="button" key={x.id} aria-pressed={selected===x.id} onClick={()=>{setSelected(x.id);setCopyStatus("");}}>
