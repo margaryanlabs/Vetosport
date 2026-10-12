@@ -78,6 +78,7 @@ export class TheOddsApiClient {
     const response = await fetch(url, {
       headers: { accept: "application/json" },
       cache: "no-store",
+      signal: AbortSignal.timeout(12_000),
     });
 
     const receivedAt = new Date();
@@ -154,10 +155,9 @@ export class TheOddsApiClient {
       sport,
       competition: event.sport_title ?? event.sport_key,
       startsAt: new Date(event.commence_time).toISOString(),
-      status:
-        new Date(event.commence_time).getTime() <= Date.now()
-          ? "live"
-          : "scheduled",
+      // Bookmaker listings contain kickoff time, not authoritative match state.
+      // Never label a game LIVE purely because its scheduled start has passed.
+      status: "scheduled",
       home: { id: event.home_team, name: event.home_team },
       away: { id: event.away_team, name: event.away_team },
     };
