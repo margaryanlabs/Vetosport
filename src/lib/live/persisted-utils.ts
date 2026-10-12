@@ -77,12 +77,13 @@ export const buildPersistedSummary = (input: {
   const state = input.state?.state ?? {};
   const score = objectValue(state.score);
   const clock = objectValue(state.clock);
-  const lastUpdatedAt =
-    input.decision?.capturedAt ??
-    input.state?.capturedAt ??
-    eventQuotes[0]?.capturedAt ??
-    input.event.event.startsAt;
-  const age = Math.max(0, (Date.now() - new Date(lastUpdatedAt).getTime()) / 1000);
+  // Event freshness must be based on the actual *score/state* snapshot.
+  // A newer quote, old decision or scheduled kickoff never proves the
+  // live game state was refreshed.
+  const lastUpdatedAt = input.state?.capturedAt;
+  const age = lastUpdatedAt
+    ? Math.max(0,(Date.now()-new Date(lastUpdatedAt).getTime())/1000)
+    : Number.POSITIVE_INFINITY;
 
   const displayClock =
     typeof state.clock === "string"

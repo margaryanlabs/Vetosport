@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import type { Decision } from "@/lib/domain/types";
 import type { LiveEventSummary } from "@/lib/live/types";
 import { SportGlyph } from "@/components/SportGlyph";
+import {getObservedFreshness} from "@/lib/live/freshness";
 
 const pp = (value: number) =>
   `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)} pp`;
@@ -41,7 +42,11 @@ export function LiveCommandCenter({
     () =>
       events
         .flatMap((event) =>
-          event.primarySignal && event.primarySignal.decision !== "PASS"
+          event.source === "persisted" && getObservedFreshness(event).freshLive && event.primarySignal &&
+          Number.isFinite(Date.parse(event.primarySignal.capturedAt)) &&
+          Date.now()-Date.parse(event.primarySignal.capturedAt)>=0 &&
+          Date.now()-Date.parse(event.primarySignal.capturedAt)<=120_000 &&
+          event.primarySignal.decision !== "PASS"
             ? [{ event, signal: event.primarySignal }]
             : [],
         )
@@ -54,7 +59,7 @@ export function LiveCommandCenter({
     (sum, event) => sum + event.markets,
     0,
   );
-  const ready = events.filter((event) => event.intelligenceReady).length;
+  const ready = events.filter((event) => event.source === "persisted" && getObservedFreshness(event).freshLive && event.intelligenceReady).length;
 
   return (
     <section className="liveCommand" id="live">
@@ -62,15 +67,15 @@ export function LiveCommandCenter({
         <div>
           <span className="panelIndex">01</span>
           <div>
-            <h2>LIVE COMMAND</h2>
-            <p>Observed events · persisted decisions · no synthetic live claims</p>
+            <h2>МАТЧИ · МОНИТОРИНГ</h2>
+            <p>Реальные источники и учебные примеры отмечены отдельно. Данные могут устаревать.</p>
           </div>
         </div>
 
         <div className="liveCommandStats">
           <span><b>{events.length}</b> EVENTS</span>
-          <span><b>{totalMarkets}</b> MARKETS</span>
-          <span><b>{ready}</b> VETO READY</span>
+          <span><b>{totalMarkets}</b> РЫНКОВ / ВКЛ. ДЕМО</span>
+          <span><b>{ready}</b> АКТУАЛЬНЫХ РЕШЕНИЙ</span>
         </div>
       </div>
 
@@ -91,7 +96,7 @@ export function LiveCommandCenter({
                     <i className={event.pulse} />
                     {event.sportLabel}
                     <em className={event.source === "persisted" ? "sourceLive" : "sourceDemo"}>
-                      {event.source === "persisted" ? "LIVE DATA" : "DEMO"}
+                      {getObservedFreshness(event).label}
                     </em>
                   </span>
                   <b>{event.clock}</b>
@@ -153,9 +158,9 @@ export function LiveCommandCenter({
           <div className="signalRadarHead">
             <div>
               <span>SIGNAL RADAR</span>
-              <strong>Live decisions and demo signals are always source-labeled</strong>
+              <strong>Только подтверждённые свежие решения, не демонстрационные сценарии</strong>
             </div>
-            <small>RANKED BY VETO SCORE</small>
+            <small>ТЕКУЩИЕ / НЕ СИМУЛЯЦИЯ</small>
           </div>
 
           <div className="signalRadarList">
@@ -199,10 +204,10 @@ export function LiveCommandCenter({
               ))
             ) : (
               <div className="signalRadarEmpty">
-                <span>NO VERIFIED SIGNALS YET</span>
+                <span>НЕТ ПОДТВЕРЖДЁННЫХ СВЕЖИХ СИГНАЛОВ</span>
                 <p>
-                  VETO can observe an event before it emits a decision. The
-                  radar stays empty rather than inventing an EDGE.
+                  Демо-сигналы, старые цены и неподтверждённые решения не попадают в этот список.
+                  Откройте матч, чтобы увидеть сохранённые данные и их источник.
                 </p>
               </div>
             )}
