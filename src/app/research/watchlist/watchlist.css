@@ -16,3 +16,38 @@
 .watchMatchActions a:last-child{border-color:rgba(240,75,76,.53);color:#ffc7c7;background:rgba(240,75,76,.08)}
 .watchMatchActions a:hover{background:rgba(166,198,219,.12)}
 @media(max-width:720px){.watchMatchActions a{width:100%;text-align:center}}
+
+/* Product-integrated Watchlist v1: premium real-source match monitoring. */
+.watchRoot.watchReal{--ink:#f4f5f1;--muted:#acbdb3;--line:rgba(209,237,218,.15);--panel:#111915;--accent:#fa4849;background:radial-gradient(ellipse 60% 36% at 80% 0%,rgba(43,102,72,.29),transparent 76%),#080d0b;}
+.watchReal .watchHeader{height:78px}.watchReal .watchBrand{display:inline-flex;align-items:center;gap:7px;font-size:18px;letter-spacing:.10em;}
+.watchRealHero{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:clamp(24px,3vw,52px);align-items:center;padding:58px 0 46px;min-width:0;}
+.watchRealHeroCopy{min-width:0}.watchRealHero h1{font-size:clamp(44px,5.3vw,83px);line-height:.98;letter-spacing:-.068em;margin:30px 0 23px;}
+.watchRealHero h1 em{font-style:normal;color:#d3e8dc}.watchRealHeroCopy>p{color:#b0c2b5;font-size:clamp(14px,1.12vw,17px);line-height:1.75;max-width:560px;}
+.watchRealHeroCopy .watchRealDisclosure{margin-top:28px;font-size:12px;color:#9bb3a2;border-left:2px solid #df4045;padding:3px 0 3px 14px;}
+.watchRealHeroVision{min-width:0}.watchRealHeroVision .pitchVisionArena{min-height:315px}
+.watchRealHero .watchHeroActions a{border-radius:10px;min-height:46px;display:inline-flex;align-items:center;justify-content:center;background:#171f1a;color:#fff;border-color:#3b5042}
+.watchRealHero .watchHeroActions a:first-child{background:#e32c36;border-color:#f14a51}
+.watchReal .watchStats article{border-radius:13px;background:linear-gradient(140deg,#19251d,#111814);min-height:160px}
+.watchReal .watchStats strong{color:#f5f7f3}.watchReal .watchStats span{color:#9cb6a5}
+.watchReal .watchFilters button{border-radius:9px;background:#131d16;color:#bfd4c4}
+.watchReal .watchFilters button.active,.watchReal .watchFilters button:hover{background:#243a2b;border-color:#7bba92;color:#fff}
+.watchReal .watchMatches{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.watchReal .watchMatches article{border-radius:16px;background:linear-gradient(135deg,#1b2920,#0e1611);border-color:rgba(203,237,216,.16);min-height:250px}
+.watchReal .watchMatches article.selected{border-color:rgba(129,216,159,.65)}
+.watchReal .watchMatchTop>b{color:#d9aaa2;letter-spacing:.05em;font-size:9px}
+.watchReal .watchScore strong{font-size:40px;color:#eff9f0}
+.watchReal .watchMeta span{background:#293f32;color:#c4e3cb;border-radius:6px}
+.watchReal .watchMatchActions button{border:1px solid rgba(219,240,224,.33);background:rgba(255,255,255,.055);color:#fff;border-radius:8px;font-size:12px;font-weight:740;padding:10px 15px}
+.watchReal .watchMatchActions button:hover{background:#273e2e}.watchReal .watchMatchActions a{border-radius:8px}
+.watchRealResearch{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:14px}
+.watchReal .watchSelected,.watchReal .watchPrice{border-radius:16px;background:linear-gradient(145deg,#1c2920,#101711);border-color:rgba(203,237,216,.18)}
+.watchReal .watchPrice>button{border-radius:10px;color:white;background:#e3333d}
+.watchReal .watchPrice input{border-radius:8px;color:#fff;background:#0c130e;border-color:#445e4a}
+.watchReal .watchBreak strong{font-size:48px}
+.watchReal .watchRealBack{display:inline-block;margin-top:22px;font-weight:650;font-size:13px;color:#d0e6d5}
+.watchReal .watchEmpty{border-radius:15px;border-color:#50715c;background:#121f16}
+.watchReal .watchEmpty a{display:inline-block;margin-top:16px;color:#f0f5f1}
+@media(max-width:1170px){.watchReal .watchMatches{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:940px){.watchRealHero{grid-template-columns:1fr;padding:40px 0}.watchRealHero h1{font-size:clamp(44px,8vw,68px)}.watchRealResearch{grid-template-columns:1fr}.watchReal .watchStats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:660px){.watchReal{padding:0 13px 45px}.watchRealHero{gap:24px}.watchRealHero h1{font-size:46px}.watchReal .watchMatches{grid-template-columns:1fr}.watchReal .watchStats article{min-height:132px}.watchReal .watchStats strong{font-size:29px}.watchRealHeroVision .pitchVisionArena{min-height:230px}.watchReal .watchBrand{font-size:15px}.watchReal .watchHeader>a:last-child{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.watchReal *{scroll-behavior:auto!important}}
