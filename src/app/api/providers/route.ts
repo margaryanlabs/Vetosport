@@ -85,6 +85,8 @@ export function GET() {
           permitted:quoteBudget.allowed,reason:quoteBudget.reason,optedIn:quoteBudget.enabled,
           estimatedCreditsPerRun:quoteBudget.creditsPerRun,estimatedCreditsPerDay:quoteBudget.estimatedDailyCredits,
           estimatedCreditsPer30Days:quoteBudget.estimatedMonthlyCredits30d,
+          estimatedCreditsPer31Days:quoteBudget.estimatedMonthlyCredits31d,
+          monthlyBudget:quoteBudget.monthlyBudget,
           configuredDailyBudgetCredits:quoteBudget.dailyBudget,actualChargesNotMeasured:true,
         },
       },
@@ -110,7 +112,7 @@ export function GET() {
       schedules: {
         footballState: "*/5 * * * *",
         apiFootball: "*/30 * * * *",
-        liveOdds: "*/5 * * * *",
+        liveOdds: "0 */4 * * *",
       },
     },
     criticalBlockers: runtime.blockers,
@@ -165,7 +167,10 @@ export function GET() {
         key: "VETO_ODDS_CRON_ENABLED",configured:quoteBudget.enabled,purpose:"Explicit operator opt-in before paid odds polling (default OFF).",critical:true,
       },
       {
-        key: "VETO_ODDS_CRON_MAX_ESTIMATED_DAILY_CREDITS",configured:quoteBudget.dailyBudget>0,purpose:"Approve a daily estimated bookmaker credits cap for */5 scheduler.",critical:true,
+        key: "VETO_ODDS_CRON_MAX_ESTIMATED_DAILY_CREDITS",configured:quoteBudget.dailyBudget>0,purpose:"Approve a daily estimated bookmaker credits cap for 6 runs per day.",critical:true,
+      },
+      {
+        key: "VETO_ODDS_CRON_MAX_ESTIMATED_MONTHLY_CREDITS",configured:quoteBudget.monthlyBudget!==null&&quoteBudget.monthlyBudget>0,purpose:"Fail-closed 31-day bookmaker budget limit under FREE 500 credits.",critical:true,
       },
       {
         key: "CRON_SECRET",
