@@ -54,6 +54,19 @@ export default function ShadowJournal(){
     if(Array.isArray(decoded))setEntries(decoded.filter(r=>r&&typeof r.id==="string"&&typeof r.match==="string"&&r.input&&typeof r.input.decimalOdds==="number").slice(0,5000));
    }
   }catch{setMessage("Предыдущий локальный журнал не прочитан. Возможно, данные браузера повреждены.");}
+  // Explicit user-directed transfer, never a real wager, even with a persisted event.
+  const params=new URLSearchParams(window.location.search);
+  if(params.get("source")==="watchlist"){
+   const incoming=params.get("match")?.trim().slice(0,160)??"";
+   const minute=Number(params.get("minute"));
+   const line=Number(params.get("line"));
+   if(incoming)setMatch(incoming);
+   setSource("VETO WATCHLIST · ручное paper-наблюдение, котировка НЕ подтверждена");
+   if(Number.isFinite(minute)&&minute>=80&&minute<=105&&line===4.5){
+    setInput(old=>({...old,elapsedMinutes:minute,scoreHome:1,scoreAway:1,underLine:4.5}));
+   }
+   setMessage("Перенесено из Watchlist: проверь условия и введи реальный источник цены вручную. Ставка НЕ создана.");
+  }
   setReady(true);
  },[]);
  useEffect(()=>{
