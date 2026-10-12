@@ -5,6 +5,8 @@ import type { Opportunity } from "@/lib/domain/types";
 import type { LiveWorkspace } from "@/lib/sandbox/workspaces";
 import { ParallaxView } from "@/components/ParallaxView";
 import { SportGlyph } from "@/components/SportGlyph";
+import {PitchVision} from "@/components/PitchVision";
+import type {LiveEventSummary} from "@/lib/live/types";
 
 type RoomMode = "overview" | "parallax" | "evidence" | "replay" | "proof";
 type ExplanationKey = "match" | "probability" | "risks" | "evidence" | "missing";
@@ -93,6 +95,14 @@ export function MatchRoom({
     "loading" | "verified" | "awaiting" | "unavailable"
   >("loading");
 
+  const pitchEvent: LiveEventSummary = {
+    id:workspace.id,source,sport:workspace.sport,sportLabel:workspace.sportLabel,
+    competition:workspace.competition,status:"live",clock:workspace.clock,period:workspace.period,
+    homeCode:workspace.homeCode,awayCode:workspace.awayCode,
+    homeName:workspace.homeName,awayName:workspace.awayName,
+    homeScore:workspace.homeScore,awayScore:workspace.awayScore,
+    pulse:workspace.pulse,markets:workspace.markets,repriced:workspace.repriced,intelligenceReady:false,
+  };
   const marketProbability = 1 / selected.marketOdds;
   const gap = selected.fairProbability - marketProbability;
   const historyLatest = workspace.probabilityHistory.at(-1);
@@ -559,6 +569,7 @@ export function MatchRoom({
       {mode === "overview" && (
         <div className="matchRoomOverview matchRoomOverviewV2">
           <section className="matchWorld">
+            <div className="matchWorldPitch"><PitchVision event={pitchEvent} compact/></div>
             <div className="matchWorldColumns matchWorldColumnsV2">
               <article>
                 <span>GAME</span>

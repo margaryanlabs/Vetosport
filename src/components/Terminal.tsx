@@ -109,7 +109,7 @@ export function Terminal({
                 }
               | null,
           ) => {
-            if (!active || !payload?.events?.length) return;
+            if (!active || !payload || !Array.isArray(payload.events)) return;
             setEventSummaries(payload.events);
             const persistedMode = payload.mode === "persisted";
             setLiveSourceMode(persistedMode ? "persisted" : "sandbox-fallback");
@@ -253,7 +253,10 @@ export function Terminal({
   const providerMode =
     providerStatus == null
       ? "CHECKING DATA"
-      : activeSummary?.source === "persisted"
+      : activeSummary?.source === "persisted" && activeSummary.status === "live" &&
+          activeSummary.lastUpdatedAt && Number.isFinite(Date.parse(activeSummary.lastUpdatedAt)) &&
+          Date.now()-Date.parse(activeSummary.lastUpdatedAt)>=0 &&
+          Date.now()-Date.parse(activeSummary.lastUpdatedAt)<=120_000
         ? "LIVE DATA"
         : configuredProviders > 0 || gatewayReady
           ? "AWAITING LIVE DATA"
@@ -316,6 +319,7 @@ export function Terminal({
           events={eventSummaries}
           onOpenMatches={() => setActiveView("matches")}
           onOpenResearch={() => setActiveView("research")}
+          onOpenSystem={() => setActiveView("system")}
           onSelectEvent={selectEvent}
           onSportChange={selectSport}
         />

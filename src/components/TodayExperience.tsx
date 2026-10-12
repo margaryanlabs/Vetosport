@@ -3,6 +3,7 @@
 import type { Sport } from "@/lib/domain/types";
 import type { LiveEventSummary } from "@/lib/live/types";
 import { SportGlyph } from "@/components/SportGlyph";
+import {PitchVision} from "@/components/PitchVision";
 
 const sportNames: Record<Sport, string> = {
   football: "Футбол",
@@ -50,6 +51,7 @@ export function TodayExperience({
   onSelectEvent,
   onOpenMatches,
   onOpenResearch,
+  onOpenSystem,
 }: {
   events: LiveEventSummary[];
   activeSport: Sport;
@@ -57,29 +59,39 @@ export function TodayExperience({
   onSelectEvent: (eventId: string) => void;
   onOpenMatches: () => void;
   onOpenResearch: () => void;
+  onOpenSystem: () => void;
 }) {
   const sportEvents = events.filter((event) => event.sport === activeSport);
-  const visibleEvents = sportEvents.length ? sportEvents : events;
+  // Never show another sport as though it belonged to the selected tab.
+  const visibleEvents = sportEvents;
+  const heroEvent = sportEvents.find(e=>e.source==="persisted") ?? sportEvents[0];
   const sportOptions = Array.from(new Set(events.map((event) => event.sport)));
-  const liveCount = events.filter((event) => event.source === "persisted").length;
-  const researchCount = events.filter((event) => event.shadowPredictionCount || event.intelligenceReady).length;
+  const observedCount = events.filter((event) => event.source === "persisted").length;
+  const liveCount = events.filter(event=>event.source==="persisted" && event.status==="live" && event.lastUpdatedAt && Number.isFinite(Date.parse(event.lastUpdatedAt)) && Date.now()-Date.parse(event.lastUpdatedAt)>=0 && Date.now()-Date.parse(event.lastUpdatedAt)<=120_000).length;
+  const researchCount = events.filter(event=>event.source==="persisted"&&(event.shadowPredictionCount||event.intelligenceReady)).length;
 
   return (
     <section className="todayExperience" aria-labelledby="today-title">
       <header className="todayHero">
         <div className="todayKicker"><i />СПОРТИВНЫЙ ИНТЕЛЛЕКТ БЕЗ ВЫДУМКИ</div>
-        <div className="todayHeroBody">
-          <div>
-            <h1 id="today-title">Понимай матч прежде, чем делать выводы.</h1>
-            <p>
-              VETO Sport сопоставляет состояние игры, рыночные цены и доказательства.
-              Если данных недостаточно, это видно сразу.
-            </p>
+        <div className="todayHeroBody todayHeroBodyShowcase">
+          <div className="todayHeroCopy">
+            <span className="todayEyebrow">THE GAME. THE EVIDENCE. THE DECISION.</span>
+            <h1 id="today-title">Спорт, который<br/><em>можно понять.</em></h1>
+            <p>Выбери матч, посмотри счёт и данные, затем проверь вывод VETO. Никаких сложных терминов до того, как увидишь саму игру.</p>
+            <div className="todayHeroActions">
+              <button type="button" className="todayPrimaryAction" onClick={onOpenMatches}>Смотреть матчи <span>↗</span></button>
+              <button type="button" className="todaySecondaryAction" onClick={()=>heroEvent ? onSelectEvent(heroEvent.id):onOpenMatches()}>Разобрать матч <span>→</span></button>
+            </div>
+            <div className="todayDataTruth todayDataTruthInline" aria-label="Состояние данных">
+              <i className={liveCount?"available":"awaiting"}/>
+              <span>{liveCount ? `${liveCount} свежих live-событий` : observedCount ? `${observedCount} сохранённых событий · актуальность не подтверждена` : "Сейчас нет подтверждённого live-потока"}</span>
+              <button type="button" onClick={onOpenSystem}>Откуда данные? ↗</button>
+            </div>
           </div>
-          <div className="todayDataTruth" aria-label="Состояние данных">
-            <span>ДАННЫЕ СЕЙЧАС</span>
-            <strong>{liveCount ? `${liveCount} LIVE` : "НЕТ LIVE"}</strong>
-            <small>{liveCount ? "События с сохранённой линией источника" : "Показаны только явно отмеченные симуляции"}</small>
+          <div className="todayHeroVision">
+            {heroEvent ? <PitchVision event={heroEvent} onOpen={()=>onSelectEvent(heroEvent.id)}/> :
+              <div className="todayHeroNoVision"><SportGlyph sport={activeSport} size={65}/><strong>Ожидаем события</strong><span>Выбери другой спорт или открой раздел матчей.</span></div>}
           </div>
         </div>
         <div className="todaySportPicker" aria-label="Выбор спорта">
@@ -98,11 +110,20 @@ export function TodayExperience({
         </div>
       </header>
 
+      <section className="todayStart" aria-label="С чего начать">
+        <header><span>VETO / YOUR FIRST 30 SECONDS</span><strong>Три понятных шага — выбери, что тебе нужно.</strong></header>
+        <div className="todayStartGrid">
+          <button type="button" onClick={onOpenMatches}><span className="todayStartNumber">01</span><strong>Смотреть матчи</strong><small>Счёт, время, турнир и источник информации.</small><b aria-hidden>↗</b></button>
+          <button type="button" onClick={()=>heroEvent ? onSelectEvent(heroEvent.id) : onOpenMatches()}><span className="todayStartNumber">02</span><strong>Разобрать игру</strong><small>Понять прогноз, цену и что может пойти не так.</small><b aria-hidden>↗</b></button>
+          <button type="button" onClick={onOpenResearch}><span className="todayStartNumber">03</span><strong>Исследовать стратегию</strong><small>Графики, история проверок и лаборатории.</small><b aria-hidden>↗</b></button>
+        </div>
+      </section>
+
       <section className="todaySection" aria-labelledby="today-live-title">
         <div className="todaySectionHead">
           <div>
-            <span>СЕЙЧАС В ФОКУСЕ</span>
-            <h2 id="today-live-title">Матчи и состояние информации</h2>
+            <span>{liveCount?"СВЕЖИЕ МАТЧИ":"СОБЫТИЯ / ВАЖНО ПРОВЕРИТЬ ИСТОЧНИК"}</span>
+            <h2 id="today-live-title">Матчи. Счёт. Что происходит.</h2>
           </div>
           <button className="todayTextAction" onClick={onOpenMatches} type="button">Все матчи <span>→</span></button>
         </div>
@@ -114,11 +135,11 @@ export function TodayExperience({
               <article className={`todayMatchCard source-${event.source}`} key={event.id}>
                 <header>
                   <span className={`todaySourceBadge ${live ? "live" : "simulation"}`}>
-                    <i />{live ? "LIVE DATA" : "SIMULATION"}
+                    <i />{live ? "СОХРАНЕНО / ПРОВЕРЬ ВРЕМЯ" : "ДЕМО / НЕ РЕАЛЬНЫЙ МАТЧ"}
                   </span>
                   <span>{event.clock}</span>
                 </header>
-                <div className="todayCompetition"><SportGlyph sport={event.sport} size={15} />{event.competition}</div>
+                <div className="todayCompetition"><SportGlyph sport={event.sport} size={18} />{event.competition}</div>
                 <div className="todayScore">
                   <div><strong>{event.homeName}</strong><span>{event.homeCode}</span></div>
                   <b>{event.homeScore}<i>:</i>{event.awayScore}</b>
@@ -150,7 +171,7 @@ export function TodayExperience({
               <span>ПРИОРИТЕТ ИНТЕЛЛЕКТА</span>
               <h2 id="today-highlights-title">Что можно изучить</h2>
             </div>
-            <span className="todayCount">{researchCount} ДОСТУПНО</span>
+            <span className="todayCount">{researchCount ? `${researchCount} С ИСТОЧНИКОМ` : "RESEARCH / EXPLORE"}</span>
           </div>
           <div className="todayResearchList">
             <article>
