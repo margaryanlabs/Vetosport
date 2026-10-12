@@ -52,9 +52,9 @@ export async function getApiFootballLiveFixtures():Promise<ApiFootballLiveSnapsh
     fixtures:data.response.slice(0,50) as ApiFootballFixture[],
   };
 }
-const liveCodes=new Set(["1H","HT","2H","ET","BT","P","LIVE","INT"]);
+const liveCodes=new Set(["1H","HT","2H","ET","BT","P","LIVE"]);
 const finishedCodes=new Set(["FT","AET","PEN"]);
-const suspendedCodes=new Set(["SUSP","PST","CANC","ABD","AWD","WO"]);
+const suspendedCodes=new Set(["INT","SUSP","PST","CANC","ABD","AWD","WO"]);
 export function normalizeApiFootballFixture(row:ApiFootballFixture):{event:SportEvent;state:Record<string,unknown>}|null{
   const f=row.fixture,t=row.teams;
   const id=f?.id;
@@ -82,7 +82,7 @@ export function normalizeApiFootballFixture(row:ApiFootballFixture):{event:Sport
     home:{id:String(t?.home?.id??home),name:home},
     away:{id:String(t?.away?.id??away),name:away},
     clock:{period:code,elapsedSeconds:elapsed===null?undefined:elapsed*60},
-    score:validScore?{home:homeGoals,away:awayGoals}:undefined,
+    score:validScore?{home:homeGoals as number,away:awayGoals as number}:undefined,
   };
   const state:Record<string,unknown>={
     status,period:code,clock,
