@@ -1,0 +1,161 @@
+/* VETO Sport / global light appearance. Loaded after every dark visual skin. */
+html[data-veto-sport-appearance="light"] {
+  color-scheme: light;
+  --bg:#f5f7fb;
+  --bg-deep:#edf2f8;
+  --panel:#ffffff;
+  --panel-solid:#ffffff;
+  --panel-raised:#f4f6f9;
+  --panel-hover:#edf2f8;
+  --line:rgba(24,42,61,.14);
+  --line-strong:rgba(24,42,61,.21);
+  --line-soft:rgba(24,42,61,.09);
+  --text:#17212e;
+  --text-soft:#3f4d61;
+  --muted:#637185;
+  --muted-2:#738094;
+  --edge:#137b55;
+  --edge-dim:rgba(19,123,85,.11);
+  --watch:#966118;
+  --danger:#c73146;
+  --ice:#3a6688;
+  --ice-dim:rgba(58,102,136,.12);
+  --shadow:0 14px 38px rgba(26,49,73,.08);
+  --veto-white:#17212e;
+  --v3-bg:#f5f7fb;
+  --v3-surface:#ffffff;
+  --v3-surface-2:#f1f5fa;
+  --v3-line:rgba(24,42,61,.13);
+  --v3-line-strong:rgba(24,42,61,.2);
+  --v3-text:#17212e;
+  --v3-text-2:#455165;
+  --v3-muted:#647287;
+  --v3-muted-2:#718196;
+  --v3-red:#d92f2a;
+  --v3-green:#117a51;
+  --v3-amber:#9a6314;
+}
+html[data-veto-sport-appearance="light"] body {
+  color:var(--text);
+  background: radial-gradient(circle at 80% -10%,rgba(217,47,42,.035),transparent 40rem),#f5f7fb;
+}
+html[data-veto-sport-appearance="light"] :is(button,input,select,textarea){color-scheme:light}
+html[data-veto-sport-appearance="light"] :is(button,a,input,select,textarea):focus-visible {
+  outline:2px solid #d92f2a;
+  outline-offset:3px;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .matchShell,.vetoShell,.matchShellCanvas,.vetoWorkspaceCanvas,
+  .matchShellBackdrop,.vetoWorkspaceBackdrop,.observedStudioData
+) {
+  background: #f5f7fb !important;
+  color:var(--text);
+}
+html[data-veto-sport-appearance="light"] :is(
+  .matchShellTop,.vetoRail,.vetoWorkspaceTop,.matchShellMobile,.vetoMobileNav,
+  .matchShellMore,.observedStudioNav,.matchShellNav,.matchShellSports,.matchShellLang
+) {
+  background:rgba(255,255,255,.96) !important;
+  color:var(--text) !important;
+  border-color:var(--line) !important;
+  box-shadow:0 6px 28px rgba(26,49,73,.055);
+}
+html[data-veto-sport-appearance="light"] :is(
+  .todayHero,.todayMatchCard,.todayStartGrid button,
+  .todaySection,.todayHighlights,.todayEmptyState,.todayHeroNoVision,
+  .matchRoom,.matchRoomHero,.matchRoomHeroV2,.vetoDecisionPanel,
+  .liveCommand,.liveCommandEvent,.matchWorldColumns article,
+  .researchDesk,.researchDeskCard,.systemHero,.systemPanel,.panel,
+  .observedScoreStory,.observedOddsStudio,.observedOddsMetrics article,
+  .observedChartFacts>div,.observedOddsRows article,.observedMovement,
+  .observedChartEmpty,.observedOddsEmpty,.observedOddsExplanation,
+  .observedChartFrame,.observedChartFacts,.observedRawDetails
+) {
+  background:linear-gradient(150deg,#ffffff,#f7f9fc) !important;
+  color:var(--text) !important;
+  border-color:var(--line) !important;
+  box-shadow:0 11px 34px rgba(22,42,65,.055);
+}
+html[data-veto-sport-appearance="light"] :is(
+  .todayHero,.todayHeroCopy,.todayMatchCard,.todayStartGrid button,
+  .matchRoom,.matchRoomHeroV2,.vetoDecisionPanel,.liveCommand,
+  .researchDesk,.researchDeskCard,.observedStudioData
+) :is(h1,h2,h3,h4,strong,b) {
+  color:var(--text) !important;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .matchShellNav button.active,.matchShellSports button.active,
+  .matchShellLang button.active,.matchShellMobile button.active,
+  .vetoRailGroup>button.active,.vetoSportTabs button.active
+){
+  color:#17212e !important;
+  background:#e8eef6 !important;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .matchShellNav button,.matchShellSports button,.matchShellLang button,
+  .matchShellMoreNav button,.vetoRailGroup>button,.vetoSportTabs button
+){color:#506078}
+html[data-veto-sport-appearance="light"] :is(
+  .matchShellBrand,.matchShellWatchLink,.vetoRailBrand,.vetoRailBrand>span,
+  .matchShellTop .matchShellTools,.matchShellNav a
+){color:var(--text)}
+html[data-veto-sport-appearance="light"] :is(
+  .todayHeroCopy>p,.todayHeroCopy p,.todayMatchCard small,
+  .todayStartGrid small,.matchRoomHero p,.researchDeskCard p,
+  .observedStudioSectionHead p,.observedOddsExplanation p
+){color:#526174 !important}
+html[data-veto-sport-appearance="light"] :is(
+  .observedStudioNav a,.observedOddsFilters button,.observedOddsBanner,
+  .observedChartFacts>div,.observedOddsMore
+) {
+  background:#f1f5fa !important;
+  color:#28384c !important;
+  border-color:var(--line) !important;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .observedStudioSectionHead h3,.observedChartFacts strong,
+  .observedOddsMetrics strong,.observedOddsRowMain strong,
+  .observedOddsRowPrice b,.observedChartEmpty strong
+) { color:#17212e !important; }
+html[data-veto-sport-appearance="light"] :is(
+  .observedChartLegend>span,.observedOddsBanner strong,
+  .observedOddsRows time,.observedRawDetails>summary
+) {color:#415165 !important}
+/* Football pitch and live-market chart regions retain dark-on-field legibility. */
+html[data-veto-sport-appearance="light"] :is(.pitchVisionArena,.pitchVision,.observedChartFrame svg) {
+  color-scheme: dark;
+}
+html[data-veto-sport-appearance="light"] .matchShellMobile {
+  box-shadow:0 -9px 32px rgba(26,49,73,.075);
+}
+.vetoSportAppearanceToggle {
+  position:fixed;
+  z-index:130;
+  right:max(17px,env(safe-area-inset-right));
+  bottom:calc(78px + env(safe-area-inset-bottom));
+  min-width:48px;
+  min-height:48px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  padding:11px 14px;
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:999px;
+  background:rgba(14,18,24,.96);
+  color:#f5f7fa;
+  box-shadow:0 13px 38px rgba(0,0,0,.24);
+  backdrop-filter:blur(18px);
+  font:700 12px/1.2 var(--font-veto-sans),sans-serif;
+  cursor:pointer;
+  transition:transform .17s ease,box-shadow .17s ease;
+}
+.vetoSportAppearanceToggle:hover{transform:translateY(-2px)}
+html[data-veto-sport-appearance="light"] .vetoSportAppearanceToggle {
+  color:#17212e;background:rgba(255,255,255,.97);
+  border-color:rgba(24,42,61,.2);
+  box-shadow:0 13px 36px rgba(26,49,73,.13);
+}
+@media(min-width:900px){.vetoSportAppearanceToggle{bottom:22px;right:22px}}
+@media(max-width:540px){.vetoSportAppearanceToggle{width:48px;height:48px;padding:0}.vetoSportAppearanceToggle>span{display:none}}
+@media(prefers-reduced-motion:reduce){.vetoSportAppearanceToggle{transition:none}}
