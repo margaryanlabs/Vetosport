@@ -4,6 +4,7 @@ import type { LiveObservation } from "@/lib/live/types";
 import { SportGlyph } from "@/components/SportGlyph";
 import {PitchVision} from "@/components/PitchVision";
 import {ObservedOddsBoard} from "@/components/ObservedOddsBoard";
+import {PaperResearchTicket} from "@/components/PaperResearchTicket";
 import {ObservedScoreStory} from "@/components/ObservedScoreStory";
 import {getObservedFreshness} from "@/lib/live/freshness";
 
@@ -76,7 +77,8 @@ export function ObservedEventRoom({
       <nav className="observedStudioNav" aria-label="Перейти к разделу матча">
         <a href="#veto-score-story"><span>01</span> История счёта</a>
         <a href="#veto-odds-studio"><span>02</span> Коэффициенты</a>
-        <a href="#veto-decision"><span>03</span> Решение VETO</a>
+        <a href="#veto-paper-studio"><span>03</span> Paper тест</a>
+        <a href="#veto-decision"><span>04</span> Решение VETO</a>
       </nav>
 
       <div className="observedStatusBand">
@@ -90,6 +92,7 @@ export function ObservedEventRoom({
       <div className="observedStudioData">
         <ObservedScoreStory points={observation.scoreHistory??[]} home={event.homeName} away={event.awayName}/>
         <ObservedOddsBoard quotes={observation.quotes}/>
+        <PaperResearchTicket event={event} quotes={observation.quotes}/>
       </div>
 
       <div className="observedBody">
