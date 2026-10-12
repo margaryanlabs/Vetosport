@@ -78,3 +78,21 @@
 @media(max-width:760px){.observedStudioNav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;padding:10px 12px}.observedStudioNav a{flex:0 0 auto;padding:0 13px}.observedStudioData{gap:13px;padding:13px 11px}.observedStudioSectionHead{padding:21px 17px 15px}.observedStudioSectionHead h3{font-size:27px}.observedStudioSectionHead p{font-size:12px}.observedStudioCount{font-size:9px;padding:9px}.observedChartLegend{padding:0 17px;gap:12px}.observedChartFrame{margin:12px 13px 0;padding:6px}.observedChartFacts,.observedOddsMetrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:15px}.observedChartFacts>div,.observedOddsMetrics article{padding:12px}.observedChartEmpty,.observedOddsEmpty{margin:0 14px 17px;padding:19px;gap:12px}.observedChartEmptyGlyph,.observedOddsEmptyIcon{font-size:45px}.observedChartEmpty strong,.observedOddsEmpty strong{font-size:18px}.observedOddsBanner{padding:12px 14px;align-items:flex-start;flex-direction:column}.observedOddsFilters{padding:14px}.observedOddsRows{padding:0 14px 17px}.observedOddsRows article{grid-template-columns:minmax(0,1fr) auto;gap:13px;padding:15px}.observedOddsRowMain{grid-column:1}.observedOddsRowPrice{grid-column:2;grid-row:1;text-align:right;min-width:auto}.observedOddsBarGroup{grid-column:1/-1;grid-row:2}.observedOddsRows time{grid-column:1/-1;grid-row:3;text-align:left}.observedOddsExplanation{margin:12px 14px}.observedOddsMore{margin:0 14px 18px}.observedChartFacts strong{font-size:16px}}
 @media(max-width:420px){.observedStudioSectionHead{flex-wrap:wrap;gap:9px}.observedStudioSectionHead h3{font-size:25px}.observedChartLegend>span{font-size:11px}.observedChartFrame svg{min-height:130px}.observedStudioCount{padding:7px 9px}}
 @media(prefers-reduced-motion:reduce){.observedOddsRows article,.observedStudioNav a{transition:none!important}}
+
+/* Exact quote-snapshot trend; never synthetic animation of prices. */
+.observedMovement{margin:12px 27px 8px;overflow:hidden;border:1px solid rgba(179,231,190,.18);border-radius:15px;background:radial-gradient(ellipse 80% 80% at 25% 20%,rgba(81,137,91,.17),transparent 80%),#0b1710}
+.observedMovement>header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:21px 23px}
+.observedMovement>header>div{display:grid;gap:5px}
+.observedMovement>header span{font-size:10px;font-weight:790;letter-spacing:.14em;color:#cf9b9a}
+.observedMovement>header strong{font-size:clamp(22px,2.4vw,30px);font-weight:770;letter-spacing:-.035em;color:#f4faf4}
+.observedMovement>header small{font-size:12px;color:#b1c6b7}
+.observedMovement>header>b{font-size:10px;white-space:nowrap;letter-spacing:.06em;padding:9px;border:1px solid rgba(206,236,212,.18);border-radius:8px;color:#d4e6d6}
+.observedMovementChart{padding:0 18px 16px}
+.observedMovementChart svg{width:100%;height:225px;display:block}
+.observedMovementChart p{margin:2px 7px 4px;font-size:12px;line-height:1.6;color:#b9cabb}
+.observedMovementChart p strong{color:#f5f9f4}
+.observedMovementEmpty{display:flex;align-items:center;gap:22px;margin:0 23px 20px;padding:22px;background:rgba(255,255,255,.025);border:1px dashed rgba(210,240,217,.15);border-radius:12px}
+.observedMovementEmpty>span{font-size:50px;color:#9dbca5;line-height:1}
+.observedMovementEmpty strong{font-size:16px;color:#f5f9f4}
+.observedMovementEmpty p{font-size:12px;line-height:1.7;color:#b6c9bb;margin:9px 0 0}
+@media(max-width:760px){.observedMovement{margin:10px 14px}.observedMovement>header{padding:17px;flex-wrap:wrap}.observedMovementChart{padding:0 8px 10px}.observedMovementChart svg{height:170px}.observedMovementEmpty{margin:0 14px 15px;padding:17px;gap:12px}.observedMovementEmpty>span{font-size:34px}}
