@@ -4,6 +4,7 @@ import type { Sport } from "@/lib/domain/types";
 import type { LiveEventSummary } from "@/lib/live/types";
 import { SportGlyph } from "@/components/SportGlyph";
 import {PitchVision} from "@/components/PitchVision";
+import {getObservedFreshness} from "@/lib/live/freshness";
 
 const sportNames: Record<Sport, string> = {
   football: "Футбол",
@@ -67,7 +68,7 @@ export function TodayExperience({
   const heroEvent = sportEvents.find(e=>e.source==="persisted") ?? sportEvents[0];
   const sportOptions = Array.from(new Set(events.map((event) => event.sport)));
   const observedCount = events.filter((event) => event.source === "persisted").length;
-  const liveCount = events.filter(event=>event.source==="persisted" && event.status==="live" && event.lastUpdatedAt && Number.isFinite(Date.parse(event.lastUpdatedAt)) && Date.now()-Date.parse(event.lastUpdatedAt)>=0 && Date.now()-Date.parse(event.lastUpdatedAt)<=120_000).length;
+  const liveCount = events.filter(event=>getObservedFreshness(event).freshLive).length;
   const researchCount = events.filter(event=>event.source==="persisted"&&(event.shadowPredictionCount||event.intelligenceReady)).length;
 
   return (
