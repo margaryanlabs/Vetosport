@@ -83,6 +83,7 @@ export function TodayExperience({
             <div className="todayHeroActions">
               <button type="button" className="todayPrimaryAction" onClick={onOpenMatches}>Смотреть матчи <span>↗</span></button>
               <button type="button" className="todaySecondaryAction" onClick={()=>heroEvent ? onSelectEvent(heroEvent.id):onOpenMatches()}>Разобрать матч <span>→</span></button>
+              <a className="todayWatchlistAction" href="/research/watchlist">Что проверить сегодня <span>↗</span></a>
             </div>
             <div className="todayDataTruth todayDataTruthInline" aria-label="Состояние данных">
               <i className={liveCount?"available":"awaiting"}/>

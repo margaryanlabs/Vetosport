@@ -203,3 +203,18 @@
  .pitchVisionSweep,.pitchVisionHalo,.pitchVisionAlternateRing { animation:none!important; }
  .todayStartGrid button,.todayHeroActions button,.todayMatchCard { transition:none; }
 }
+
+/* Watchlist is a first-class VETO product destination, not a hidden research URL. */
+.matchShellNav .matchShellWatchLink{display:flex;align-items:center;justify-content:center;padding:0 13px;min-height:36px;margin-left:7px;border:1px solid rgba(233,92,94,.34);border-radius:9px;background:rgba(229,61,70,.08);color:#ffd9d5;text-decoration:none;font-size:10px;font-weight:770;letter-spacing:.02em;white-space:nowrap;}
+.matchShellNav .matchShellWatchLink:hover{background:rgba(229,61,70,.19);color:#fff}
+.todayHeroActions .todayWatchlistAction{display:inline-flex;align-items:center;justify-content:center;min-height:51px;padding:0 18px;border:1px solid rgba(176,232,193,.27);border-radius:12px;text-decoration:none;background:rgba(71,122,84,.13);font-size:13px;font-weight:740;color:#e0f3e3;}
+.todayHeroActions .todayWatchlistAction span{margin-left:10px}
+.todayHeroActions .todayWatchlistAction:hover{background:rgba(71,122,84,.3)}
+@media(max-width:1100px){.matchShellNav .matchShellWatchLink{padding:0 9px;margin-left:1px;font-size:9px}}
+@media(max-width:720px){
+ .matchShellMobile{grid-template-columns:repeat(5,minmax(0,1fr));}
+ .matchShellMobile .matchShellMobileWatch{display:flex;align-items:center;justify-content:center;border:0;border-radius:12px;background:rgba(228,45,52,.13);color:#f3c7c4;font-size:8px;font-weight:760;text-decoration:none;white-space:nowrap;}
+ .matchShellMobile .matchShellMobileWatch:hover{background:rgba(228,45,52,.25);}
+ .todayHeroActions .todayWatchlistAction{min-height:45px;width:100%;font-size:13px}
+}
+@media(max-width:390px){.matchShellMobile .matchShellMobileWatch{font-size:7px}.matchShellMobile button{font-size:7px}}
