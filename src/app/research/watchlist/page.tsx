@@ -3,7 +3,7 @@
 import {useEffect,useMemo,useState} from "react";
 import {PitchVision} from "@/components/PitchVision";
 import {VetoMark} from "@/components/VetoMark";
-import type {LiveEventSummary} from "@/lib/live/types";
+import type {LiveEventSummary, LiveQuotePreview} from "@/lib/live/types";
 import {getObservedFreshness} from "@/lib/live/freshness";
 import {screenPersistedResearchMatches} from "@/lib/research/watchlist/engine";
 import "./watchlist.css";
@@ -19,6 +19,7 @@ export default function ResearchWatchlistPage(){
  const [now,setNow]=useState(0);
  const [selectedId,setSelectedId]=useState("");
  const [manualOdds,setManualOdds]=useState("");
+ const [marketQuotes,setMarketQuotes]=useState<LiveQuotePreview[]>([]);
  const [refresh,setRefresh]=useState(0);
  const [note,setNote]=useState("");
  const [filter,setFilter]=useState<"all"|"live"|"candidates">("all");
@@ -52,6 +53,20 @@ export default function ResearchWatchlistPage(){
  const currentCandidates=candidates.filter(x=>x.freshness==="RECENT_SNAPSHOT");
  const focus=football.find(x=>x.id===selectedId)??currentCandidates[0]?.event??fresh[0]??football[0]??null;
  const shown=filter==="candidates"?currentCandidates.map(x=>x.event):filter==="live"?fresh:football;
+ useEffect(()=>{
+  let active=true;
+  setMarketQuotes([]);
+  if (!focus || focus.source!=="persisted") return()=>{active=false;};
+  const query="/api/live/workspace?id="+encodeURIComponent(focus.id);
+  fetch(query,{cache:"no-store"})
+   .then(r=>r.ok?r.json():null)
+   .then(data=>{if(active){setMarketQuotes(Array.isArray(data?.observation?.quotes)?
+     (data.observation.quotes as LiveQuotePreview[]).filter(q=>q.provider==="the-odds-api"):[]);}})
+   .catch(()=>{if(active)setMarketQuotes([]);});
+  return()=>{active=false;};
+ },[focus?.id]);
+ const mostRecentQuote=marketQuotes.length?marketQuotes.reduce((a,b)=>Date.parse(a.capturedAt)>Date.parse(b.capturedAt)?a:b):null;
+ const quoteAgeMs=mostRecentQuote&&now?now-Date.parse(mostRecentQuote.capturedAt):null;
  const price=validPrice(manualOdds);
  const breakEven=price?(100/price).toFixed(2).replace(".",",")+"%":null;
  const candidate=focus?currentCandidates.find(x=>x.event.id===focus.id):null;
@@ -95,7 +110,7 @@ export default function ResearchWatchlistPage(){
    <article><small>СОХРАНЁННЫХ СОБЫТИЙ</small><strong>{status==="loading"?"…":football.length}</strong><span>{providerLabel}</span></article>
    <article><small>СВЕЖИХ LIVE-СНИМКОВ</small><strong>{status==="loading"?"…":fresh.length}</strong><span>состояние обновлено ≤ 120 сек назад</span></article>
    <article><small>СОВПАДЕНИЙ ДЛЯ ИССЛЕДОВАНИЯ</small><strong>{status==="loading"?"…":currentCandidates.length}</strong><span>1:1 после 80' · только наблюдение</span></article>
-   <article><small>ПРОВЕРЕННЫХ КОЭФФИЦИЕНТОВ</small><strong>0</strong><span>реальные букмекерские котировки пока не подключены</span></article>
+   <article><small>КОТИРОВОК ДЛЯ ВЫБРАННОГО МАТЧА</small><strong>{marketQuotes.length}</strong><span>{marketQuotes.length?"Сохранённая линия; свежесть проверяйте ниже":"Пока нет совпавших предложений букмекеров"}</span></article>
   </div>
   <section className="watchSurface" id="watchLive">
    <div className="watchSurfaceTitle">
@@ -132,7 +147,14 @@ export default function ResearchWatchlistPage(){
      <div className="watchDetail"><small>УСЛОВИЕ</small><strong>1:1 после 80-й минуты. Проверять, существует ли рынок «Тотал меньше 4.5» и каковы реальные условия его расчёта.</strong></div>
      <div className="watchDetail"><small>СТАТУС ДАННЫХ</small><strong>{candidate?"Есть свежее совпадение, но нет подтверждённой цены.":"Условие сейчас не подтверждено свежим снимком. Пока только исследование."}</strong></div>
      <div className="watchDetail"><small>РИСК И ОГРАНИЧЕНИЯ</small><strong>Голы в оставшееся время, задержки провайдера, дополнительное время, остановка рынков, невыгодный коэффициент, изменившаяся статистика. Историческая частота не гарантирует прибыль.</strong></div>
-     <div className="watchDetail"><small>ИСТОЧНИК КОЭФФИЦИЕНТОВ</small><strong>Пока не подтверждён. VETO не показывает придуманные цены и не исполняет ставки.</strong></div>
+     <div className="watchDetail"><small>СОХРАНЁННАЯ БУКМЕКЕРСКАЯ ЛИНИЯ</small>
+      <strong>{marketQuotes.length?"The Odds API · котировки с отметками времени; наличие ставки сейчас не гарантируется.":"Для этого матча нет сохранённых котировок. Не подменяем их ручными оценками."}</strong>
+      {mostRecentQuote&&<p>Последняя отметка букмекера: {formatted(mostRecentQuote.capturedAt)} · {quoteAgeMs!==null&&quoteAgeMs>=0?Math.floor(quoteAgeMs/60000)+" мин назад":"время не подтверждено"} · {quoteAgeMs!==null&&quoteAgeMs>120000?"АРХИВ · НЕ ТЕКУЩИЕ LIVE-КОЭФФИЦИЕНТЫ":"СНИМОК · НЕ ПОДТВЕРЖДЕНА ДОСТУПНОСТЬ"}</p>}
+      {marketQuotes.slice(0,8).map(q=><div className="watchRealQuote" key={q.bookmaker+"-"+q.marketKey+"-"+q.selectionKey+"-"+q.capturedAt}>
+        <span>{q.bookmaker} · {q.marketKey}</span><strong>{q.selectionLabel}</strong><b>{q.suspended?"ПРИОСТАНОВЛЕНО":q.decimalOdds.toFixed(2)}</b>
+        <small>{formatted(q.capturedAt)}</small>
+      </div>)}
+     </div>
     </article>
     <aside className="watchPrice">
      <small>03 / MANUAL ODDS CHECK</small><h2>Если нашёл коэффициент</h2>
