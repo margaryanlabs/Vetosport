@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useId, useState } from "react";
 import type { ProbabilityPoint } from "@/lib/sandbox/live";
 
 type XY = { x: number; y: number };
@@ -25,10 +26,27 @@ const path = (points: XY[]) =>
 export function ParallaxView({
   points,
   label,
+  sourceLabel = "Сохранённая шкала вероятностей",
 }: {
   points: ProbabilityPoint[];
   label: string;
+  sourceLabel?: string;
 }) {
+  const [selectedIndex, setSelectedIndex] = useState(() => Math.max(0, points.length - 1));
+  const chartId = useId().replace(/:/g, "");
+  useEffect(() => {
+    setSelectedIndex(Math.max(0, points.length - 1));
+  }, [points.length, label]);
+
+  if (!points.length) {
+    return (
+      <div className="parallaxEmpty" role="status">
+        <span>ШКАЛА ПОКА ПУСТА</span>
+        <p>VETO покажет движение вероятности, когда появятся подтверждённые снимки данных.</p>
+      </div>
+    );
+  }
+
   const values = points.flatMap((point) => [point.market, point.veto]);
   const rawMin = Math.min(...values);
   const rawMax = Math.max(...values);
@@ -66,6 +84,8 @@ export function ParallaxView({
         : "HOLDING";
 
   const intensity = Math.min(1, absGap / 0.1);
+  const selectedPoint = points[Math.min(selectedIndex, points.length - 1)] ?? latest;
+  const selectPoint = (index: number) => setSelectedIndex(index);
 
   return (
     <div className={`parallaxView parallaxState-${state.toLowerCase()}`} style={{ "--parallax-intensity": intensity } as React.CSSProperties}>
@@ -99,11 +119,11 @@ export function ParallaxView({
 
         <svg viewBox={`0 0 ${W} ${H + 28}`} role="img" aria-label="Reality and market probability divergence">
           <defs>
-            <linearGradient id="parallaxGapFill" x1="0" x2="0" y1="0" y2="1">
+            <linearGradient id={`parallaxGapFill-${chartId}`} x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%" stopColor="#ff2d2d" stopOpacity=".18" />
               <stop offset="100%" stopColor="#ff2d2d" stopOpacity=".015" />
             </linearGradient>
-            <filter id="parallaxGlow">
+            <filter id={`parallaxGlow-${chartId}`}>
               <feGaussianBlur stdDeviation="4" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
@@ -123,7 +143,7 @@ export function ParallaxView({
             />
           ))}
 
-          <path d={area} className="parallaxGapArea" />
+          <path d={area} className="parallaxGapArea" fill={`url(#parallaxGapFill-${chartId})`} />
           <path d={path(reality)} className="parallaxRealityPath" />
           <path d={path(market)} className="parallaxMarketPath" />
 
@@ -133,7 +153,7 @@ export function ParallaxView({
               cy={reality[reality.length - 1].y}
               r="5"
               className="parallaxRealityDot"
-              filter="url(#parallaxGlow)"
+              filter={`url(#parallaxGlow-${chartId})`}
             />
           )}
           {market.length > 0 && (
@@ -142,20 +162,38 @@ export function ParallaxView({
               cy={market[market.length - 1].y}
               r="5"
               className="parallaxMarketDot"
-              filter="url(#parallaxGlow)"
+              filter={`url(#parallaxGlow-${chartId})`}
             />
           )}
 
           {points.map((point, index) => (
-            <text
-              key={point.label}
-              x={24 + (index / Math.max(1, points.length - 1)) * (W - 48)}
-              y={H + 20}
-              textAnchor={index === 0 ? "start" : index === points.length - 1 ? "end" : "middle"}
-              className="parallaxAxisLabel"
-            >
-              {point.label}
-            </text>
+            <g key={`${point.label}-${index}`} className={`parallaxPoint ${index === selectedIndex ? "active" : ""}`}>
+              <circle
+                aria-label={`Выбрать снимок ${point.label}`}
+                cx={reality[index].x}
+                cy={reality[index].y}
+                onClick={() => selectPoint(index)}
+                onFocus={() => selectPoint(index)}
+                onMouseEnter={() => selectPoint(index)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    selectPoint(index);
+                  }
+                }}
+                r={index === selectedIndex ? 7 : 5}
+                role="button"
+                tabIndex={0}
+              />
+              <text
+                x={24 + (index / Math.max(1, points.length - 1)) * (W - 48)}
+                y={H + 20}
+                textAnchor={index === 0 ? "start" : index === points.length - 1 ? "end" : "middle"}
+                className="parallaxAxisLabel"
+              >
+                {point.label}
+              </text>
+            </g>
           ))}
         </svg>
       </div>
@@ -175,8 +213,13 @@ export function ParallaxView({
           <small>{gapDelta >= 0 ? "+" : ""}{(gapDelta * 100).toFixed(1)} pp gap change</small>
         </div>
         <p>
-          The visible space between these lines is the VETO object: the distance between evidence-led reality and the price-implied world.
+          Разрыв показывает разницу между оценкой VETO и ценой рынка. Нажмите на точку графика, чтобы увидеть сохранённый момент.
         </p>
+      </div>
+      <div className="parallaxSnapshot" aria-live="polite">
+        <span>ВЫБРАННЫЙ МОМЕНТ · {sourceLabel}</span>
+        <strong>{selectedPoint.label}</strong>
+        <div><b>VETO {((selectedPoint.veto ?? 0) * 100).toFixed(1)}%</b><b>РЫНОК {((selectedPoint.market ?? 0) * 100).toFixed(1)}%</b><b>РАЗНИЦА {((selectedPoint.veto - selectedPoint.market) * 100 >= 0 ? "+" : "")}{((selectedPoint.veto - selectedPoint.market) * 100).toFixed(1)} п.п.</b></div>
       </div>
     </div>
   );
