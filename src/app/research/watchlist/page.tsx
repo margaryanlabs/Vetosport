@@ -2,6 +2,7 @@
 
 import {useEffect,useMemo,useState} from "react";
 import {PitchVision} from "@/components/PitchVision";
+import {OpportunityRadar} from "@/components/OpportunityRadar";
 import {VetoMark} from "@/components/VetoMark";
 import type {LiveEventSummary, LiveQuotePreview} from "@/lib/live/types";
 import {getObservedFreshness} from "@/lib/live/freshness";
@@ -96,7 +97,7 @@ export default function ResearchWatchlistPage(){
      <h1>Что смотреть<br/><em>прямо сейчас?</em></h1>
      <p>Настоящие матчи из нашего источника, понятная проверка ситуации и честное время снимка. Никаких нарисованных коэффициентов и обещаний выигрыша.</p>
      <div className="watchHeroActions">
-      <a href="#watchLive">Смотреть реальные матчи ↗</a>
+      <a href="#watchRadar">Исследовать матчи ↗</a>
       <a href="#watchResearch">Что проверить в линии ↓</a>
      </div>
      <p className="watchRealDisclosure">API-Football FREE опрашивается примерно раз в 30 минут. Снимок матча — не видеотрансляция и не текущая букмекерская линия.</p>
@@ -112,6 +113,7 @@ export default function ResearchWatchlistPage(){
    <article><small>СОВПАДЕНИЙ ДЛЯ ИССЛЕДОВАНИЯ</small><strong>{status==="loading"?"…":currentCandidates.length}</strong><span>1:1 после 80' · только наблюдение</span></article>
    <article><small>КОТИРОВОК ДЛЯ ВЫБРАННОГО МАТЧА</small><strong>{marketQuotes.length}</strong><span>{marketQuotes.length?"Сохранённая линия; свежесть проверяйте ниже":"Пока нет совпавших предложений букмекеров"}</span></article>
   </div>
+  <OpportunityRadar/>
   <section className="watchSurface" id="watchLive">
    <div className="watchSurfaceTitle">
     <div><small>01 / MATCH INTELLIGENCE</small><h2>Матчи в источнике</h2></div>
