@@ -20,6 +20,9 @@ import { WorkspaceChrome, type WorkspaceView } from "@/components/WorkspaceChrom
 import { MatchRoom } from "@/components/MatchRoom";
 import { SystemStatusPanel } from "@/components/SystemStatusPanel";
 import { ObservedEventRoom } from "@/components/ObservedEventRoom";
+import { TodayExperience } from "@/components/TodayExperience";
+import { HistoryExperience } from "@/components/HistoryExperience";
+import { ResearchHub } from "@/components/ResearchHub";
 import type { LiveEventSummary, LiveObservation } from "@/lib/live/types";
 import { sandboxEventSummaries } from "@/lib/live/sandbox";
 import { sandboxFootballBeforeSurface, sandboxFootballSurface } from "@/lib/sandbox/football-model";
@@ -36,7 +39,13 @@ type ProviderStatus = {
   };
 };
 
-export function Terminal({ initialEventId }: { initialEventId?: string }) {
+export function Terminal({
+  initialEventId,
+  initialView,
+}: {
+  initialEventId?: string;
+  initialView?: WorkspaceView;
+}) {
   const initialWorkspaceId = initialEventId ?? liveWorkspaces[0].id;
   const [locale, setLocale] = useState<Locale>("ru");
   const [selectedEventId, setSelectedEventId] = useState(initialWorkspaceId);
@@ -50,7 +59,9 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   const [liveSourceMode, setLiveSourceMode] = useState<
     "persisted" | "sandbox-fallback"
   >("sandbox-fallback");
-  const [activeView, setActiveView] = useState<WorkspaceView>("intelligence");
+  const [activeView, setActiveView] = useState<WorkspaceView>(
+    initialView ?? (initialEventId ? "check" : "today"),
+  );
 
   useEffect(() => {
     let active = true;
@@ -117,11 +128,15 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
 
   useEffect(() => {
     const url = new URL(window.location.href);
-    if (url.searchParams.get("event") !== selectedEventId) {
+    if (
+      url.searchParams.get("event") !== selectedEventId ||
+      url.searchParams.get("view") !== activeView
+    ) {
       url.searchParams.set("event", selectedEventId);
+      url.searchParams.set("view", activeView);
       window.history.replaceState({}, "", url);
     }
-  }, [selectedEventId]);
+  }, [activeView, selectedEventId]);
 
   useEffect(() => {
     let active = true;
@@ -244,7 +259,7 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   };
   const switchView = (view: WorkspaceView) => {
     if (remoteObservation && view === "research") {
-      setActiveView("intelligence");
+      setActiveView("check");
       return;
     }
     setActiveView(view);
@@ -260,13 +275,13 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   const selectEvent = (eventId: string) => {
     if (!eventSummaries.some((event) => event.id === eventId)) return;
     setSelectedEventId(eventId);
-    setActiveView("intelligence");
+    setActiveView("check");
   };
   const selectSignal = (eventId: string, selectionId: string) => {
     if (!eventSummaries.some((event) => event.id === eventId)) return;
     setSelectedEventId(eventId);
     setSelectedId(selectionId);
-    setActiveView("intelligence");
+    setActiveView("check");
   };
 
   return (
@@ -286,23 +301,35 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
       competition={headerEvent.competition}
       providerMode={providerMode}
     >
-      {activeView === "live" && (
+      {activeView === "today" && (
+        <TodayExperience
+          activeSport={headerEvent.sport}
+          events={eventSummaries}
+          onOpenEvent={selectEvent}
+          onOpenMatches={() => setActiveView("matches")}
+          onOpenResearch={() => setActiveView("research")}
+          onSportChange={selectSport}
+          sourceMode={liveSourceMode}
+        />
+      )}
+
+      {activeView === "matches" && (
         <div className="workspaceScene workspaceLive">
           <div className="workspaceSceneIntro">
-            <span>{liveSourceMode === "persisted" ? "LIVE FEED" : "DEMO FEED"}</span>
+            <span>{liveSourceMode === "persisted" ? "LIVE DATA" : "DEMO / SIMULATION"}</span>
             <strong>
               {liveSourceMode === "persisted"
-                ? "Read the match state before the market fully reacts."
-                : "Explore VETO on a clearly labeled simulation."}
+                ? "Матчи с сохранённым состоянием и понятным источником данных."
+                : "Симуляции помечены явно — это не текущий live-рынок."}
             </strong>
             <small>
               {liveSourceMode === "persisted"
-                ? "Persisted live data · source lineage preserved"
+                ? "Сохранённые live-данные · происхождение источника сохранено"
                 : configuredProviders > 0
-                  ? `${configuredProviders}/2 direct adapters configured · demo events remain labeled`
+                  ? `${configuredProviders}/2 адаптеров подключено · demo-события остаются помеченными`
                   : gatewayReady
-                    ? "Gateway ready · waiting for the first real event"
-                    : "Demo fallback · live ingestion not configured"}
+                    ? "Шлюз готов · ожидается первое live-событие"
+                    : "Demo fallback · live-ингест ещё не передал события"}
             </small>
           </div>
 
@@ -315,7 +342,7 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
         </div>
       )}
 
-      {activeView === "intelligence" && (
+      {activeView === "check" && (
         <div className="workspaceScene workspaceIntelligence">
           {remoteObservation ? (
             <ObservedEventRoom observation={remoteObservation} />
@@ -333,15 +360,14 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
 
       {activeView === "research" && (
         <section className="workspaceScene workspaceResearch" id="research">
-          <div className="workspaceSceneIntro researchIntro">
-            <span>RESEARCH LAB</span>
-            <strong>PARALLAX · probability surface · model council · validation</strong>
-            <small>
-              {activeSummary?.source === "persisted"
-                ? "Research layers linked to the selected observed event."
-                : "Simulation dataset · research logic only · not a live-market claim."}
-            </small>
-          </div>
+          <ResearchHub
+            onJump={jumpTo}
+            sourceLabel={
+              activeSummary?.source === "persisted"
+                ? "Лабораторные слои привязаны к выбранному сохранённому наблюдению."
+                : "Выбран набор симуляции · это исследовательская логика, не claim о live-рынке."
+            }
+          />
 
           <div className="v2ResearchBody">
       {activeWorkspace.sport === "football" ? (
@@ -616,6 +642,10 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
         </section>
       )}
 
+      {activeView === "history" && (
+        <HistoryExperience events={eventSummaries} onOpenEvent={selectEvent} />
+      )}
+
       {activeView === "system" && (
         <div className="workspaceScene workspaceSystem">
           <SystemStatusPanel />
@@ -623,7 +653,7 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
       )}
 
       <footer className="signalFooter">
-        <div className="footerSignalLine"><i /><span>VETO / SIGNAL SYSTEM</span></div>
+        <div className="footerSignalLine"><i /><span>VETO / SPORT INTELLIGENCE</span></div>
         <div className="footerBrand footerBrandCanonical">
           <VetoMark size={25} />
           <VetoWordmark className="footerWordmark" />
