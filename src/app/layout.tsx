@@ -1,23 +1,11 @@
 import type { Metadata } from "next";
-import { Exo_2, Montserrat } from "next/font/google";
 import "./globals.css";
 import "./veto-brand.css";
 import "./workspace-shell.css";
 import "./match-room.css";
 import "./observed-room.css";
 import "./veto-terminal-v3.css";
-
-const montserrat = Montserrat({
-  subsets: ["latin", "cyrillic"],
-  variable: "--font-veto-sans",
-  display: "swap",
-});
-
-const exo2 = Exo_2({
-  subsets: ["latin", "cyrillic"],
-  variable: "--font-veto-tech",
-  display: "swap",
-});
+import "./veto-sport-system.css";
 
 export const metadata: Metadata = {
   title: "VETO Sport — Sports Market Intelligence",
@@ -34,7 +22,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ru" className={`${montserrat.variable} ${exo2.variable}`}>
+    <html lang="ru">
       <body>{children}</body>
     </html>
   );
