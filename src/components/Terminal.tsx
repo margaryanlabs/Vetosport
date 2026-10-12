@@ -226,14 +226,18 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   const gatewayReady = Boolean(
     providerStatus?.providers?.canonicalGateway?.configured,
   );
+  // Operational gateway readiness is not the same as actual persisted match data.
+  // Never show the terminal as LIVE/READY while its visible events are sandbox simulations.
   const providerMode =
-    providerStatus == null
-      ? "CHECKING"
-      : configuredProviders > 0
-        ? "DIRECT DATA READY"
-        : gatewayReady
-          ? "GATEWAY READY"
-          : "DEMO MODE";
+    liveSourceMode !== "persisted"
+      ? "DEMO MODE"
+      : providerStatus == null
+        ? "CHECKING"
+        : configuredProviders > 0
+          ? "DIRECT DATA READY"
+          : gatewayReady
+            ? "GATEWAY READY"
+            : "PERSISTED DATA";
   const selectSport = (sport: Sport) => {
     const persisted = eventSummaries.find(
       (item) => item.sport === sport && item.source === "persisted",
@@ -345,6 +349,7 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
 
           <nav aria-label="Project ZERO-S research laboratories" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(195px,1fr))",gap:12,margin:"0 0 22px"}}>
             {[
+              {url:"/research/watchlist",no:"00",label:"ЧТО ПОСМОТРЕТЬ СЕГОДНЯ",sub:"Research Watchlist · условия рынков · только проверенные источники"},
               {url:"/research/late-tail",no:"01",label:"CLOSING-TIME INTELLIGENCE",sub:"Хвост поздних голов · 12 сценариев"},
               {url:"/research/goal-cascade",no:"02",label:"GOAL CASCADE FALSIFICATION",sub:"Гипотеза и историческое опровержение"},
               {url:"/research/shadow-journal",no:"03",label:"SHADOW JOURNAL",sub:"Ручной paper-журнал без ставок"},

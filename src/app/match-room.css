@@ -986,3 +986,13 @@
 .proofPreviewGrid{margin-top:30px;display:grid;grid-template-columns:repeat(4,minmax(100px,170px));gap:6px}.proofPreviewGrid>div{min-height:78px;padding:11px;border:1px solid rgba(255,255,255,.045);border-radius:11px}.proofPreviewGrid strong{display:block;margin-top:12px;font:620 13px/1 var(--font-veto-tech),sans-serif}
 @media(max-width:900px){.proofMetrics{grid-template-columns:1fr 1fr}.proofNarrative{grid-template-columns:1fr}.proofVerdict{grid-template-columns:1fr 1fr}.proofVerdict>div:last-child{grid-column:1/3}.proofPreviewGrid{grid-template-columns:1fr 1fr}}
 @media(max-width:720px){.proofHeader{flex-direction:column}.proofHeader h3{font-size:22px}.proofVerdict{grid-template-columns:1fr}.proofVerdict>div:last-child{grid-column:auto}.proofMetrics{grid-template-columns:1fr 1fr}.proofMetrics article{min-height:126px;padding:13px}.proofMetrics strong{font-size:18px}.proofAuditGrid{grid-template-columns:1fr 1fr}.proofEmpty{min-height:300px;padding:20px}.proofEmpty h4{font-size:20px}}
+
+/* ZERO-S WATCHLIST NAV: research entry in main desktop and mobile terminals. */
+.matchShellNav .matchShellWatchNav{align-self:center;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;text-decoration:none;color:#f58b8c;border:1px solid rgba(255,45,45,.35);padding:9px 12px;font-size:9px;font-weight:850;letter-spacing:.11em;background:rgba(255,45,45,.08)}
+.matchShellNav .matchShellWatchNav:hover{border-color:#ff5656;background:rgba(255,45,45,.16);color:#fff}
+@media(max-width:1180px){.matchShellNav .matchShellWatchNav{display:none}}
+@media(max-width:720px){
+ .matchShellMobile{grid-template-columns:repeat(5,minmax(0,1fr))}
+ .matchShellMobile .matchShellMobileWatch{display:grid;place-items:center;text-decoration:none;background:rgba(255,45,45,.09);border:1px solid rgba(255,45,45,.25);border-radius:10px;color:#ff9292;font-size:8px;font-weight:850;letter-spacing:.07em}
+ .matchShellMobile .matchShellMobileWatch:focus-visible{outline:2px solid #fff;outline-offset:2px}
+}

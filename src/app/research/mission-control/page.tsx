@@ -177,7 +177,7 @@ export default function MissionControlPage(){
    </section>
    <section className="missionPanel missionWide"><div className="missionHead"><small>03 / WORKFLOW</small><h2>Как пользоваться VETO каждый день</h2></div>
     <div className="missionSteps">{nextSteps.map((s,i)=><div key={i}><small>ШАГ {i+1}</small><p>{s}</p></div>)}</div>
-    <div className="missionCtas"><a href="/research/high-hit">Выбрать вид спорта →</a><a href="/research/shadow-journal">Записать paper-наблюдение →</a><a href="/research/goal-cascade">Доказательства →</a></div>
+    <div className="missionCtas"><a href="/research/watchlist">Какие рынки посмотреть сегодня →</a><a href="/research/high-hit">Выбрать вид спорта →</a><a href="/research/shadow-journal">Записать paper-наблюдение →</a><a href="/research/goal-cascade">Доказательства →</a></div>
    </section>
   </div>}
   {tab==="MISSIONS"&&<>
