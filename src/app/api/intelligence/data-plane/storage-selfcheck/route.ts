@@ -6,7 +6,13 @@ export const dynamic = "force-dynamic";
 
 const capturedAt = "2026-10-07T08:00:00.000Z";
 
-export async function GET() {
+export async function GET(request: Request) {
+  // This is a mutating storage probe. Never let anonymous traffic write to the database.
+  const cron = process.env.CRON_SECRET;
+  const ingestion = process.env.INGESTION_SECRET;
+  const authorized = (Boolean(cron) && request.headers.get("authorization") === `Bearer ${cron}`) ||
+    (typeof ingestion === "string" && ingestion.length >= 12 && request.headers.get("x-veto-ingestion-secret") === ingestion);
+  if (!authorized) return NextResponse.json({error:"Unauthorized"},{status:401,headers:{"Cache-Control":"no-store"}});
   try {
     const persistence = getPersistence();
     const event = await persistence.upsertEvent(
@@ -80,10 +86,7 @@ export async function GET() {
       {
         passed: false,
         storage: persistenceConfiguration(),
-        error:
-          error instanceof Error
-            ? error.message
-            : "Storage self-check failed.",
+        error: "Protected storage self-check failed."
       },
       { status: 500 },
     );
