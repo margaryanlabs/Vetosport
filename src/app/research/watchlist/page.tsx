@@ -150,7 +150,10 @@ export default function ResearchWatchlistPage(){
      <p>Условие: 1:1 после 80′. <b>Посмотреть наличие и правила Total Under 4.5</b>, сравнить с текущей линией, проверить минуты и отсутствие suspension.</p>
      <div className="watchMeta"><span>Источник: PERSISTED</span><span>Снимок: {row.freshness==="RECENT_SNAPSHOT"?"≤ 120 сек":row.freshness==="STALE_SNAPSHOT"?"УСТАРЕЛ":"ВРЕМЯ НЕ ПОДТВЕРЖДЕНО"}</span></div>
      <small>Изменено: {row.event.lastUpdatedAt?dateLabel(row.event.lastUpdatedAt):"неизвестно"} · наличие рынка и коэффициент НЕ подтверждены.</small>
-     <a href={"/?event="+encodeURIComponent(row.event.id)}>Открыть наблюдение в VETO ↗</a>
+     <div className="watchMatchActions">
+      <a href={"/?event="+encodeURIComponent(row.event.id)}>Открыть матч в VETO ↗</a>
+      <a href={"/research/shadow-journal?source=watchlist&match="+encodeURIComponent(row.event.homeName+" — "+row.event.awayName)+"&minute="+encodeURIComponent(String(row.minute))+"&line=4.5"}>Записать PAPER-сценарий ↗</a>
+     </div>
     </article>)}</div>}
    <p className="watchSource">Источник коэффициентов: {report?report.mode+" · снимков "+report.storedQuoteSnapshots+" · свежих отметок поставщика "+report.recentProviderTimestampCount:"не подтверждён"} · Последняя проверка: {lastCheck?dateLabel(lastCheck):"—"}. Ни один матч не прошёл проверку исполнения ставки.</p>
   </section>
