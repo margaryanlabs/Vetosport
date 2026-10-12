@@ -66,6 +66,7 @@ export default function HighHitScout(){
    <h1>90% — это<br/><em>ещё не безопасность.</em></h1>
    <p>Исследование рынков с высокой исторической частотой исхода: футбол, бейсбол, баскетбол, теннис, хоккей и волейбол. <strong>Наша цель — отделить высокую проходимость от реальной ценности коэффициента.</strong> Непроверенные идеи остаются гипотезами.</p>
   </section>
+  <a href="/research/watchlist" style={{display:"inline-block",margin:"0 12px 28px 0",color:"#fff",background:"#a8333b",border:"1px solid #d4545c",padding:"13px 18px",textDecoration:"none",fontSize:12,fontWeight:750}}>КАКИЕ РЫНКИ ПОСМОТРЕТЬ → WATCHLIST</a>
   <a href="/research/mission-control" style={{display:"inline-block",margin:"0 0 28px",color:"#d6e6f0",background:"#243d4d",border:"1px solid #406077",padding:"13px 18px",textDecoration:"none",fontSize:12,fontWeight:750}}>MISSION CONTROL → Все исследования, где искать коэффициенты, что осталось и как проверить</a>
   <div className="hitSectionTitle"><small>01 / SPORT RADAR</small><h2>Каталог исследовательских гипотез</h2><span>{HIGH_HIT_CATALOG.length} сценариев · 6 видов спорта</span></div>
   <div className="hitFilters">{sports.map(s=><button type="button" aria-pressed={filter===s.id} className={filter===s.id?"active":""} key={s.id} onClick={()=>setFilter(s.id)}>{s.label}</button>)}</div>
