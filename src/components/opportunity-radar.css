@@ -55,3 +55,9 @@
 @media(max-width:1120px){.radarCards{grid-template-columns:repeat(2,minmax(0,1fr))}.radarMetricGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:720px){.radarHeader{align-items:stretch;flex-direction:column;gap:16px;padding-top:18px}.radarHeader h2{font-size:35px}.radarHeader p{font-size:13px}.radarHeader>button{align-self:flex-start}.radarMetricGrid{gap:7px}.radarMetricGrid article{min-height:138px;padding:14px}.radarMetricGrid article strong{font-size:34px}.radarMetricGrid article span{font-size:11px}.radarCards{grid-template-columns:1fr}.radarCard{min-height:355px}.radarMatch strong{font-size:14px}.radarFooter{display:block}.radarFooter p{margin-top:8px}.radarCardTop{flex-wrap:wrap}.radarToolbar button{font-size:11px;padding:0 11px}}
 @media(prefers-reduced-motion:reduce){.radarOpen,.radarToolbar button{transition:none}}
+
+.radarQuietState{display:flex;align-items:center;gap:19px;margin:16px 0 20px;padding:22px;border:1px solid rgba(226,197,130,.3);border-radius:14px;background:radial-gradient(ellipse at 7% 40%,rgba(204,171,94,.16),transparent 60%),linear-gradient(140deg,#2a2820,#151d17)}
+.radarQuietState>span{flex:0 0 auto;width:51px;height:51px;display:grid;place-items:center;border:1px solid rgba(228,201,154,.26);border-radius:50%;color:#ddc28f;font-size:23px}
+.radarQuietState strong{font-size:19px;font-weight:760;letter-spacing:-.02em;color:#f3f1e9}
+.radarQuietState p{max-width:780px;margin:7px 0 0;color:#c4cab9;font-size:13px;line-height:1.65}
+@media(max-width:720px){.radarQuietState{padding:16px;gap:12px}.radarQuietState>span{width:39px;height:39px;font-size:19px}.radarQuietState strong{font-size:16px}.radarQuietState p{font-size:12px}}
