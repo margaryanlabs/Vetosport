@@ -87,6 +87,7 @@ export function normalizeApiFootballFixture(row:ApiFootballFixture):{event:Sport
   const state:Record<string,unknown>={
     status,period:code,clock,
     ...(validScore?{score:{home:homeGoals,away:awayGoals}}:{}),
+    ...(elapsed===null?{}:{elapsedSeconds:elapsed*60,clockResolution:"MINUTES_NOT_SECONDS"}),
     providerEventId:id,
     providerStatusLong:f?.status?.long||code,
     source:"api-football.fixtures.live",
@@ -103,6 +104,8 @@ export function apiFootballAdapterSelfcheck(){
     {name:"Finished fixture excluded from live stream",pass:normalizeApiFootballFixture({...base,fixture:{...base.fixture,status:{short:"FT"}}})===null},
     {name:"Unknown state excluded from live stream",pass:normalizeApiFootballFixture({...base,fixture:{...base.fixture,status:{short:"NS"}}})===null},
     {name:"Injury time parsed",pass:normalizeApiFootballFixture({...base,fixture:{...base.fixture,status:{short:"2H",elapsed:90,extra:3}}})?.state.clock==="90+3′"},
+    {name:"Typed elapsed seconds exposed for existing model preflight",pass:valid?.state.elapsedSeconds===83*60&&valid?.state.clockResolution==="MINUTES_NOT_SECONDS"},
+    {name:"No elapsed clock never faked",pass:normalizeApiFootballFixture({...base,fixture:{...base.fixture,status:{short:"HT",elapsed:null}}})?.state.elapsedSeconds===undefined},
     {name:"Raw quote data never manufactured",pass:!Object.hasOwn(valid?.state||{},"quotes")},
     {name:"Quota estimates below free plan",pass:apiFootballSchedule.perDay<100},
   ];
