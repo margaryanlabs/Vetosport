@@ -33,3 +33,12 @@ Owner-facing **/research/watchlist** answers “which markets should I inspect?�
 
 ## Release state
 New feature branch is stacked on #27 → #26. Do **not** merge this branch directly into main before its dependencies and independent production QA pass. Keep PR in Draft. It contains no active sportsbook offers.
+
+## 24-hour activation note — 12 October
+- Production inspected: `/api/providers` returns `gateway-ready` but `liveReady=false`; Sportmonks + Odds API keys absent, odds allowlist empty. `/api/live/events` returns `sandbox-fallback`. Do not claim live betting readiness.
+- Watchlist now fetches provider **readiness booleans only**, exposes source-activation guidance without secrets, and counts only persisted 1:1 minute 80+ events with timestamp age <=120s as the current observation queue. Stale and missing timestamp matches are suppressed from the actionable list.
+- Main terminal source badge now shows DEMO MODE whenever the event feed is sandbox fallback, even if the ingest gateway is configured.
+- Selecting a sport in the watchlist automatically selects an appropriate hypothesis rather than leaving details stuck on the previous sport.
+- Fresh candidate cards may prefill Shadow Journal via `source=watchlist` URL query, but no bookmaker quote is transferred, accepted or executed; user must input/check source manually.
+- GitHub issue #30 records 24-hour owner/configuration tasks. #28 remains CI startup blocker.
+- Release gate unchanged: GitHub Actions start failure and private preview browser QA must be resolved before production promotion, independent positive EV not validated.
