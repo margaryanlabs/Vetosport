@@ -96,3 +96,41 @@
 .observedMovementEmpty strong{font-size:16px;color:#f5f9f4}
 .observedMovementEmpty p{font-size:12px;line-height:1.7;color:#b6c9bb;margin:9px 0 0}
 @media(max-width:760px){.observedMovement{margin:10px 14px}.observedMovement>header{padding:17px;flex-wrap:wrap}.observedMovementChart{padding:0 8px 10px}.observedMovementChart svg{height:170px}.observedMovementEmpty{margin:0 14px 15px;padding:17px;gap:12px}.observedMovementEmpty>span{font-size:34px}}
+
+/* Paper-only research — no financial transactions or simulated outcome claims. */
+.paperStudio{scroll-margin-top:85px;border:1px solid rgba(212,237,221,.17);border-radius:20px;background:radial-gradient(ellipse at 92% 20%,rgba(197,84,85,.09),transparent 50%),#131b18;overflow:hidden}
+.paperStudioGrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:16px;padding:0 25px 24px}
+.paperTicketEditor,.paperTicketHistory{min-width:0;border:1px solid rgba(209,236,213,.15);border-radius:13px;background:rgba(0,0,0,.16);padding:19px}
+.paperTicketEditor label{display:grid;gap:9px;font-size:12px;font-weight:740;color:#c3d6c7}
+.paperTicketEditor select,.paperTicketEditor input{max-width:100%;width:100%;min-height:46px;padding:0 13px;border:1px solid rgba(208,235,216,.21);border-radius:10px;color:#f3f8f4;background:#202b24;font-size:14px}
+.paperTicketEditor select option{color:#0c1710;background:#f1f8f1}
+.paperTicketEditor input:disabled{color:#a8bdb1;opacity:.78}
+.paperTicketFields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:15px}
+.paperTicketMetrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px}
+.paperTicketMetrics article{display:grid;align-content:start;gap:11px;min-width:0;padding:14px;border-radius:10px;background:#202c24;border:1px solid rgba(206,238,215,.1)}
+.paperTicketMetrics span{color:#b6cab9;font-size:10px;line-height:1.5;font-weight:720}
+.paperTicketMetrics strong{font:780 clamp(17px,2.2vw,27px)/1.1 var(--font-veto-tech),monospace;color:#eff8ee}
+.paperQuoteCaveat{color:#abbfb0;font-size:12px;line-height:1.6;margin:15px 0!important}
+.paperTicketCommit{width:100%;min-height:51px;border:1px solid #db4b54;border-radius:10px;background:#cc333e;color:white;font-size:14px;font-weight:780;cursor:pointer;transition:background .2s}
+.paperTicketCommit:hover{background:#e34752}
+.paperTicketCommit:disabled{cursor:not-allowed;opacity:.5}
+.paperTicketMessage{color:#bedcc4;font-size:12px;margin-top:10px}
+.paperTicketHistoryHeading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;color:#c6d9c9;font-size:11px;font-weight:780;letter-spacing:.04em}
+.paperTicketHistoryHeading b{font-size:10px;color:#a4bba8}
+.paperTicketHistory article{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:14px 2px;border-bottom:1px solid rgba(230,245,235,.11)}
+.paperTicketHistory article>div:first-child{display:grid;gap:6px;min-width:0}
+.paperTicketHistory article>div:first-child strong{color:#f0f7f0;font-size:13px;line-height:1.4}
+.paperTicketHistory article>div:first-child span{font-size:10px;color:#b5c8b8;letter-spacing:.045em}
+.paperTicketHistory article>div:nth-child(2){display:grid;gap:6px;text-align:right}
+.paperTicketHistory article b{font:780 21px/1 var(--font-veto-tech),monospace;color:#f1f8f0}
+.paperTicketHistory article small{color:#a7c1ad;font-size:10px}
+.paperTicketHistory article time{font-size:11px;color:#a8c0af}
+.paperTicketHistory article em{justify-self:end;font-style:normal;color:#dcc49d;font-size:10px;letter-spacing:.04em}
+.paperEmpty{display:grid;justify-items:center;text-align:center;align-content:center;min-height:225px;padding:15px;border:1px dashed rgba(210,236,218,.17);border-radius:11px}
+.paperEmpty span{font-size:46px;color:#bbd3c0}
+.paperEmpty strong{font-size:17px;color:#f6f9f5;margin-top:7px}
+.paperEmpty p{font-size:12px;line-height:1.55;color:#b1c2b3;max-width:350px}
+.paperJournalCaveat{margin:15px 0 0!important;font-size:11px;line-height:1.65;color:#adc0b2}
+@media(max-width:900px){.paperStudioGrid{grid-template-columns:1fr}}
+@media(max-width:600px){.paperStudioGrid{padding:0 12px 14px;gap:10px}.paperTicketEditor,.paperTicketHistory{padding:14px}.paperTicketFields{gap:8px}.paperTicketMetrics{gap:6px}.paperTicketMetrics article{padding:11px}.paperTicketMetrics span{font-size:9px}.paperTicketMetrics strong{font-size:18px}}
+@media(prefers-reduced-motion:reduce){.paperTicketCommit{transition:none}}
