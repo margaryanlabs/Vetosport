@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
+import {isAuthorizedProviderRead, protectedProviderHeaders} from "@/lib/providers/direct-read-auth";
 import { getSportmonksClient } from "@/lib/providers/factory";
 
 export async function GET(request: Request) {
+  if (!isAuthorizedProviderRead(request)) {
+    return NextResponse.json({error:"Unauthorized"},{status:401,headers:protectedProviderHeaders});
+  }
   const url = new URL(request.url);
   const fixtureId = url.searchParams.get("fixtureId");
 
@@ -27,7 +31,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "In-play odds fetch failed" },
+      { error: "Protected provider read failed." },
       { status: 502 },
     );
   }
