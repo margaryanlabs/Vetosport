@@ -345,6 +345,7 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
 
           <nav aria-label="Project ZERO-S research laboratories" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(195px,1fr))",gap:12,margin:"0 0 22px"}}>
             {[
+              {url:"/research/watchlist",no:"00",label:"ЧТО ПОСМОТРЕТЬ СЕГОДНЯ",sub:"Research Watchlist · условия рынков · только проверенные источники"},
               {url:"/research/late-tail",no:"01",label:"CLOSING-TIME INTELLIGENCE",sub:"Хвост поздних голов · 12 сценариев"},
               {url:"/research/goal-cascade",no:"02",label:"GOAL CASCADE FALSIFICATION",sub:"Гипотеза и историческое опровержение"},
               {url:"/research/shadow-journal",no:"03",label:"SHADOW JOURNAL",sub:"Ручной paper-журнал без ставок"},
