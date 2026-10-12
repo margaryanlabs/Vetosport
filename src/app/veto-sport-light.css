@@ -69,7 +69,7 @@ html[data-veto-sport-appearance="light"] :is(
   .observedScoreStory,.observedOddsStudio,.observedOddsMetrics article,
   .observedChartFacts>div,.observedOddsRows article,.observedMovement,
   .observedChartEmpty,.observedOddsEmpty,.observedOddsExplanation,
-  .observedChartFrame,.observedChartFacts,.observedRawDetails
+  .observedChartFacts,.observedRawDetails
 ) {
   background:linear-gradient(150deg,#ffffff,#f7f9fc) !important;
   color:var(--text) !important;
@@ -77,9 +77,9 @@ html[data-veto-sport-appearance="light"] :is(
   box-shadow:0 11px 34px rgba(22,42,65,.055);
 }
 html[data-veto-sport-appearance="light"] :is(
-  .todayHero,.todayHeroCopy,.todayMatchCard,.todayStartGrid button,
-  .matchRoom,.matchRoomHeroV2,.vetoDecisionPanel,.liveCommand,
-  .researchDesk,.researchDeskCard,.observedStudioData
+  .todayHeroCopy,.todayMatchCard,.todayStartGrid button,
+  .matchRoomHeroV2,.vetoDecisionPanel,.liveCommand,
+  .researchDesk,.researchDeskCard
 ) :is(h1,h2,h3,h4,strong,b) {
   color:var(--text) !important;
 }
@@ -159,3 +159,188 @@ html[data-veto-sport-appearance="light"] .vetoSportAppearanceToggle {
 @media(min-width:900px){.vetoSportAppearanceToggle{bottom:22px;right:22px}}
 @media(max-width:540px){.vetoSportAppearanceToggle{width:48px;height:48px;padding:0}.vetoSportAppearanceToggle>span{display:none}}
 @media(prefers-reduced-motion:reduce){.vetoSportAppearanceToggle{transition:none}}
+
+/* VETO Sport / LIGHT CONTRAST CORRECTION 2026-10-12
+ * Previous overrides whitened the observed SVG chart background but left
+ * its light plot strokes unchanged. They also darkened text inside the
+ * purposefully dark pitch embedded in the bright Today hero.
+ */
+html[data-veto-sport-appearance="light"] {
+  --vs-bg:#f5f7fb;
+  --vs-surface:#ffffff;
+  --vs-surface-raised:#f1f5fa;
+  --vs-surface-hover:#e8eef6;
+  --vs-border:rgba(26,43,63,.16);
+  --vs-border-soft:rgba(26,43,63,.1);
+  --vs-text:#17212e;
+  --vs-muted:#56677b;
+  --vs-quiet:#66778a;
+  --vs-red:#ce292e;
+  --vs-green:#137b55;
+  --vs-amber:#95621d;
+  --vs-shadow:0 15px 44px rgba(29,49,73,.075);
+  --studioLine:rgba(26,43,63,.15);
+  --studioMuted:#56677b;
+}
+/* Structural surfaces in Today, Match Room, research and workspace. */
+html[data-veto-sport-appearance="light"] :is(
+  .todayExperience,.todayLowerGrid,.todaySection,.researchDesk,
+  .workspaceResearch,.matchRoom,.matchRoomVisualFrame,
+  .liveCommand,.systemHero,.matchShellCanvas
+) {
+  color: var(--vs-text);
+}
+html[data-veto-sport-appearance="light"] :is(
+  .todayHeroCopy>p,.todayEyebrow,.todayKicker,
+  .todayHero .todayHeroCopy h1 em,
+  .todayDataTruthInline,.todaySectionHead>div>span,
+  .todayIntegrity>span,.todayMatchCard small,
+  .todayCardFooter span,.todayCardFooter small
+) {
+  color: #506276 !important;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .todayHero .todayHeroCopy h1,.todaySectionHead h2,
+  .todayStart>header>strong,.todayIntegrity h2
+) {
+  color: #17212e !important;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .todaySecondaryAction,.todayDataTruthInline>button,.todayTextAction,
+  .todayMatchCard .todayCardFooter button
+) {
+  color: #25384d !important;
+  border-color: rgba(31,53,76,.2) !important;
+  background: #eef3f8 !important;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .todayMatchCard,.todayStartGrid button,.todayHighlights,.todayIntegrity
+) :is(small,p,span) {
+  color: #506176;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .matchShellStatus,.matchShellWatchLink,.matchShellMoreNav button,
+  .matchShellMoreMeta,.vetoWorkspaceTitle,.vetoRailStatus
+) {
+  color: #455a71;
+}
+/* Keep football pitch and score overlay truly dark; never recolor the data
+ * labels in these components via a bright parent .todayHero selector. */
+html[data-veto-sport-appearance="light"] :is(
+  .pitchVision,.pitchVisionTop,.pitchVisionArena,.pitchVisionFooter,
+  .pitchVisionNotice,.pitchVisionAlternate
+) {
+  color-scheme: dark;
+  --vs-text: #f3f8f5;
+  --vs-muted: #b2c9bb;
+}
+html[data-veto-sport-appearance="light"] .pitchVision {
+  background: #0a1513 !important;
+  color: #edf7ef !important;
+  border-color: rgba(143,186,156,.32) !important;
+}
+html[data-veto-sport-appearance="light"] .todayHero .pitchVision :is(
+  h1,h2,h3,h4,strong,b
+) {
+  color: #f0f8f3 !important;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .pitchVisionTop,.pitchVisionArena,.pitchVisionFooter
+) :is(strong,b,span,small) {
+  color: inherit;
+}
+html[data-veto-sport-appearance="light"] .pitchVision :is(.pitchVisionSource.demo,.pitchVisionNotice) {
+  color: #e8b9aa;
+}
+/* Observed chart has SVG strokes explicitly calibrated for dark green.
+ * Give its chart its own matte canvas instead of painting it white. */
+html[data-veto-sport-appearance="light"] .observedChartFrame {
+  background: #0c1511 !important;
+  color:#ecf5eb !important;
+  border-color:rgba(39,92,59,.3) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+}
+html[data-veto-sport-appearance="light"] .observedChartFrame svg {
+  filter:none !important;
+  color-scheme:dark;
+}
+/* Observed Studio text: white cards need dark copy, not the previous
+ * static pale-on-dark palette. Keep outcome semantics green/amber/red. */
+html[data-veto-sport-appearance="light"] :is(
+  .observedScoreStory,.observedOddsStudio,.observedStudioData
+) {
+  --studioLine:rgba(26,43,63,.14);
+  --studioMuted:#5c6b7b;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .observedStudioSectionHead h3,.observedStudioSectionHead p,
+  .observedStudioSectionHead>div>span,.observedStudioCount,
+  .observedChartLegend>span,.observedChartFacts span,
+  .observedOddsMetrics :is(small,strong,span),
+  .observedChartEmpty :is(strong,p),.observedOddsEmpty :is(strong,p,span),
+  .observedOddsBanner :is(strong,span),
+  .observedOddsRowMain :is(span,strong,small),
+  .observedOddsBarHead :is(span,b),
+  .observedOddsRowPrice :is(b,small),
+  .observedOddsRows time,
+  .observedOddsExplanation p,.observedRawDetails>summary
+) {
+  color:#25374b !important;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .observedScoreStory>footer,.observedOddsStudio>footer,
+  .observedMovement>header,.observedOddsStudio>header
+) {
+  color:#5d6d80 !important;
+  background:#f4f7fb !important;
+  border-color:rgba(26,43,63,.13) !important;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .observedOddsRows article,.observedOddsFilters button,
+  .observedOddsBanner,.observedOddsMetrics article,
+  .observedOddsExplanation,.observedChartFacts>div
+) {
+  color:#25374b !important;
+  background:#f1f5fa !important;
+  border-color:rgba(26,43,63,.14) !important;
+}
+html[data-veto-sport-appearance="light"] .observedOddsFilters :is(button.active,button:hover) {
+  background:#c92e36 !important;
+  color:#fff !important;
+}
+html[data-veto-sport-appearance="light"] .observedOddsFilters button.active :is(span,strong) {
+  color:inherit !important;
+}
+/* These badges represent evidence states and should stay differentiated. */
+html[data-veto-sport-appearance="light"] .todaySourceBadge.simulation {
+  color:#8a4c35 !important;
+  background:#fff0e9 !important;
+}
+html[data-veto-sport-appearance="light"] .matchRoomSource.demo {
+  color:#506075 !important;
+  background:#e9eef5 !important;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .matchRoomSource.live,.observedOddsRowPrice small.isRecent
+) {
+  color:#10784d !important;
+}
+/* Inactive controls must be legible and focus must remain visible. */
+html[data-veto-sport-appearance="light"] :is(
+  .matchShellNav button,.matchShellSports button,.matchShellLang button,
+  .matchShellMobile button,.matchShellMoreNav button,
+  .vetoRailGroup>button,.vetoSportTabs button
+):not(.active) {
+  color:#48596f;
+}
+html[data-veto-sport-appearance="light"] .vetoSportAppearanceToggle:focus-visible {
+  outline:3px solid #b7272f;
+  outline-offset:3px;
+}
+
+/* Empty-state card must remain legible on the white canvas. */
+html[data-veto-sport-appearance="light"] .todayHeroNoVision { background:#f1f5fa !important; color:#506176 !important; border-color:rgba(26,43,63,.24) !important; }
+html[data-veto-sport-appearance="light"] .todayHeroNoVision :is(strong,span) { color:#243449 !important; }
+html[data-veto-sport-appearance="light"] .todayHero .todayPrimaryAction { background:#ce292e !important; color:#fff !important; border-color:#ce292e !important; }
+html[data-veto-sport-appearance="light"] .todayHero .todayPrimaryAction:hover { background:#af1e29 !important; }
+html[data-veto-sport-appearance="light"] .todayStartGrid button:first-child { background:linear-gradient(145deg,#fff6f5,#ffffff) !important; border-color:rgba(207,42,48,.23) !important; }
