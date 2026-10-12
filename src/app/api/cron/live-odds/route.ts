@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ingestLiveOdds } from "@/lib/ingestion/live-odds";
 import { providerConfiguration } from "@/lib/providers/factory";
 import { persistenceConfiguration } from "@/lib/persistence/factory";
+import {currentOddsBudgetConfig} from "@/lib/providers/odds-budget";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,18 @@ export async function GET(request: Request) {
   const persistence = persistenceConfiguration();
   const sportKeys = providers.theOddsApi.sportKeys;
   const markets = providers.theOddsApi.markets;
+  const budget=currentOddsBudgetConfig({sportKeys,markets,regions:providers.theOddsApi.regions});
+
+  if (!budget.allowed) {
+    return NextResponse.json({
+      ok:true,skipped:true,quotaProtected:true,
+      reason:budget.reason,estimatedCreditsPerRun:budget.creditsPerRun,
+      estimatedCreditsPerDay:budget.estimatedDailyCredits,
+      estimatedCreditsPer30Days:budget.estimatedMonthlyCredits30d,
+      configuredDailyBudgetCredits:budget.dailyBudget,
+      note:"Estimate only. Verify actual quota with provider. No paid request was made.",
+    }, {headers:{"Cache-Control":"no-store"}});
+  }
 
   if (
     !providers.theOddsApi.configured ||
@@ -44,8 +57,11 @@ export async function GET(request: Request) {
     ok: true,
     skipped: false,
     quotaProtected: true,
+    estimatedCreditsPerDay:budget.estimatedDailyCredits,
+    configuredDailyBudgetCredits:budget.dailyBudget,
+    actualChargesNotMeasured:true,
     sportKeys,
     markets,
     results,
-  });
+  },{headers:{"Cache-Control":"no-store"}});
 }
