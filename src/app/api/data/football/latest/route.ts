@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
+import {isAuthorizedProviderRead, protectedProviderHeaders} from "@/lib/providers/direct-read-auth";
 import { getSportmonksClient } from "@/lib/providers/factory";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (!isAuthorizedProviderRead(request)) {
+    return NextResponse.json({error:"Unauthorized"},{status:401,headers:protectedProviderHeaders});
+  }
   try {
     const client = getSportmonksClient();
     const envelope = await client.getLatestUpdatedFixtures();
@@ -19,7 +23,7 @@ export async function GET() {
     });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Latest fixture fetch failed" },
+      { error: "Protected provider read failed." },
       { status: 502 },
     );
   }
