@@ -44,6 +44,11 @@ export function OpportunityRadar(){
    <article className="pass"><small>— PASS</small><strong>{feed?.counts.pass??(loading?"…":"0")}</strong><span>Устаревший или непроверенный источник</span></article>
    <article><small>✓ VALIDATED EDGE</small><strong>0</strong><span>Ни одного доказанного преимущества</span></article>
   </div>
+  {feed&&feed.counts.paper===0&&feed.counts.watch===0&&feed.rows.length>0&&
+    <div className="radarQuietState"><span aria-hidden="true">◉</span>
+      <div><strong>Сейчас нет достаточно свежих данных для исследования</strong>
+       <p>Последние сохранённые матчи доступны ниже как архив. Это нормальная ситуация для бесплатного API, который не обновляет данные ежесекундно. VETO не выдаёт архив за текущий сигнал.</p></div>
+    </div>}
   <div className="radarToolbar">
    <div role="group" aria-label="Фильтры радара">
     {([{id:"all",label:"Все наблюдения"},{id:"watch",label:"Ожидают данных"},{id:"paper",label:"Для Paper"}] as const).map(x=>
@@ -54,7 +59,7 @@ export function OpportunityRadar(){
   {error?<div className="radarEmpty"><strong>Источник временно недоступен</strong><p>{error}</p></div>:
    loading&&!feed?<div className="radarEmpty"><strong>Загружаем подтверждённые данные…</strong><p>Обращаемся только к хранилищу VETO — бесплатные кредиты спортивных API не тратятся.</p></div>:
    filtered.length===0?<div className="radarEmpty"><strong>Пока нет подходящих наблюдений</strong><p>VETO не генерирует фальшивые ставки или сигналы. При следующем обновлении матчей исследовательский радар пересчитает статусы.</p></div>:
-   <div className="radarCards">{filtered.slice(0,12).map(item=><article className={"radarCard "+item.status.toLowerCase()} key={item.id}>
+   <div className="radarCards">{filtered.slice(0,8).map(item=><article className={"radarCard "+item.status.toLowerCase()} key={item.id}>
     <div className="radarCardTop"><div><span className={"radarBadge "+item.status.toLowerCase()}><i/>{item.status}</span><span className="radarCompetition">{item.event.competition}</span></div><span className="radarAge">СНИМОК: {age(item.scoreAgeSeconds)}</span></div>
     <div className="radarMatch"><div><strong>{item.event.homeName}</strong><span>HOME</span></div><b>{item.event.homeScore}<i>:</i>{item.event.awayScore}</b><div className="away"><strong>{item.event.awayName}</strong><span>AWAY</span></div></div>
     <div className="radarMatchClock">МАТЧ <b>{item.event.clock}</b><span>·</span> {item.event.status==="live"?"Последний статус источника: LIVE":"Статус: "+item.event.status}</div>
