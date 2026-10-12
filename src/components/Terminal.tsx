@@ -226,14 +226,18 @@ export function Terminal({ initialEventId }: { initialEventId?: string }) {
   const gatewayReady = Boolean(
     providerStatus?.providers?.canonicalGateway?.configured,
   );
+  // Operational gateway readiness is not the same as actual persisted match data.
+  // Never show the terminal as LIVE/READY while its visible events are sandbox simulations.
   const providerMode =
-    providerStatus == null
-      ? "CHECKING"
-      : configuredProviders > 0
-        ? "DIRECT DATA READY"
-        : gatewayReady
-          ? "GATEWAY READY"
-          : "DEMO MODE";
+    liveSourceMode !== "persisted"
+      ? "DEMO MODE"
+      : providerStatus == null
+        ? "CHECKING"
+        : configuredProviders > 0
+          ? "DIRECT DATA READY"
+          : gatewayReady
+            ? "GATEWAY READY"
+            : "PERSISTED DATA";
   const selectSport = (sport: Sport) => {
     const persisted = eventSummaries.find(
       (item) => item.sport === sport && item.source === "persisted",
