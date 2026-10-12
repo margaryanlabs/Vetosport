@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDataPlaneRuntimeStatus } from "@/lib/data-plane/engine";
 import { providerConfiguration } from "@/lib/providers/factory";
 import { persistenceConfiguration } from "@/lib/persistence/factory";
+import {currentOddsBudgetConfig} from "@/lib/providers/odds-budget";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,7 @@ export function GET() {
   const providers = providerConfiguration();
   const persistence = persistenceConfiguration();
   const runtime = getDataPlaneRuntimeStatus();
+  const quoteBudget=currentOddsBudgetConfig({sportKeys:providers.theOddsApi.sportKeys,markets:providers.theOddsApi.markets,regions:providers.theOddsApi.regions});
 
   const secrets = {
     cronSecretConfigured: Boolean(process.env.CRON_SECRET),
@@ -23,15 +25,16 @@ export function GET() {
   const liveOddsReady =
     providers.theOddsApi.configured &&
     providers.theOddsApi.sportKeysConfigured &&
+    quoteBudget.allowed &&
     persistence.supabaseConfigured &&
     secrets.cronSecretConfigured;
 
   const activationMode =
-    runtime.mode === "LIVE_READY"
+    runtime.mode === "LIVE_READY" && liveOddsReady
       ? "live-ready"
       : runtime.mode === "PUSH_READY"
         ? "gateway-ready"
-        : runtime.mode === "PARTIAL_FEEDS"
+        : runtime.mode === "LIVE_READY" || runtime.mode === "PARTIAL_FEEDS"
           ? "partially-configured"
           : "sandbox";
 
@@ -40,7 +43,7 @@ export function GET() {
     mode: activationMode,
     runtimeMode: runtime.mode,
     generatedAt: new Date().toISOString(),
-    liveReady: runtime.mode === "LIVE_READY",
+    liveReady: runtime.mode === "LIVE_READY" && liveOddsReady,
     gatewayReady: runtime.canonicalGatewayConfigured,
     providers: {
       canonicalGateway: {
@@ -64,6 +67,16 @@ export function GET() {
         sportKeysConfigured: providers.theOddsApi.sportKeysConfigured,
         sportKeysCount: providers.theOddsApi.sportKeys.length,
         markets: providers.theOddsApi.markets,
+        scheduledPolling: {
+          permitted:quoteBudget.allowed,
+          reason:quoteBudget.reason,
+          optedIn:quoteBudget.enabled,
+          estimatedCreditsPerRun:quoteBudget.creditsPerRun,
+          estimatedCreditsPerDay:quoteBudget.estimatedDailyCredits,
+          estimatedCreditsPer30Days:quoteBudget.estimatedMonthlyCredits30d,
+          configuredDailyBudgetCredits:quoteBudget.dailyBudget,
+          actualChargesNotMeasured:true,
+        },
       },
     },
     storage: {
@@ -82,14 +95,17 @@ export function GET() {
         liveOddsReady && persistence.supabaseConfigured,
       decisionProofReady: persistence.supabaseConfigured,
       quotaGuard:
-        "Odds cron refuses polling when VETO_ODDS_SPORT_KEYS is empty.",
+        "Odds cron refuses polling unless keys, explicit allowlist, VETO_ODDS_CRON_ENABLED and estimated daily credits budget all pass.",
       schedules: {
         footballState: "*/5 * * * *",
         liveOdds: "*/5 * * * *",
       },
     },
     criticalBlockers: runtime.blockers,
-    directAdapterGaps: runtime.directAdapterGaps,
+    directAdapterGaps: [
+      ...runtime.directAdapterGaps,
+      ...(!quoteBudget.allowed ? ["Scheduled odds feed disabled: "+quoteBudget.reason] : []),
+    ],
     requiredEnvironment: [
       {
         key: "INGESTION_SECRET",
@@ -120,6 +136,18 @@ export function GET() {
         configured: providers.theOddsApi.sportKeysConfigured,
         purpose: "Explicit quota-safe The Odds API competitions/sports allowlist",
         optionalWhenUsingGateway: true,
+      },
+      {
+        key: "VETO_ODDS_CRON_ENABLED",
+        configured:quoteBudget.enabled,
+        purpose:"Explicit opt-in to quota-spending scheduled bookmaker requests (default OFF).",
+        critical:true,
+      },
+      {
+        key: "VETO_ODDS_CRON_MAX_ESTIMATED_DAILY_CREDITS",
+        configured:quoteBudget.dailyBudget>0,
+        purpose:"Required daily cost forecast cap; 5min cron runs ~288 times/day. Monitor real provider usage.",
+        critical:true,
       },
       {
         key: "CRON_SECRET",
