@@ -2,6 +2,7 @@
 
 import type { LiveObservation } from "@/lib/live/types";
 import { SportGlyph } from "@/components/SportGlyph";
+import {PitchVision} from "@/components/PitchVision";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) =>
@@ -66,18 +67,20 @@ export function ObservedEventRoom({
         </div>
       </header>
 
+      {event.sport==="football" && <div className="observedVisualFrame"><PitchVision event={event} compact/></div>}
+
       <div className="observedStatusBand">
         <div><span>DATA STATE</span><strong>OBSERVED</strong><small>Persisted event path</small></div>
         <div><span>MARKETS</span><strong>{event.markets}</strong><small>{observation.quoteCount} quote rows</small></div>
         <div><span>SHADOW</span><strong>{observation.shadowPredictionCount ? "READY" : "EMPTY"}</strong><small>{observation.shadowPredictionCount} research lines</small></div>
         <div><span>LEDGER</span><strong>{observation.decisionCount ? "PRESENT" : "EMPTY"}</strong><small>{observation.decisionCount} decisions</small></div>
-        <div><span>VETO STATUS</span><strong>{signal?.decision ?? observation.shadowPredictionCount ? "RESEARCH ONLY" : readinessLabel(readiness?.status)}</strong><small>{signal ? "Persisted decision" : observation.shadowPredictionCount ? "Shadow output · no decision authority" : "Preflight · no synthetic forecast"}</small></div>
+        <div><span>VETO STATUS</span><strong>{signal ? signal.decision : observation.shadowPredictionCount ? "RESEARCH ONLY" : readinessLabel(readiness?.status)}</strong><small>{signal ? "Persisted decision" : observation.shadowPredictionCount ? "Shadow output · no decision authority" : "Preflight · no synthetic forecast"}</small></div>
       </div>
 
       <div className="observedBody">
         <section className="observedState">
           <header>
-            <div><span>LIVE STATE</span><strong>What the data plane actually knows.</strong></div>
+            <div><span>LAST OBSERVED STATE</span><strong>What the data plane actually knows.</strong></div>
             <small>{observation.stateCapturedAt ? new Date(observation.stateCapturedAt).toLocaleString("en-GB") : "No state snapshot"}</small>
           </header>
 
@@ -100,8 +103,8 @@ export function ObservedEventRoom({
               <article key={`${quote.bookmaker}-${quote.marketKey}-${quote.selectionKey}-${quote.capturedAt}`}>
                 <span>{quote.bookmaker}</span>
                 <div><strong>{quote.selectionLabel}</strong><small>{quote.marketKey}</small></div>
-                <b>{quote.decimalOdds.toFixed(2)}</b>
-                <em>{new Date(quote.capturedAt).toLocaleTimeString("en-GB")}</em>
+                <b>{quote.suspended ? "—" : quote.decimalOdds.toFixed(2)}</b>
+                <em>{quote.suspended ? "SUSPENDED · " : ""}{new Date(quote.capturedAt).toLocaleTimeString("en-GB")}</em>
               </article>
             )) : (
               <div className="observedEmpty compact"><span>MARKET FEED PENDING</span><p>No persisted price rows yet.</p></div>
