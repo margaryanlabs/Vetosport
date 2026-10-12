@@ -102,6 +102,7 @@ export function WorkspaceChrome({
               {item.desktop}
             </button>
           ))}
+          <a className="matchShellWatchLink" href="/research/watchlist">ЧТО ПОСМОТРЕТЬ ↗</a>
         </nav>
 
         <div className="matchShellTools">
@@ -148,6 +149,7 @@ export function WorkspaceChrome({
             <span>{item.mobile}</span>
           </button>
         ))}
+        <a className="matchShellMobileWatch" href="/research/watchlist" aria-label="Какие матчи и рынки посмотреть">НАБЛЮДАТЬ</a>
         <button
           aria-expanded={moreOpen}
           className={moreOpen || ["history", "research", "system"].includes(activeView) ? "active" : ""}
