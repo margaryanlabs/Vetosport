@@ -134,3 +134,45 @@
 @media(max-width:900px){.paperStudioGrid{grid-template-columns:1fr}}
 @media(max-width:600px){.paperStudioGrid{padding:0 12px 14px;gap:10px}.paperTicketEditor,.paperTicketHistory{padding:14px}.paperTicketFields{gap:8px}.paperTicketMetrics{gap:6px}.paperTicketMetrics article{padding:11px}.paperTicketMetrics span{font-size:9px}.paperTicketMetrics strong{font-size:18px}}
 @media(prefers-reduced-motion:reduce){.paperTicketCommit{transition:none}}
+
+/* VETO Sport Paper Trading II: virtual ledgers, no real execution */
+.paperLedger .observedStudioSectionHead{padding-bottom:14px}
+.paperControlBar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;padding:14px 25px 19px}
+.paperControlBar label{display:flex;align-items:center;gap:11px;font-size:12px;color:#baccba;font-weight:720}
+.paperControlBar select{min-height:42px;padding:0 12px;border:1px solid rgba(210,235,212,.22);border-radius:9px;color:#eff9f1;background:#223128;font-size:13px}
+.paperControlBar span{font-size:12px;color:#b7c9b8}.paperControlBar span strong{font-size:13px;color:#dfece0}
+.paperControlBar>button{min-height:42px;padding:0 13px;border:1px solid rgba(223,243,227,.22);border-radius:10px;color:#eef7ec;background:#25352a;font-size:12px;font-weight:750}
+.paperControlBar>button:hover{background:#3b5240}.paperControlBar>button:disabled{opacity:.45;cursor:not-allowed}
+.paperPerformance{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;padding:0 25px 22px}
+.paperPerformance article{min-width:0;display:grid;align-content:start;gap:9px;padding:20px 17px;border:1px solid rgba(201,233,211,.17);border-radius:13px;background:linear-gradient(145deg,#213128,#161e19 85%)}
+.paperPerformance article:first-child{background:linear-gradient(145deg,#294533,#19251d 90%);border-color:rgba(149,221,171,.32)}
+.paperPerformance small{font-size:10px;font-weight:790;letter-spacing:.07em;line-height:1.5;color:#bcd5bd}
+.paperPerformance strong{font:780 clamp(22px,2.45vw,33px)/1.1 var(--font-veto-tech),monospace;color:#f2f9f2;letter-spacing:-.05em}
+.paperPerformance strong.positive,.paperOutcomeNet.positive{color:#a5e1b4}
+.paperPerformance strong.negative,.paperOutcomeNet.negative{color:#f3a7a2}
+.paperPerformance span{color:#aebfad;font-size:11px;line-height:1.5}
+.paperEquityWrap{margin:0 25px 23px;padding:20px;border:1px solid rgba(200,234,211,.14);border-radius:14px;background:radial-gradient(ellipse at 10% 0%,rgba(124,192,129,.13),transparent 65%),rgba(5,17,10,.32)}
+.paperEquityWrap>header{display:flex;flex-wrap:wrap;align-items:center;gap:12px 17px;padding-bottom:17px}
+.paperEquityWrap>header span{font:770 10px/1.4 var(--font-veto-tech),monospace;letter-spacing:.11em;color:#adccaF}
+.paperEquityWrap>header strong{font-size:20px;font-weight:760;color:#f0faf2;letter-spacing:-.02em}
+.paperEquityWrap>header small{font-size:12px;color:#aabbac;margin-left:auto}
+.paperEquityEmpty{padding:28px;border:1px dashed rgba(202,227,209,.2);border-radius:11px;color:#bac7b9;font-size:13px;line-height:1.7}
+.paperEquityEmpty b{color:#eef7ef}
+.paperEquityChart{padding:5px 0 0}.paperEquityChart svg{width:100%;display:block;height:auto;max-height:235px}
+.paperEquityChart p{margin:9px 0 0;color:#aebfad;font-size:11px;line-height:1.6}
+.paperTicketEditor h4{font-size:18px;font-weight:760;color:#f2faf2;letter-spacing:-.03em;margin:0 0 21px}
+.paperRiskNotice{display:flex;align-items:flex-start;gap:12px;margin:17px 0 6px;padding:15px;border:1px solid rgba(208,233,213,.15);border-radius:12px;background:rgba(103,145,109,.09)}
+.paperRiskNotice>span{font-size:13px}.paperRiskNotice .ok{color:#94d7a5}.paperRiskNotice .warn{color:#efa9a1}
+.paperRiskNotice strong{font-size:12px;color:#e2efe4}.paperRiskNotice p{margin:5px 0 0;font-size:11px;line-height:1.55;color:#b7c9b8}
+.paperLedgerEntry .paperOutcomeControls{grid-column:1/-1;display:grid;gap:10px;margin-top:6px;padding:13px;border:1px solid rgba(201,231,208,.16);border-radius:11px;background:#1b2d21}
+.paperOutcomeControls label{display:grid;gap:8px;font-size:11px;color:#e0e9e1}
+.paperOutcomeControls select{width:100%;min-height:42px;border:1px solid rgba(214,234,216,.23);border-radius:9px;padding:0 10px;color:#e9f4e9;background:#27382c;font-size:12px}
+.paperOutcomeControls select option{color:#122318;background:#f4f9f2}
+.paperOutcomeControls button{min-height:40px;padding:0 11px;border:1px solid rgba(231,201,163,.25);border-radius:9px;background:#34412f;color:#eff8eb;font-size:12px;font-weight:720}
+.paperOutcomeControls button:disabled{opacity:.5;cursor:not-allowed}
+.paperOutcomeControls button:not(:disabled):hover{background:#4d6441}
+.paperOutcomeNet{grid-column:1/-1;font-size:11px;font-weight:750;line-height:1.5}
+.paperLedger .paperJournalCaveat{border-top:1px solid rgba(200,224,205,.13);padding-top:13px}
+.paperLedger .paperTicketEditor input:focus-visible,.paperLedger .paperTicketEditor select:focus-visible,.paperLedger .paperOutcomeControls select:focus-visible{outline:2px solid #e8656b;outline-offset:3px}
+@media(max-width:900px){.paperPerformance{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.paperControlBar{padding:12px 13px;gap:10px}.paperControlBar label{flex-wrap:wrap;gap:6px}.paperPerformance{padding:0 12px 12px;gap:7px}.paperPerformance article{padding:13px;min-height:120px}.paperPerformance strong{font-size:24px}.paperPerformance span{font-size:10px}.paperEquityWrap{margin:0 12px 14px;padding:14px}.paperEquityWrap>header small{margin-left:0}.paperEquityWrap>header strong{font-size:17px}.paperTicketEditor h4{font-size:17px}.paperRiskNotice{padding:11px}.paperOutcomeControls button{font-size:11px}}
