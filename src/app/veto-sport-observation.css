@@ -1,0 +1,80 @@
+/* VETO SPORT / OBSERVATION STUDIO — no synthetic score or bookmaker imagery */
+.observedRoom{ --studioLine:rgba(212,239,222,.13); --studioMuted:#a7bdb0; }
+.observedStudioNav{position:sticky;top:0;z-index:20;display:flex;gap:9px;flex-wrap:wrap;align-items:center;padding:11px clamp(15px,2vw,27px);border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08);background:rgba(10,17,15,.95);backdrop-filter:blur(18px)}
+.observedStudioNav a{display:flex;align-items:center;gap:9px;min-height:42px;padding:0 15px;border-radius:12px;border:1px solid rgba(230,244,235,.12);color:#e7f0e9;font-size:12px;font-weight:720;text-decoration:none;background:rgba(255,255,255,.025);transition:background .2s,border-color .2s}
+.observedStudioNav a:hover,.observedStudioNav a:focus-visible{background:#24362b;border-color:rgba(198,235,212,.4)}
+.observedStudioNav a span{font:760 10px/1 var(--font-veto-tech),monospace;letter-spacing:.08em;color:#ef7476}
+.observedStudioData{display:grid;gap:20px;padding:22px clamp(12px,2vw,30px) 6px;background:linear-gradient(180deg,#0b1310,#0c1110)}
+.observedScoreStory,.observedOddsStudio{min-width:0;overflow:hidden;scroll-margin-top:83px;border-radius:20px;border:1px solid var(--studioLine);background:linear-gradient(133deg,#1a2520 0%,#101814 48%,#0d1110 100%);box-shadow:0 15px 42px rgba(0,0,0,.17)}
+.observedScoreStory>footer,.observedOddsStudio>footer{margin:0;padding:14px 21px;border-top:1px solid var(--studioLine);font-size:11px;line-height:1.6;color:#adbdaf;background:rgba(0,0,0,.13)}
+.observedStudioSectionHead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:27px 27px 20px}
+.observedStudioSectionHead>div{min-width:0}
+.observedStudioSectionHead>div>span{font:760 10px/1.4 var(--font-veto-tech),monospace;letter-spacing:.15em;color:#c58e8c}
+.observedStudioSectionHead h3{margin:9px 0 10px;font-size:clamp(26px,3vw,38px);font-weight:770;letter-spacing:-.045em;color:#f6faf6;line-height:1.13}
+.observedStudioSectionHead p{margin:0;max-width:800px;color:#b1c3b5;font-size:13px;line-height:1.7}
+.observedStudioCount{flex:0 0 auto;padding:9px 12px;border:1px solid rgba(232,243,237,.16);border-radius:9px;font:760 10px/1.3 var(--font-veto-tech),monospace;letter-spacing:.06em;color:#d8e7dc;background:rgba(255,255,255,.035)}
+.observedChartLegend{display:flex;align-items:center;gap:22px;flex-wrap:wrap;padding:5px 27px 5px}
+.observedChartLegend>span{display:flex;align-items:center;gap:9px;color:#dce6dd;font-size:13px;font-weight:690}
+.observedChartLegend i{display:block;width:13px;height:4px;border-radius:3px;background:#f35e62}
+.observedChartLegend .away i{background:#9cdabc}
+.observedChartFrame{margin:13px 27px 0;padding:12px 12px 3px;border:1px solid rgba(208,237,217,.11);border-radius:13px;background:radial-gradient(ellipse 70% 80% at 40% 40%,rgba(78,118,88,.18),transparent 100%),#0c1511}
+.observedChartFrame svg{display:block;width:100%;height:auto;min-height:160px;max-height:280px;overflow:visible}
+.observedChartFacts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:17px 27px 25px}
+.observedChartFacts>div{display:grid;gap:7px;padding:13px 14px;border-radius:10px;border:1px solid rgba(232,244,232,.1);background:rgba(255,255,255,.035)}
+.observedChartFacts span{font-size:9px;font-weight:740;letter-spacing:.09em;color:#a6c1ae;line-height:1.4}
+.observedChartFacts strong{font:790 clamp(14px,1.5vw,19px)/1.2 var(--font-veto-tech),monospace;color:#f1faf1}
+.observedChartEmpty{display:flex;align-items:center;gap:26px;margin:10px 27px 26px;padding:27px;border:1px dashed rgba(209,234,219,.25);border-radius:14px;background:radial-gradient(circle at 15% 40%,rgba(142,197,160,.08),transparent 50%),rgba(0,0,0,.15)}
+.observedChartEmptyGlyph{flex:0 0 auto;font-size:65px;font-weight:200;line-height:1;color:#b3d3b9}
+.observedChartEmpty strong{display:block;color:#f0f7f2;font-size:20px;font-weight:760;letter-spacing:-.025em}
+.observedChartEmpty p{margin:10px 0 0;max-width:800px;color:#afc2b3;font-size:13px;line-height:1.7}
+.observedOddsMetrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;padding:0 27px 22px}
+.observedOddsMetrics article{display:grid;gap:7px;align-content:start;min-width:0;padding:17px;border:1px solid rgba(224,248,228,.11);border-radius:12px;background:linear-gradient(130deg,rgba(188,221,187,.067),rgba(0,0,0,.1))}
+.observedOddsMetrics small{color:#a5beaa;font-size:10px;font-weight:730;letter-spacing:.06em;line-height:1.5}
+.observedOddsMetrics strong{font:760 clamp(26px,2.7vw,40px)/1 var(--font-veto-tech),monospace;letter-spacing:-.045em;color:#f5f9f5}
+.observedOddsMetrics strong.observedOddsAge{font-size:clamp(17px,2vw,26px);letter-spacing:-.02em;line-height:1.3}
+.observedOddsMetrics span{color:#b5c4b7;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+.observedOddsBanner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 24px;border-top:1px solid rgba(223,244,229,.12);border-bottom:1px solid rgba(223,244,229,.12);background:#19231d}
+.observedOddsBanner>div{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+.observedOddsBanner i{flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:#d8af79;box-shadow:0 0 0 4px rgba(216,175,121,.1)}
+.observedOddsBanner i.recent{background:#8bd3a1}
+.observedOddsBanner strong{color:#eff7ef;font-size:11px;font-weight:770;letter-spacing:.06em}
+.observedOddsBanner span{color:#b7c9ba;font-size:11px}
+.observedOddsBanner>button{flex:0 0 auto;min-height:36px;padding:0 11px;border:1px solid rgba(207,240,217,.25);border-radius:9px;background:rgba(255,255,255,.05);color:#eff5ef;font-size:11px;cursor:pointer}
+.observedOddsExplanation{margin:16px 27px 0;padding:14px 17px;border-radius:11px;border:1px solid rgba(204,237,216,.15);background:#0c1812}
+.observedOddsExplanation p{margin:0;color:#d7e2d9;font-size:13px;line-height:1.7}
+.observedOddsFilters{display:flex;gap:7px;padding:19px 27px;overflow-x:auto}
+.observedOddsFilters button{flex:0 0 auto;min-height:40px;padding:0 15px;border:1px solid rgba(206,230,212,.15);border-radius:9px;color:#ceded1;background:#17211b;cursor:pointer;font-size:12px;font-weight:740}
+.observedOddsFilters button.active,.observedOddsFilters button:hover{background:#e33e46;border-color:#e33e46;color:#fff}
+.observedOddsRows{display:grid;gap:8px;padding:0 27px 23px}
+.observedOddsRows article{display:grid;grid-template-columns:minmax(170px,1.3fr) minmax(160px,.8fr) auto auto;align-items:center;gap:15px;padding:17px;border:1px solid rgba(216,238,219,.12);border-radius:13px;background:rgba(5,12,8,.35);transition:border-color .2s,background .2s}
+.observedOddsRows article:hover{background:rgba(52,84,58,.24);border-color:rgba(216,238,219,.27)}
+.observedOddsRowMain{display:grid;gap:5px;min-width:0}
+.observedOddsRowMain span{font-size:11px;color:#c1d1c1;font-weight:760;letter-spacing:.015em}
+.observedOddsRowMain strong{font-size:15px;color:#f7faf7;line-height:1.3;overflow-wrap:anywhere}
+.observedOddsRowMain small{font-size:10px;color:#a8bcad;overflow-wrap:anywhere}
+.observedOddsBarGroup{min-width:0}
+.observedOddsBarHead{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:10px;color:#9fb4a4}
+.observedOddsBarHead b{font:760 12px/1.3 var(--font-veto-tech),monospace;color:#d9e6dc}
+.observedOddsBarTrack{height:7px;background:#263b2a;border-radius:15px;overflow:hidden;margin-top:9px}
+.observedOddsBarTrack i{display:block;height:100%;background:linear-gradient(90deg,#659681,#a5d4b0);border-radius:15px}
+.observedOddsRowPrice{display:grid;gap:5px;min-width:104px;text-align:right}
+.observedOddsRowPrice b{font:780 26px/1 var(--font-veto-tech),monospace;letter-spacing:-.05em;color:#f2faf4}
+.observedOddsRowPrice small{font-size:9px;font-weight:760;color:#aab9a8;line-height:1.4}
+.observedOddsRows article.isRecent .observedOddsRowPrice small{color:#b6dfbf}
+.observedOddsRows time{color:#acbdad;font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.observedOddsMore{display:block;min-height:42px;margin:0 27px 23px;padding:0 17px;border:1px solid rgba(194,225,203,.25);border-radius:10px;background:#1e2b21;color:#e8f4e9;font-size:12px;font-weight:730;cursor:pointer}
+.observedOddsMore:hover{background:#2e4130}
+.observedOddsNone{padding:0 27px 25px;color:#b6c8b8;font-size:13px}
+.observedOddsEmpty{display:flex;align-items:center;gap:22px;min-height:176px;margin:0 27px 24px;padding:26px;border:1px dashed rgba(208,236,211,.2);border-radius:14px;background:radial-gradient(circle at 18% 45%,rgba(123,171,126,.09),transparent 51%),#0e1a14}
+.observedOddsEmptyIcon{font-size:76px;line-height:1;color:#afcbb6}
+.observedOddsEmpty strong{display:block;margin-bottom:8px;color:#f3f8f4;font-size:21px;letter-spacing:-.025em}
+.observedOddsEmpty p{max-width:750px;color:#b4c5b7;font-size:13px;line-height:1.7}
+.observedOddsEmpty span{color:#d0a4a0;font-size:10px;font-weight:770;letter-spacing:.06em}
+.observedRawDetails{margin-top:22px;border-top:1px solid rgba(255,255,255,.09)}
+.observedRawDetails>summary{padding:14px 0;cursor:pointer;color:#bdcfbe;font-size:12px;font-weight:730}
+.observedRawDetails .observedMarketTape{margin:0}
+#veto-decision{scroll-margin-top:80px}
+@media(max-width:1100px){.observedOddsRows article{grid-template-columns:minmax(0,1.2fr) minmax(140px,1fr) auto}.observedOddsRows time{grid-column:1/-1;text-align:right}}
+@media(max-width:760px){.observedStudioNav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;padding:10px 12px}.observedStudioNav a{flex:0 0 auto;padding:0 13px}.observedStudioData{gap:13px;padding:13px 11px}.observedStudioSectionHead{padding:21px 17px 15px}.observedStudioSectionHead h3{font-size:27px}.observedStudioSectionHead p{font-size:12px}.observedStudioCount{font-size:9px;padding:9px}.observedChartLegend{padding:0 17px;gap:12px}.observedChartFrame{margin:12px 13px 0;padding:6px}.observedChartFacts,.observedOddsMetrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:15px}.observedChartFacts>div,.observedOddsMetrics article{padding:12px}.observedChartEmpty,.observedOddsEmpty{margin:0 14px 17px;padding:19px;gap:12px}.observedChartEmptyGlyph,.observedOddsEmptyIcon{font-size:45px}.observedChartEmpty strong,.observedOddsEmpty strong{font-size:18px}.observedOddsBanner{padding:12px 14px;align-items:flex-start;flex-direction:column}.observedOddsFilters{padding:14px}.observedOddsRows{padding:0 14px 17px}.observedOddsRows article{grid-template-columns:minmax(0,1fr) auto;gap:13px;padding:15px}.observedOddsRowMain{grid-column:1}.observedOddsRowPrice{grid-column:2;grid-row:1;text-align:right;min-width:auto}.observedOddsBarGroup{grid-column:1/-1;grid-row:2}.observedOddsRows time{grid-column:1/-1;grid-row:3;text-align:left}.observedOddsExplanation{margin:12px 14px}.observedOddsMore{margin:0 14px 18px}.observedChartFacts strong{font-size:16px}}
+@media(max-width:420px){.observedStudioSectionHead{flex-wrap:wrap;gap:9px}.observedStudioSectionHead h3{font-size:25px}.observedChartLegend>span{font-size:11px}.observedChartFrame svg{min-height:130px}.observedStudioCount{padding:7px 9px}}
+@media(prefers-reduced-motion:reduce){.observedOddsRows article,.observedStudioNav a{transition:none!important}}
