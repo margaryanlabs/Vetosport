@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/shadow-football",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/api-football-live",
+      "schedule": "*/30 * * * *"
     }
   ]
 }
