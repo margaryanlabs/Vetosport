@@ -1,21 +1,29 @@
 "use client";
 
+import { useState } from "react";
 import type { Locale, Sport } from "@/lib/domain/types";
 import { SportGlyph } from "@/components/SportGlyph";
 import { VetoMark, VetoWordmark } from "@/components/VetoMark";
 
-export type WorkspaceView = "live" | "intelligence" | "research" | "system";
+export type WorkspaceView =
+  | "today"
+  | "matches"
+  | "check"
+  | "history"
+  | "research"
+  | "system";
 
 const nav: Array<{
   id: WorkspaceView;
-  desktop: string;
-  mobile: string;
+  label: string;
+  mobile?: string;
   aria: string;
 }> = [
-  { id: "live", desktop: "MATCHES", mobile: "LIVE", aria: "Live and observed matches" },
-  { id: "intelligence", desktop: "MATCH ROOM", mobile: "MATCH", aria: "Match intelligence room" },
-  { id: "research", desktop: "LAB", mobile: "LAB", aria: "Research laboratory" },
-  { id: "system", desktop: "SYSTEM", mobile: "SYSTEM", aria: "System status" },
+  { id: "today", label: "СЕГОДНЯ", mobile: "СЕГОДНЯ", aria: "Главная VETO Sport" },
+  { id: "matches", label: "МАТЧИ", mobile: "МАТЧИ", aria: "Все матчи" },
+  { id: "check", label: "ПРОВЕРИТЬ", mobile: "ПРОВЕРИТЬ", aria: "Проверить выбранный матч" },
+  { id: "history", label: "ИСТОРИЯ", aria: "История и повтор" },
+  { id: "research", label: "ЛАБОРАТОРИЯ", mobile: "ЛАБ", aria: "Исследовательская лаборатория" },
 ];
 
 const sports: Sport[] = ["football","basketball","tennis","hockey"];
@@ -55,6 +63,7 @@ export function WorkspaceChrome({
   providerMode: string;
   children: React.ReactNode;
 }) {
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const providerTone =
     /READY|CONFIGURED/.test(providerMode)
       ? "ready"
@@ -62,10 +71,13 @@ export function WorkspaceChrome({
         ? "checking"
         : "demo";
 
+  const mobileNav = nav.filter((item) => item.mobile);
+  const secondaryNav = nav.filter((item) => !item.mobile);
+
   return (
     <main className={`matchShell matchShell-${activeSport}`}>
       <header className="matchShellTop">
-        <button className="matchShellBrand" onClick={() => onViewChange("intelligence")} type="button" aria-label="VETO Sport">
+        <button className="matchShellBrand" onClick={() => onViewChange("today")} type="button" aria-label="VETO Sport · Сегодня">
           <VetoMark size={31} />
           <VetoWordmark className="matchShellWordmark" />
           <span>SPORT</span>
@@ -81,7 +93,7 @@ export function WorkspaceChrome({
               aria-current={activeView===item.id ? "page" : undefined}
               aria-label={item.aria}
             >
-              {item.desktop}
+              {item.label}
             </button>
           ))}
         </nav>
@@ -107,8 +119,40 @@ export function WorkspaceChrome({
               <button className={locale===item?"active":""} key={item} onClick={() => onLocaleChange(item)} type="button">{item.toUpperCase()}</button>
             ))}
           </div>
+          <button
+            aria-expanded={mobileMoreOpen}
+            aria-label="Дополнительная навигация"
+            className="matchShellMore"
+            onClick={() => setMobileMoreOpen((value) => !value)}
+            type="button"
+          >
+            ЕЩЁ
+          </button>
         </div>
       </header>
+
+      {mobileMoreOpen && (
+        <div className="matchShellMoreMenu" role="menu" aria-label="Дополнительная навигация">
+          {secondaryNav.map((item) => (
+            <button
+              aria-current={activeView === item.id ? "page" : undefined}
+              className={activeView === item.id ? "active" : ""}
+              key={item.id}
+              onClick={() => {
+                onViewChange(item.id);
+                setMobileMoreOpen(false);
+              }}
+              role="menuitem"
+              type="button"
+            >
+              {item.label}
+            </button>
+          ))}
+          <button onClick={() => { onViewChange("system"); setMobileMoreOpen(false); }} role="menuitem" type="button">
+            СТАТУС ДАННЫХ
+          </button>
+        </div>
+      )}
 
       <div className="matchShellBackdrop" aria-hidden>
         <span className="matchShellPitch" />
@@ -118,7 +162,7 @@ export function WorkspaceChrome({
       <div className="matchShellCanvas">{children}</div>
 
       <nav className="matchShellMobile" aria-label="Mobile navigation">
-        {nav.map((item) => (
+        {mobileNav.map((item) => (
           <button
             className={activeView===item.id?"active":""}
             key={item.id}
@@ -127,7 +171,7 @@ export function WorkspaceChrome({
             aria-current={activeView===item.id ? "page" : undefined}
             aria-label={item.aria}
           >
-            <span>{item.mobile}</span>
+            <span>{item.mobile ?? item.label}</span>
           </button>
         ))}
       </nav>
