@@ -21,6 +21,8 @@ export function GET() {
   const apiFootballConfigured=Boolean(process.env.API_FOOTBALL_KEY);
   const apiFootballEnabled=process.env.VETO_API_FOOTBALL_ENABLED==="true";
   const apiFootballIngestionReady=apiFootballConfigured&&apiFootballEnabled&&persistence.supabaseConfigured&&secrets.cronSecretConfigured;
+  const apiFootballInPlayEnabled=process.env.VETO_API_FOOTBALL_INPLAY_ENABLED==="true";
+  const apiFootballInPlayReady=apiFootballConfigured&&apiFootballInPlayEnabled&&persistence.supabaseConfigured&&secrets.cronSecretConfigured;
 
   const footballStateReady =
     providers.sportmonks.configured &&
@@ -65,6 +67,13 @@ export function GET() {
         estimatedRequestsPerDay:apiFootballSchedule.perDay,
         quotaReserve:apiFootballSchedule.reserve,
       },
+      apiFootballInPlay: {
+        role:"source-labelled live odds snapshots for exact API-Football fixture IDs; bookmaker identity not in source",
+        configured:apiFootballConfigured,enabled:apiFootballInPlayEnabled,
+        ingestionReady:apiFootballInPlayReady,cronEndpoint:"/api/cron/api-football-inplay",
+        estimatedCallsPerDay:12,nominalFootballDailyCalls:60,quotaReserve:20,
+        sourceCanIdentifyBookmaker:false,maximumPageRequestsPerRun:1,
+      },
       sportmonks: {
         role: "football events, live state and final score",
         configured: providers.sportmonks.configured,
@@ -102,6 +111,7 @@ export function GET() {
       canonicalGatewayReady: runtime.canonicalGatewayConfigured,
       footballStateReady,
       apiFootballIngestionReady,
+      apiFootballInPlayReady,
       liveOddsReady,
       autoSettlementReady: footballStateReady,
       terminalClosingConsensusReady:
@@ -112,12 +122,14 @@ export function GET() {
       schedules: {
         footballState: "*/5 * * * *",
         apiFootball: "*/30 * * * *",
+        apiFootballInPlay: "0 */2 * * *",
         liveOdds: "0 */4 * * *",
       },
     },
     criticalBlockers: runtime.blockers,
     directAdapterGaps: [...runtime.directAdapterGaps,
       ...(apiFootballConfigured&&!apiFootballEnabled?["API-Football key present, but VETO_API_FOOTBALL_ENABLED is off; no quota calls."]:[]),
+      ...(apiFootballConfigured&&!apiFootballInPlayEnabled?["API-Football live odds snapshots are opt-in, currently OFF."]:[]),
       ...(!quoteBudget.allowed?["Scheduled bookmaker polling disabled: "+quoteBudget.reason]:[]),
     ],
     requiredEnvironment: [
@@ -143,6 +155,12 @@ export function GET() {
         key:"VETO_API_FOOTBALL_ENABLED",
         configured:apiFootballEnabled,
         purpose:"Explicit operator consent to 48 requests/day via protected 30-minute cron; default OFF.",
+        optionalWhenUsingGateway:true,
+      },
+      {
+        key:"VETO_API_FOOTBALL_INPLAY_ENABLED",
+        configured:apiFootballInPlayEnabled,
+        purpose:"Opt in to exactly 12 additional free API-Football live odds calls daily (combined nominal 60/100).",
         optionalWhenUsingGateway:true,
       },
       {

@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/api-football-live",
       "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/api-football-inplay",
+      "schedule": "0 */2 * * *"
     }
   ]
 }

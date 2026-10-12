@@ -21,7 +21,7 @@ const nav: Array<{
 }> = [
   { id: "today", desktop: "СЕГОДНЯ", mobile: "СЕГОДНЯ", aria: "Сегодня" },
   { id: "matches", desktop: "МАТЧИ", mobile: "МАТЧИ", aria: "Матчи" },
-  { id: "check", desktop: "ПРОВЕРИТЬ", mobile: "ПРОВЕРИТЬ", aria: "Проверить матч" },
+  { id: "check", desktop: "РАЗБОР МАТЧА", mobile: "РАЗБОР", aria: "Разбор матча и данные VETO" },
   { id: "history", desktop: "ИСТОРИЯ", mobile: "ИСТОРИЯ", aria: "История" },
   { id: "research", desktop: "ЛАБОРАТОРИЯ", mobile: "ЛАБ", aria: "Лаборатория" },
 ];
@@ -102,7 +102,7 @@ export function WorkspaceChrome({
               {item.desktop}
             </button>
           ))}
-          <a className="matchShellWatchLink" href="/research/watchlist">ЧТО ПОСМОТРЕТЬ ↗</a>
+          <a className="matchShellWatchLink" href="/research/watchlist">РАДАР МАТЧЕЙ ↗</a>
         </nav>
 
         <div className="matchShellTools">
@@ -149,7 +149,7 @@ export function WorkspaceChrome({
             <span>{item.mobile}</span>
           </button>
         ))}
-        <a className="matchShellMobileWatch" href="/research/watchlist" aria-label="Какие матчи и рынки посмотреть">НАБЛЮДАТЬ</a>
+        <a className="matchShellMobileWatch" href="/research/watchlist" aria-label="Радар матчей и исследовательских рынков">РАДАР</a>
         <button
           aria-expanded={moreOpen}
           className={moreOpen || ["history", "research", "system"].includes(activeView) ? "active" : ""}

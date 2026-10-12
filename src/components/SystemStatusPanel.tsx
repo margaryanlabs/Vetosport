@@ -24,6 +24,7 @@ type Providers = {
     canonicalGateway?: { configured?: boolean };
     sportmonks?: { configured?: boolean };
     apiFootball?: { configured?:boolean;ingestionReady?:boolean;scheduledPollingEnabled?:boolean;estimatedRequestsPerDay?:number };
+    apiFootballInPlay?: {configured?:boolean;enabled?:boolean;ingestionReady?:boolean;estimatedCallsPerDay?:number;quotaReserve?:number};
     theOddsApi?: {
       configured?: boolean;
       sportKeysConfigured?: boolean;
@@ -64,6 +65,7 @@ export function SystemStatusPanel() {
   }, []);
 
   const freeFootball=providers?.providers?.apiFootball;
+  const freeInPlay=providers?.providers?.apiFootballInPlay;
   const sportmonks =
     providers?.providers?.sportmonks?.configured ??
     plane?.runtime?.sportmonksConfigured ??
@@ -128,6 +130,13 @@ export function SystemStatusPanel() {
           <strong>{freeFootball?.ingestionReady?"API-FOOTBALL READY":freeFootball?.configured?"API-FOOTBALL KEY ADDED":sportmonks?"SPORTMONKS READY":gateway?"GATEWAY ONLY":"PENDING"}</strong>
           <small>{freeFootball?.ingestionReady?"The protected 30-minute cron is enabled; match scores are provider snapshots, not a broadcast.":freeFootball?.configured?"Free API-Football key exists. Server polling is OFF until VETO_API_FOOTBALL_ENABLED=true is set; bookmaker quotes are separate.":"No free direct football adapter active yet."}</small>
           <i className={freeFootball?.ingestionReady ? "ok" : "pending"} />
+        </article>
+
+        <article>
+          <span>API-FOOTBALL IN-PLAY</span>
+          <strong>{freeInPlay?.ingestionReady?"LIVE ODDS POLLING ON":freeInPlay?.configured?"READY / POLLING OFF":"NO KEY"}</strong>
+          <small>{freeInPlay?.ingestionReady?`12 scheduled FREE requests/day; exact fixture matching; no bookmaker identity provided. Waiting for actual market snapshots.`:freeInPlay?.configured?"API key exists. In-play polls are disabled until verified operator activation.":"Football provider key not connected."}</small>
+          <i className={freeInPlay?.ingestionReady?"ok":"pending"}/>
         </article>
 
         <article>
