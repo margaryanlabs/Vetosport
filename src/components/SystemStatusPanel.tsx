@@ -23,6 +23,7 @@ type Providers = {
   providers?: {
     canonicalGateway?: { configured?: boolean };
     sportmonks?: { configured?: boolean };
+    apiFootball?: { configured?:boolean;ingestionReady?:boolean;scheduledPollingEnabled?:boolean;estimatedRequestsPerDay?:number };
     theOddsApi?: {
       configured?: boolean;
       sportKeysConfigured?: boolean;
@@ -62,6 +63,7 @@ export function SystemStatusPanel() {
     };
   }, []);
 
+  const freeFootball=providers?.providers?.apiFootball;
   const sportmonks =
     providers?.providers?.sportmonks?.configured ??
     plane?.runtime?.sportmonksConfigured ??
@@ -123,9 +125,9 @@ export function SystemStatusPanel() {
 
         <article id="system-providers">
           <span>SPORT DATA</span>
-          <strong>{sportmonks ? "DIRECT READY" : gateway ? "GATEWAY ONLY" : "PENDING"}</strong>
-          <small>SportMonks direct football adapter is optional when canonical push is used.</small>
-          <i className={sportmonks || gateway ? "ok" : "pending"} />
+          <strong>{freeFootball?.ingestionReady?"API-FOOTBALL READY":freeFootball?.configured?"API-FOOTBALL KEY ADDED":sportmonks?"SPORTMONKS READY":gateway?"GATEWAY ONLY":"PENDING"}</strong>
+          <small>{freeFootball?.ingestionReady?"The protected 30-minute cron is enabled; match scores are provider snapshots, not a broadcast.":freeFootball?.configured?"Free API-Football key exists. Server polling is OFF until VETO_API_FOOTBALL_ENABLED=true is set; bookmaker quotes are separate.":"No free direct football adapter active yet."}</small>
+          <i className={freeFootball?.ingestionReady ? "ok" : "pending"} />
         </article>
 
         <article>
