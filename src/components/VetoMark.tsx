@@ -6,29 +6,14 @@ export function VetoMark({
   className?: string;
 }) {
   return (
-    <svg
+    <img
       aria-hidden="true"
-      className={className}
+      alt=""
+      className={`vetoMark ${className}`.trim()}
+      src="/veto-mark.svg"
       width={size}
       height={size}
-      viewBox="0 0 64 64"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M13.5 12.5 30.25 48c.72 1.53 2.87 1.56 3.64.05L51 12.5"
-        stroke="#F7F7F8"
-        strokeWidth="8"
-        strokeLinecap="square"
-        strokeLinejoin="miter"
-      />
-      <path
-        d="M25.5 22.5h13"
-        stroke="#FF2D2D"
-        strokeWidth="5.2"
-        strokeLinecap="square"
-      />
-    </svg>
+    />
   );
 }
 
