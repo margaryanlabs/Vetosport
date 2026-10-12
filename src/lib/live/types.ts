@@ -1,4 +1,5 @@
 import type { Decision, EventStatus, Sport } from "@/lib/domain/types";
+import type {ObservedScorePoint} from "@/lib/live/score-observations";
 
 export interface LivePrimarySignal {
   selectionId: string;
@@ -94,6 +95,7 @@ export interface LiveObservation {
   stateCapturedAt?: string;
   stateLatencyMs?: number;
   state: Record<string, unknown>;
+  scoreHistory?: ObservedScorePoint[];
   quotes: LiveQuotePreview[];
   quoteCount: number;
   shadowPredictions: LiveShadowPrediction[];

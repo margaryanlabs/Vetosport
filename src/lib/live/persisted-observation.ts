@@ -1,5 +1,6 @@
 import { getPersistence } from "@/lib/persistence/factory";
 import type { LiveObservation } from "@/lib/live/types";
+import {extractObservedScoreHistory} from "@/lib/live/score-observations";
 import {
   buildPersistedSummary,
   isSelfcheckEvent,
@@ -51,6 +52,7 @@ export const getPersistedObservation = async (
     stateCapturedAt: state?.capturedAt,
     stateLatencyMs: state?.sourceLatencyMs,
     state: state?.state ?? {},
+    scoreHistory: extractObservedScoreHistory(states),
     quotes: quotes.slice(0, 50).map((quote) => ({
       provider: quote.provider,
       bookmaker: quote.bookmaker,

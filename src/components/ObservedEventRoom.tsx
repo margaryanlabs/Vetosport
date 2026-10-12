@@ -3,6 +3,9 @@
 import type { LiveObservation } from "@/lib/live/types";
 import { SportGlyph } from "@/components/SportGlyph";
 import {PitchVision} from "@/components/PitchVision";
+import {ObservedOddsBoard} from "@/components/ObservedOddsBoard";
+import {ObservedScoreStory} from "@/components/ObservedScoreStory";
+import {getObservedFreshness} from "@/lib/live/freshness";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) =>
@@ -40,6 +43,7 @@ export function ObservedEventRoom({
   observation: LiveObservation;
 }) {
   const event = observation.summary;
+  const freshness = getObservedFreshness(event);
   const signal = observation.latestDecision;
   const readiness = event.decisionReadiness;
   const state = Object.entries(observation.state).slice(0, 8);
@@ -48,7 +52,7 @@ export function ObservedEventRoom({
     <section className="observedRoom">
       <header className="observedHero">
         <div className="observedMeta">
-          <span><i /> {event.status.toUpperCase()}</span>
+          <span><i /> {freshness.label}</span>
           <span>{event.competition}</span>
           <span>CANONICAL · {event.id.slice(0, 8)}</span>
         </div>
@@ -69,12 +73,23 @@ export function ObservedEventRoom({
 
       {event.sport==="football" && <div className="observedVisualFrame"><PitchVision event={event} compact/></div>}
 
+      <nav className="observedStudioNav" aria-label="Перейти к разделу матча">
+        <a href="#veto-score-story"><span>01</span> История счёта</a>
+        <a href="#veto-odds-studio"><span>02</span> Коэффициенты</a>
+        <a href="#veto-decision"><span>03</span> Решение VETO</a>
+      </nav>
+
       <div className="observedStatusBand">
-        <div><span>DATA STATE</span><strong>OBSERVED</strong><small>Persisted event path</small></div>
-        <div><span>MARKETS</span><strong>{event.markets}</strong><small>{observation.quoteCount} quote rows</small></div>
-        <div><span>SHADOW</span><strong>{observation.shadowPredictionCount ? "READY" : "EMPTY"}</strong><small>{observation.shadowPredictionCount} research lines</small></div>
-        <div><span>LEDGER</span><strong>{observation.decisionCount ? "PRESENT" : "EMPTY"}</strong><small>{observation.decisionCount} decisions</small></div>
-        <div><span>VETO STATUS</span><strong>{signal ? signal.decision : observation.shadowPredictionCount ? "RESEARCH ONLY" : readinessLabel(readiness?.status)}</strong><small>{signal ? "Persisted decision" : observation.shadowPredictionCount ? "Shadow output · no decision authority" : "Preflight · no synthetic forecast"}</small></div>
+        <div><span>ДАННЫЕ</span><strong>{freshness.freshLive?"СВЕЖИЙ СНИМОК":"СОХРАНЕНО"}</strong><small>{freshness.ageSeconds===null?"Время неизвестно":`${Math.floor(freshness.ageSeconds/60)} мин с последней записи`}</small></div>
+        <div><span>РЫНКИ</span><strong>{event.markets}</strong><small>{observation.quoteCount} реальных записей котировок</small></div>
+        <div><span>ИССЛЕДОВАНИЯ</span><strong>{observation.shadowPredictionCount || "—"}</strong><small>Экспериментальные прогнозы, не ставки</small></div>
+        <div><span>ИСТОРИЯ РЕШЕНИЙ</span><strong>{observation.decisionCount || "—"}</strong><small>Сохранённые решения системы</small></div>
+        <div><span>СТАТУС VETO</span><strong>{signal ? signal.decision : observation.shadowPredictionCount ? "RESEARCH ONLY" : readinessLabel(readiness?.status)}</strong><small>{signal ? "Ранее сохранённое решение" : observation.shadowPredictionCount ? "Экспериментальный анализ" : "Нужны дополнительные данные"}</small></div>
+      </div>
+
+      <div className="observedStudioData">
+        <ObservedScoreStory points={observation.scoreHistory??[]} home={event.homeName} away={event.awayName}/>
+        <ObservedOddsBoard quotes={observation.quotes}/>
       </div>
 
       <div className="observedBody">
@@ -97,6 +112,7 @@ export function ObservedEventRoom({
             <div className="observedEmpty"><span>STATE SNAPSHOT PENDING</span><p>The event exists, but no state snapshot is persisted yet.</p></div>
           )}
 
+          <details className="observedRawDetails"><summary>Показать технический архив котировок</summary>
           <div className="observedMarketTape">
             <header><span>RECENT MARKET QUOTES</span><small>{observation.quotes.length} shown</small></header>
             {observation.quotes.length ? observation.quotes.slice(0, 12).map((quote) => (
@@ -110,9 +126,10 @@ export function ObservedEventRoom({
               <div className="observedEmpty compact"><span>MARKET FEED PENDING</span><p>No persisted price rows yet.</p></div>
             )}
           </div>
+          </details>
         </section>
 
-        <aside className="observedDecision">
+        <aside className="observedDecision" id="veto-decision">
           <div className="observedDecisionHead">
             <span>VETO DECISION LAYER</span>
             <em className={signal ? signal.decision.toLowerCase() : "pending"}>{signal?.decision ?? "PENDING"}</em>
