@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDataPlaneRuntimeStatus } from "@/lib/data-plane/engine";
 import { providerConfiguration } from "@/lib/providers/factory";
 import { persistenceConfiguration } from "@/lib/persistence/factory";
+import {apiFootballSchedule} from "@/lib/providers/api-football";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,10 @@ export function GET() {
     cronSecretConfigured: Boolean(process.env.CRON_SECRET),
     ingestionSecretConfigured: Boolean(process.env.INGESTION_SECRET),
   };
+
+  const apiFootballConfigured=Boolean(process.env.API_FOOTBALL_KEY);
+  const apiFootballEnabled=process.env.VETO_API_FOOTBALL_ENABLED==="true";
+  const apiFootballIngestionReady=apiFootballConfigured&&apiFootballEnabled&&persistence.supabaseConfigured&&secrets.cronSecretConfigured;
 
   const footballStateReady =
     providers.sportmonks.configured &&
@@ -48,6 +53,15 @@ export function GET() {
         configured: runtime.canonicalGatewayConfigured,
         endpoint: "/api/ingest/live/canonical",
       },
+      apiFootball: {
+        role:"football live fixture + score snapshots, no bookmaker odds",
+        configured:apiFootballConfigured,
+        scheduledPollingEnabled:apiFootballEnabled,
+        ingestionReady:apiFootballIngestionReady,
+        cronEndpoint:"/api/cron/api-football-live",
+        estimatedRequestsPerDay:apiFootballSchedule.perDay,
+        quotaReserve:apiFootballSchedule.reserve,
+      },
       sportmonks: {
         role: "football events, live state and final score",
         configured: providers.sportmonks.configured,
@@ -76,6 +90,7 @@ export function GET() {
       ingestionSecretConfigured: secrets.ingestionSecretConfigured,
       canonicalGatewayReady: runtime.canonicalGatewayConfigured,
       footballStateReady,
+      apiFootballIngestionReady,
       liveOddsReady,
       autoSettlementReady: footballStateReady,
       terminalClosingConsensusReady:
@@ -85,11 +100,14 @@ export function GET() {
         "Odds cron refuses polling when VETO_ODDS_SPORT_KEYS is empty.",
       schedules: {
         footballState: "*/5 * * * *",
+        apiFootball: "*/30 * * * *",
         liveOdds: "*/5 * * * *",
       },
     },
     criticalBlockers: runtime.blockers,
-    directAdapterGaps: runtime.directAdapterGaps,
+    directAdapterGaps: [...runtime.directAdapterGaps,
+      ...(apiFootballConfigured&&!apiFootballEnabled?["API-Football key present, but VETO_API_FOOTBALL_ENABLED is off; no quota calls."]:[]),
+    ],
     requiredEnvironment: [
       {
         key: "INGESTION_SECRET",
@@ -102,6 +120,18 @@ export function GET() {
         configured: persistence.supabaseConfigured,
         purpose: "Truth Journal, decision ledger, quotes and settlement storage",
         critical: true,
+      },
+      {
+        key:"API_FOOTBALL_KEY",
+        configured:apiFootballConfigured,
+        purpose:"Direct FREE live fixture snapshots; 100 requests/day, no real-time bookmaker odds included.",
+        optionalWhenUsingGateway:true,
+      },
+      {
+        key:"VETO_API_FOOTBALL_ENABLED",
+        configured:apiFootballEnabled,
+        purpose:"Explicit operator consent to 48 requests/day via protected 30-minute cron; default OFF.",
+        optionalWhenUsingGateway:true,
       },
       {
         key: "SPORTMONKS_API_TOKEN",
