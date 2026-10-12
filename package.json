@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "prebuild": "node --test tests/sport-light-contrast.test.mjs"
   },
   "dependencies": {
     "next": "16.3.8",
