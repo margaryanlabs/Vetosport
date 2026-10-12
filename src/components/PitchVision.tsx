@@ -2,6 +2,7 @@
 
 import type {LiveEventSummary} from "@/lib/live/types";
 import {SportGlyph} from "@/components/SportGlyph";
+import {getObservedFreshness} from "@/lib/live/freshness";
 
 /**
  * Graphic matchcast, not a video feed or player tracking.
@@ -19,7 +20,8 @@ export function PitchVision({
 }) {
   const football = event.sport === "football";
   const persisted = event.source === "persisted";
-  const sourceLabel = persisted ? "СОХРАНЁННЫЕ ДАННЫЕ" : "ДЕМОНСТРАЦИЯ";
+  const freshness = getObservedFreshness(event);
+  const sourceLabel = freshness.label;
   const sourceTime = event.lastUpdatedAt && Number.isFinite(Date.parse(event.lastUpdatedAt))
     ? new Date(event.lastUpdatedAt).toISOString().slice(11,16) + " UTC"
     : "НЕ ПОДТВЕРЖДЕНО";
@@ -78,7 +80,7 @@ export function PitchVision({
             </div>
             <div className="pitchVisionAway"><small>AWAY</small><strong>{event.awayName}</strong></div>
           </div>
-          <div className="pitchVisionClock"><span>{event.status === "live" ? "В МАТЧЕ" : event.status === "finished" ? "ЗАВЕРШЁН" : "СОБЫТИЕ"}</span><strong>{event.clock || "—"}</strong></div>
+          <div className="pitchVisionClock"><span>{!persisted ? "ДЕМО" : freshness.freshLive ? "В МАТЧЕ · СНИМОК" : event.status === "finished" ? "ЗАВЕРШЁН" : "ПОСЛЕДНИЙ СНИМОК"}</span><strong>{event.clock || "—"}</strong></div>
         </div>
       </div>
       <footer className="pitchVisionFooter">
@@ -87,7 +89,7 @@ export function PitchVision({
       </footer>
       <p className="pitchVisionNotice">
         {football ? "Визуальная схема поля, не видеотрансляция и не трекинг мяча." : "Графический обзор, не видеотрансляция."}
-        {persisted ? " Счёт и состояние — из сохранённого источника; актуальность проверяйте отдельно." : " Счёт демонстрационный."}
+        {persisted ? freshness.freshLive ? " Счёт из сохранённого источника. Время последнего снимка указано ниже." : " Снимок может быть устаревшим, не используйте как текущую трансляцию." : " Счёт демонстрационный."}
       </p>
     </section>
   );
