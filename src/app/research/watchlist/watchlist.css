@@ -10,3 +10,9 @@
 .watchSetup a{border-bottom:1px solid #658a9c;color:#c1deea;font-size:11px;padding-bottom:6px}
 @media(max-width:900px){.watchLaunchHealth{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:500px){.watchLaunchHealth{gap:7px}.watchLaunchHealth>div{padding:12px}.watchLaunchHealth strong{font-size:10px}.watchLaunchHealth small{font-size:8px}}
+
+.watchMatchActions{display:flex;flex-wrap:wrap;gap:13px;margin-top:19px}
+.watchMatchActions a{font-size:11px;color:#d8ebf4;border:1px solid #60798b;padding:10px 12px;line-height:1.5}
+.watchMatchActions a:last-child{border-color:rgba(240,75,76,.53);color:#ffc7c7;background:rgba(240,75,76,.08)}
+.watchMatchActions a:hover{background:rgba(166,198,219,.12)}
+@media(max-width:720px){.watchMatchActions a{width:100%;text-align:center}}
