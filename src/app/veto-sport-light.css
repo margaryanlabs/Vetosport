@@ -337,3 +337,10 @@ html[data-veto-sport-appearance="light"] .vetoSportAppearanceToggle:focus-visibl
   outline:3px solid #b7272f;
   outline-offset:3px;
 }
+
+/* Empty-state card must remain legible on the white canvas. */
+html[data-veto-sport-appearance="light"] .todayHeroNoVision { background:#f1f5fa !important; color:#506176 !important; border-color:rgba(26,43,63,.24) !important; }
+html[data-veto-sport-appearance="light"] .todayHeroNoVision :is(strong,span) { color:#243449 !important; }
+html[data-veto-sport-appearance="light"] .todayHero .todayPrimaryAction { background:#ce292e !important; color:#fff !important; border-color:#ce292e !important; }
+html[data-veto-sport-appearance="light"] .todayHero .todayPrimaryAction:hover { background:#af1e29 !important; }
+html[data-veto-sport-appearance="light"] .todayStartGrid button:first-child { background:linear-gradient(145deg,#fff6f5,#ffffff) !important; border-color:rgba(207,42,48,.23) !important; }
