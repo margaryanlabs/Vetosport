@@ -61,7 +61,7 @@ export default function ResearchWatchlistPage(){
   fetch(query,{cache:"no-store"})
    .then(r=>r.ok?r.json():null)
    .then(data=>{if(active){setMarketQuotes(Array.isArray(data?.observation?.quotes)?
-     (data.observation.quotes as LiveQuotePreview[]).filter(q=>q.provider==="the-odds-api"):[]);}})
+     (data.observation.quotes as LiveQuotePreview[]).filter(q=>q.provider==="the-odds-api"||q.provider==="api-football-live-odds"):[]);}})
    .catch(()=>{if(active)setMarketQuotes([]);});
   return()=>{active=false;};
  },[focus?.id]);
@@ -148,10 +148,10 @@ export default function ResearchWatchlistPage(){
      <div className="watchDetail"><small>СТАТУС ДАННЫХ</small><strong>{candidate?"Есть свежее совпадение, но нет подтверждённой цены.":"Условие сейчас не подтверждено свежим снимком. Пока только исследование."}</strong></div>
      <div className="watchDetail"><small>РИСК И ОГРАНИЧЕНИЯ</small><strong>Голы в оставшееся время, задержки провайдера, дополнительное время, остановка рынков, невыгодный коэффициент, изменившаяся статистика. Историческая частота не гарантирует прибыль.</strong></div>
      <div className="watchDetail"><small>СОХРАНЁННАЯ БУКМЕКЕРСКАЯ ЛИНИЯ</small>
-      <strong>{marketQuotes.length?"The Odds API · котировки с отметками времени; наличие ставки сейчас не гарантируется.":"Для этого матча нет сохранённых котировок. Не подменяем их ручными оценками."}</strong>
+      <strong>{marketQuotes.length?"Реальные снимки The Odds API / API-Football In-Play с отметками времени. Для некоторых линий источник не называет букмекера; доступность ставки не гарантирована.":"Для этого матча нет сохранённых котировок. Не подменяем их ручными оценками."}</strong>
       {mostRecentQuote&&<p>Последняя отметка букмекера: {formatted(mostRecentQuote.capturedAt)} · {quoteAgeMs!==null&&quoteAgeMs>=0?Math.floor(quoteAgeMs/60000)+" мин назад":"время не подтверждено"} · {quoteAgeMs!==null&&quoteAgeMs>120000?"АРХИВ · НЕ ТЕКУЩИЕ LIVE-КОЭФФИЦИЕНТЫ":"СНИМОК · НЕ ПОДТВЕРЖДЕНА ДОСТУПНОСТЬ"}</p>}
       {marketQuotes.slice(0,8).map(q=><div className="watchRealQuote" key={q.bookmaker+"-"+q.marketKey+"-"+q.selectionKey+"-"+q.capturedAt}>
-        <span>{q.bookmaker} · {q.marketKey}</span><strong>{q.selectionLabel}</strong><b>{q.suspended?"ПРИОСТАНОВЛЕНО":q.decimalOdds.toFixed(2)}</b>
+        <span>{q.provider} · {q.bookmaker} · {q.marketKey}</span><strong>{q.selectionLabel}</strong><b>{q.suspended?"ПРИОСТАНОВЛЕНО":q.decimalOdds.toFixed(2)}</b>
         <small>{formatted(q.capturedAt)}</small>
       </div>)}
      </div>
