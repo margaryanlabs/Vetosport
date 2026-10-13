@@ -213,6 +213,7 @@ export function TodayExperience({
             <li><i className="research" />Research — материал для изучения, не рекомендация.</li>
             <li><i className="simulation" />Simulation — демонстрационный набор данных.</li>
           </ul>
+          <a className="todayPlanLink" href="/plans">Как мы планируем открыть доступ ↗</a>
         </aside>
       </div>
     </section>
