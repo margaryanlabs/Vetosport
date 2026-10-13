@@ -7,6 +7,7 @@ import {ObservedOddsBoard} from "@/components/ObservedOddsBoard";
 import {PaperResearchTicket} from "@/components/PaperResearchTicket";
 import {ObservedScoreStory} from "@/components/ObservedScoreStory";
 import {getObservedFreshness} from "@/lib/live/freshness";
+import {DecisionPassport} from "@/components/DecisionPassport";
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const pp = (value: number) =>
@@ -75,11 +76,14 @@ export function ObservedEventRoom({
       {event.sport==="football" && <div className="observedVisualFrame"><PitchVision event={event} compact/></div>}
 
       <nav className="observedStudioNav" aria-label="Перейти к разделу матча">
-        <a href="#veto-score-story"><span>01</span> История счёта</a>
-        <a href="#veto-odds-studio"><span>02</span> Коэффициенты</a>
-        <a href="#veto-paper-studio"><span>03</span> Paper тест</a>
-        <a href="#veto-decision"><span>04</span> Решение VETO</a>
+        <a href="#veto-proof-of-edge"><span>01</span> Паспорт VETO</a>
+        <a href="#veto-score-story"><span>02</span> История счёта</a>
+        <a href="#veto-odds-studio"><span>03</span> Коэффициенты</a>
+        <a href="#veto-paper-studio"><span>04</span> Paper тест</a>
+        <a href="#veto-decision"><span>05</span> Решение VETO</a>
       </nav>
+
+      <DecisionPassport observation={observation} />
 
       <div className="observedStatusBand">
         <div><span>ДАННЫЕ</span><strong>{freshness.freshLive?"СВЕЖИЙ СНИМОК":"СОХРАНЕНО"}</strong><small>{freshness.ageSeconds===null?"Время неизвестно":`${Math.floor(freshness.ageSeconds/60)} мин с последней записи`}</small></div>
