@@ -52,11 +52,19 @@ export function prioritizeLiveFeed(summaries:LiveEventSummary[],now:number,limit
   const state=getObservedFreshness(event,now);
   return state.freshLive?0:state.known&&!state.stale?1:2;
  };
- return [...summaries].sort((a,b)=>{
+ const sorted=[...summaries].sort((a,b)=>{
   const tier=feedTier(a,now)-feedTier(b,now);
   if(tier)return tier;
   const fresh=liveScore(a)-liveScore(b);
   return fresh||feedSort(a,b,now);
+ });
+ // Unresolved games must remain retrievable by event ID, but must not fill the
+ // public "right now" list just because API-Football's plan cannot supply FT.
+ let archived=0;
+ return sorted.filter(event=>{
+  if(!getObservedFreshness(event,now).unverifiedArchive)return true;
+  archived++;
+  return archived<=8;
  }).slice(0,Math.min(40,Math.max(1,limit)));
 }
 export function liveFeedPrioritySelfcheck(){
@@ -85,6 +93,12 @@ export function liveFeedPrioritySelfcheck(){
   {name:"Upcoming game outranks unverified 11-hour-old LIVE status",passed:order.findIndex(x=>x.id==="upcoming")<order.findIndex(x=>x.id==="stale")},
   {name:"Duplicate storage records are not counted as different matches",passed:selectFeedCandidates([current,current],now).length===1},
   {name:"Capped visible selection never exceeds 40",passed:prioritizeLiveFeed(Array.from({length:75},(_,i)=>summary(ev(String(i),"2026-10-14T11:15:00Z","live"))),now).length===40},
+  {name:"At most eight unverified archived LIVE flags remain in the current-match feed",
+   passed:prioritizeLiveFeed(Array.from({length:26},(_,i)=>summary(ev("archive-"+i,"2026-10-14T00:00:00Z","live"),
+    "2026-10-14T00:45:00Z")),now).length===8},
+  {name:"Archive quarantine never removes genuine live fixtures",
+   passed:prioritizeLiveFeed([summary(current,"2026-10-14T11:59:40Z"),...Array.from({length:22},(_,i)=>
+    summary(ev("archive-"+i,"2026-10-14T00:00:00Z","live"),"2026-10-14T00:45:00Z"))],now).length===9},
   {name:"All windows cover recent kickoff plus next day",passed:liveFeedWindows(now).length===4&&liveFeedWindows(now)[3].label==="upcoming"},
  ];
  return{passed:checks.every(c=>c.passed),checks};
