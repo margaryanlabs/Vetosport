@@ -33,3 +33,6 @@ html[data-veto-sport-appearance="light"] .vetoTruthEmpty>a{color:#28384c;border-
 html[data-veto-sport-appearance="light"] .vetoDiscoveryLanding>a:first-of-type{color:#fff!important;background:#c92b32}
 @media(max-width:680px){.todayDemoConsent{align-items:stretch;flex-direction:column}.todayDemoConsent button{width:100%;min-height:46px}.vetoTruthEmpty{margin:20px auto;padding:24px}.vetoTruthEmpty>a{width:100%}}
 @media(prefers-reduced-motion:reduce){.todayStartGrid>a{transition:none}}
+
+.todayPlanLink{display:inline-flex;padding:10px 0;margin-top:17px;text-decoration:none;color:#edf0f5;font-size:12px;font-weight:850;border-bottom:1px solid rgba(242,240,245,.25)}
+html[data-veto-sport-appearance="light"] .todayPlanLink{color:#23384c;border-bottom-color:rgba(24,42,61,.25)}
