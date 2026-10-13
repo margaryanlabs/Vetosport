@@ -100,6 +100,7 @@ export default function ResearchWatchlistPage(){
      <div className="watchHeroActions">
       <a href="#watchRadar">Исследовать матчи ↗</a>
       <a href="#watchResearch">Что проверить в линии ↓</a>
+      <a href="/research/discovery">Исследования без ограничений ↗</a>
      </div>
      <p className="watchRealDisclosure">API-Football FREE опрашивается примерно раз в 30 минут. Снимок матча — не видеотрансляция и не текущая букмекерская линия.</p>
     </div>
