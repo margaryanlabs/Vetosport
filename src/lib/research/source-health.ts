@@ -44,6 +44,8 @@ export function toSourceHealthView(input:{
  const safeCodes=new Set([
   "STORAGE_OR_PROVIDER_FAILURE","UPSTREAM_REJECTED_TARGETED_IDS",
   "MALFORMED_PROVIDER_PAYLOAD","NO_ELIGIBLE_OBSERVED_FIXTURES",
+  "UPSTREAM_DAILY_QUOTA","UPSTREAM_MINUTE_QUOTA","UPSTREAM_SUBSCRIPTION",
+  "UPSTREAM_AUTH","UPSTREAM_INVALID_PARAMETERS","UPSTREAM_UNCLASSIFIED",
   "QUOTA_RESERVE","LIVE_FOOTBALL_OR_STORAGE_NOT_ENABLED",
   "UPSTREAM_HTTP_400","UPSTREAM_HTTP_401","UPSTREAM_HTTP_403",
   "UPSTREAM_HTTP_404","UPSTREAM_HTTP_429","UPSTREAM_HTTP_500",
@@ -55,12 +57,22 @@ export function toSourceHealthView(input:{
  const upstreamAttempted=typeof info.upstreamAttempted==="boolean"?info.upstreamAttempted:null;
  const validStages=new Set(["FETCH_EVENTS","FETCH_STATE_HISTORY","FETCH_UPSTREAM","PERSIST_FINALS","WRITE_PROVIDER_HEALTH"]);
  const lastFailureStage=typeof info.failureStage==="string"&&validStages.has(info.failureStage)?info.failureStage:null;
- const note=state==="unknown"?"Нет подтверждённого запуска этого источника.":
+ const quotaHint=lastRunCode==="UPSTREAM_DAILY_QUOTA"?
+   "Дневной лимит API исчерпан; новые проверки станут возможны после сброса квоты.":
+  lastRunCode==="UPSTREAM_MINUTE_QUOTA"?
+   "Достигнуто минутное ограничение запросов; источник должен снизить частоту.":
+  lastRunCode==="UPSTREAM_SUBSCRIPTION"?
+   "Подписка спортивного провайдера ограничивает этот запрос.":
+  lastRunCode==="UPSTREAM_AUTH"?
+   "Источник отклонил авторизацию; требуется проверка подключения.":
+  lastRunCode==="UPSTREAM_INVALID_PARAMETERS"?
+   "Источник отклонил параметры запроса; требуется исправление интеграции.":null;
+ const note=quotaHint??(state==="unknown"?"Нет подтверждённого запуска этого источника.":
   state==="stale"?"Последний запуск устарел; новые данные не подтверждены.":
   state==="degraded"?"Последний запуск сообщил об ограничении, ошибке или неполных данных.":
   descriptor.id==="api-football-finals"?
    "Проверка окончательных результатов выполнена. Положительная доходность не следует из количества FT.":
-   "Последняя проверка источника прошла. Это не гарантирует полноту и секундную свежесть.";
+   "Последняя проверка источника прошла. Это не гарантирует полноту и секундную свежесть.");
  return{id:descriptor.id,label:descriptor.label,state,updatedAt:ageMinutes===null?null:latest!.checkedAt,
   ageMinutes,receivedRecords:stored,scannedRecords:scanned,pendingFixtureChecks:pending,
   lastRunCode,lastFailureStage,upstreamAttempted,note};
