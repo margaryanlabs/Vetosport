@@ -62,6 +62,7 @@ export function Terminal({
   const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
   const [remoteWorkspace, setRemoteWorkspace] = useState<LiveWorkspace | null>(null);
   const [remoteObservation, setRemoteObservation] = useState<LiveObservation | null>(null);
+  const [workspaceStatus, setWorkspaceStatus] = useState<"loading"|"ready"|"error">("loading");
   const [loadedEvents, setLoadedEvents] = useState<LiveEventSummary[]>([]);
   const [demoEnabled, setDemoEnabled] = useState(false);
   const [liveSourceMode, setLiveSourceMode] = useState<
@@ -120,7 +121,8 @@ export function Terminal({
 
             if (persistedMode) {
               setSelectedEventId((current) =>
-                payload.events!.some((event) => event.id === current)
+                payload.events!.some((event) => event.id === current) ||
+                (current === initialEventId && /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(current))
                   ? current
                   : payload.events![0].id,
               );
@@ -170,23 +172,27 @@ export function Terminal({
                 }
               | null,
           ) => {
-            if (!active || !payload) return;
+            if (!active) return;
+            if (!payload) { setWorkspaceStatus("error"); return; }
             if (payload.workspace?.id === selectedEventId) {
               setRemoteWorkspace(payload.workspace);
               setRemoteObservation(null);
+              setWorkspaceStatus("ready");
             } else if (payload.observation?.summary.id === selectedEventId) {
               setRemoteWorkspace(null);
               setRemoteObservation(payload.observation);
-            }
+              setWorkspaceStatus("ready");
+            } else setWorkspaceStatus("error");
           },
         )
         .catch(() => {
-          // Static server-rendered workspace remains the safe fallback.
+          if(active) setWorkspaceStatus("error");
         });
     };
 
     setRemoteWorkspace(null);
     setRemoteObservation(null);
+    setWorkspaceStatus("loading");
     refreshWorkspace();
     const interval = window.setInterval(refreshWorkspace, 15_000);
 
@@ -368,6 +374,10 @@ export function Terminal({
         <div className="workspaceScene workspaceIntelligence">
           {remoteObservation ? (
             <ObservedEventRoom observation={remoteObservation} />
+          ) : workspaceStatus === "loading" ? (
+            <div className="vetoTruthEmpty" role="status"><strong>Проверяем выбранный матч…</strong><p>Читаем реальное наблюдение и исходные данные. Демонстрационный прогноз не подставляется.</p></div>
+          ) : workspaceStatus === "error" && (initialEventId || activeSummary?.source === "persisted") ? (
+            <div className="vetoTruthEmpty" role="alert"><strong>Реальные данные матча временно недоступны</strong><p>Не можем подтвердить содержимое по указанному событию. Ни симуляции, ни выдуманной ставки не показываем.</p><a href="/research/watchlist">Выбрать другой реальный матч ↗</a></div>
           ) : activeSummary?.source === "persisted" ? (
             <div className="vetoTruthEmpty"><strong>Открываем реальные данные матча…</strong><p>Не подменяем выбранный матч демонстрационными прогнозами. Если данные не приходят, проверьте статус источника.</p><a href="/research/watchlist">Радар и состояние данных ↗</a></div>
           ) : !demoEnabled ? (
@@ -393,6 +403,10 @@ export function Terminal({
           </div>
           {remoteObservation ? (
             <ObservedEventRoom observation={remoteObservation} />
+          ) : workspaceStatus === "loading" ? (
+            <div className="vetoTruthEmpty" role="status"><strong>Читаем подтверждённую историю…</strong><p>Сопоставляем реальные архивные наблюдения; демо в историю не подставляется.</p></div>
+          ) : workspaceStatus === "error" && (initialEventId || activeSummary?.source === "persisted") ? (
+            <div className="vetoTruthEmpty" role="alert"><strong>Архив матча не получен</strong><p>Проверьте исходный матч в радаре; синтетическая история не показывается.</p><a href="/research/watchlist">Радар матчей ↗</a></div>
           ) : activeSummary?.source === "persisted" ? (
             <div className="vetoTruthEmpty"><strong>История источника загружается…</strong><p>Архив реального матча не заменяется данными симуляции.</p><a href="/research/watchlist">Реальные матчи ↗</a></div>
           ) : !demoEnabled ? (

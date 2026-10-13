@@ -38,3 +38,12 @@ test("The discovery research journey is available",()=>{
  assert.match(passport,/href="\/research\/discovery"/);
  assert.match(terminal,/vetoDiscoveryLanding/);
 });
+
+test("Deep-linked real fixtures remain selected and show genuine source loading/errors",()=>{
+ assert.match(terminal,/current === initialEventId/);
+ assert.match(terminal,/setWorkspaceStatus\("loading"\)/);
+ assert.match(terminal,/setWorkspaceStatus\("error"\)/);
+ assert.match(terminal,/Проверяем выбранный матч/);
+ assert.match(terminal,/Реальные данные матча временно недоступны/);
+ assert.match(terminal,/Читаем подтверждённую историю/);
+});
