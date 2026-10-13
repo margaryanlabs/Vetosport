@@ -519,3 +519,54 @@ html[data-veto-sport-appearance="light"] :is(
   .paperTicketMetrics strong,.paperTicketHistory article b,
   .observedOddsRowPrice b,.observedOddsMetrics strong,.paperPerformance strong
 ) {text-rendering:optimizeLegibility}
+
+/* Visual hierarchy: quiet neutral surfaces instead of green-tinted cards.
+   Green remains meaningful ONLY for verified positive/live states. */
+html[data-veto-sport-appearance="light"] :is(
+  .paperStudio,.paperTicketEditor,.paperTicketHistory,
+  .paperPerformance article,.paperEquityWrap,.paperRiskNotice,
+  .paperOutcomeControls,.paperEquityEmpty
+) {
+  background:linear-gradient(150deg,#ffffff,#f6f8fb) !important;
+  border-color:rgba(25,46,70,.14) !important;
+  box-shadow:0 10px 28px rgba(28,48,72,.045);
+}
+html[data-veto-sport-appearance="light"] :is(
+  .paperTicketMetrics article,.paperTicketHistory article,
+  .paperControlBar,.paperOutcomeControls
+) {
+  background:#f1f5f9 !important;
+  border-color:rgba(25,46,70,.16) !important;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .observedOddsRows article,.observedOddsMetrics article,
+  .observedChartFacts>div,.observedOddsExplanation,
+  .observedOddsEmpty
+) {
+  background:#f5f8fb !important;
+  border-color:rgba(25,46,70,.15) !important;
+}
+html[data-veto-sport-appearance="light"] .observedOddsRows article:hover {
+  background:#edf3f8 !important;
+  border-color:rgba(38,76,111,.26) !important;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .paperControlBar select,.paperControlBar>button,
+  .paperTicketEditor select,.paperTicketEditor input,
+  .paperOutcomeControls select,.paperOutcomeControls button
+) {
+  background:#fff !important;
+  color:#25384e !important;
+  border-color:rgba(25,46,70,.22) !important;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .paperTicketMetrics strong,.paperTicketHistory article b,
+  .paperPerformance strong:not(.positive):not(.negative)
+) { color:#182c40 !important }
+/* Decision statuses keep their distinct accessible hues. */
+html[data-veto-sport-appearance="light"] :is(
+  .paperPerformance strong.positive,.paperOutcomeNet.positive
+) {color:#106f47 !important}
+html[data-veto-sport-appearance="light"] :is(
+  .paperPerformance strong.negative,.paperOutcomeNet.negative
+) {color:#b52f40 !important}
