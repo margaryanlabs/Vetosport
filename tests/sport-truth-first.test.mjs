@@ -76,3 +76,25 @@ test("Discovery covers bounded week-old certified results without provider reque
  assert.match(engine,/Certified 6-day-old historical result/);
  assert.match(engine,/Observations older than the seven-day boundary/);
 });
+
+test("Final-score ingestion spends no additional provider calls and cannot settle guesses",()=>{
+ const cron=read("src/app/api/cron/api-football-finals/route.ts");
+ const candidates=read("src/lib/providers/api-football-finals.ts");
+ assert.match(cron,/fixtures\?ids=/);
+ assert.doesNotMatch(cron,/fixtures\?date=/);
+ assert.match(cron,/statuses:\["live"\]/);
+ assert.match(cron,/rotationIndex/);
+ assert.match(cron,/source:"api-football\.fixtures\.results"/);
+ assert.match(cron,/regulationTimeOnly:true/);
+ assert.match(cron,/MAXIMUM_NONEXISTENT_NOT_ALLOWED|if\(!selectedIds\)/);
+ assert.match(cron,/selectedFixtureCount:selectedIds/);
+ const certificate=cron.indexOf("await store.appendEventState");
+ const journal=cron.indexOf("await store.appendTruthJournal");
+ const finish=cron.indexOf("await store.upsertEvent");
+ assert.ok(certificate>=0 && certificate<journal && journal<finish,
+  "Certificate and audit trail must precede final event-status write");
+ assert.match(candidates,/minimumKickoffAgeMinutes\?\?100/);
+ assert.match(candidates,/Math\.min\(20,/);
+ assert.match(candidates,/Rotate targets fairly/);
+ assert.match(candidates,/Ambiguous/mi);
+});
