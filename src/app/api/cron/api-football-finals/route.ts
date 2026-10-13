@@ -54,13 +54,15 @@ export async function GET(req:Request){
    const age=now.getTime()-Date.parse(e.event.startsAt);
    return Number.isFinite(age)&&age>=100*60000&&age<=72*HOUR;
   });
+  // 10-match batches prevent a few high-frequency timelines from crowding out
+  // the latest provider ID for other matches in the storage row cap.
   failureStage="FETCH_STATE_HISTORY";
-  const chunks=Array.from({length:Math.ceil(eligible.length/24)},(_,i)=>
-   eligible.slice(i*24,(i+1)*24).map(e=>e.id));
+  const chunks=Array.from({length:Math.ceil(eligible.length/10)},(_,i)=>
+   eligible.slice(i*10,(i+1)*10).map(e=>e.id));
   const states=[] as Awaited<ReturnType<typeof store.listRecentEventStates>>;
   for(let i=0;i<chunks.length;i+=2){
    const part=await Promise.all(chunks.slice(i,i+2).map(ids=>
-    store.listRecentEventStates({eventIds:ids,limit:900})));
+    store.listRecentEventStates({eventIds:ids,limit:1800})));
    states.push(...part.flat());
   }
   const rotationIndex=Math.floor(now.getTime()/(4*HOUR));
@@ -71,6 +73,7 @@ export async function GET(req:Request){
   selectedIds=targets.length;
   const scanMayBeCapped=blocks.some(x=>x.length>=100);
   if(!selectedIds){
+   failureStage="WRITE_PROVIDER_HEALTH";
    await store.appendProviderHealth({
     providerId:"api-football-finals",status:"degraded",checkedAt:asOf,
     message:"No 100min+ previously observed unresolved API-Football fixtures to reconcile; no quota used.",
