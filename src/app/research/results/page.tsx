@@ -3,6 +3,7 @@ import {VetoMark} from "@/components/VetoMark";
 import {SportAppearanceToggle} from "@/components/SportAppearanceToggle";
 import {fetchOpenLigaResults,openLeagues,resultsAttribution} from "@/lib/providers/openligadb-results";
 import type {LeagueResults,PublicMatch} from "@/lib/providers/openligadb-results";
+import {SourceCrosscheck} from "./SourceCrosscheck";
 import "./results.css";
 export const dynamic="force-dynamic";
 export const metadata={
@@ -84,6 +85,9 @@ export default async function ResultsPage(){
    <div><small>DATA INTEGRITY</small><h2>Почему это отдельная витрина?</h2></div>
    <p>Результаты сообщаются сообществом OpenLigaDB. Они не доказывают, что VETO наблюдал матч в реальном времени, что существовал доступный коэффициент или что стратегия была прибыльной. В нашу закрытую исследовательскую базу эти данные автоматически <b>не записываются</b>.</p>
   </section>
+  <SourceCrosscheck matches={[...first.finished,...second.finished].map(m=>({
+   id:m.id,league:m.league,home:m.home,away:m.away,score:m.homeScore!==null&&m.awayScore!==null?m.homeScore+" : "+m.awayScore:"— : —",
+  }))}/>
   <LeagueSection report={first}/>
   <LeagueSection report={second}/>
   <footer className="vrsFooter">
