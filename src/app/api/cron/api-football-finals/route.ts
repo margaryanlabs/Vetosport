@@ -37,12 +37,16 @@ export async function GET(req:Request){
   // Six non-overlapping 12-hour kickoff windows. 72h allows delayed coverage
   // and matches that finished after midnight UTC.
   const slots=6,slotHours=12,HOUR=3600000;
-  const blocks=await Promise.all(Array.from({length:slots},(_,i)=>
-   store.listRecentEvents({
-    from:new Date(now.getTime()-(i+1)*slotHours*HOUR).toISOString(),
-    to:new Date(now.getTime()-i*slotHours*HOUR).toISOString(),
+  // Bound bridge concurrency to two windows at a time.
+  const blocks=[] as Awaited<ReturnType<typeof store.listRecentEvents>>[];
+  for(let i=0;i<slots;i+=2){
+   const part=await Promise.all([i,i+1].filter(k=>k<slots).map(k=>store.listRecentEvents({
+    from:new Date(now.getTime()-(k+1)*slotHours*HOUR).toISOString(),
+    to:new Date(now.getTime()-k*slotHours*HOUR).toISOString(),
     statuses:["live"],limit:100,
    })));
+   blocks.push(...part);
+  }
   const events=[...new Map(blocks.flat().filter(e=>e.event.sport==="football"&&!isSelfcheckEvent(e))
    .map(e=>[e.id,e])).values()];
   const chunks=Array.from({length:Math.ceil(events.length/30)},(_,i)=>
