@@ -117,3 +117,12 @@ test("Public provider status is bounded, accurate and sanitized",()=>{
  assert.match(page,/Откуда поступают данные/);
  assert.match(page,/К проверке FT/);
 });
+
+test("Provider pipeline failure is classified without leaking private diagnostics",()=>{
+ const parser=read("src/lib/research/source-health.ts");
+ const page=read("src/app/research/discovery/page.tsx");
+ assert.match(parser,/safeCodes=new Set/);
+ assert.match(parser,/lastRunCode/);
+ assert.match(parser,/UPSTREAM_REJECTED_TARGETED_IDS/);
+ assert.match(page,/provider\.lastRunCode/);
+});
