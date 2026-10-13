@@ -64,13 +64,13 @@ export function Terminal({
   const [remoteObservation, setRemoteObservation] = useState<LiveObservation | null>(null);
   const [loadedEvents, setLoadedEvents] = useState<LiveEventSummary[]>([]);
   const [demoEnabled, setDemoEnabled] = useState(false);
+  const [liveSourceMode, setLiveSourceMode] = useState<
+    "persisted" | "sandbox-fallback"
+  >("sandbox-fallback");
   // Real events are the default. A deliberate click is required to display sandbox matches.
   const eventSummaries = liveSourceMode === "persisted"
     ? loadedEvents
     : demoEnabled ? sandboxEventSummaries : [];
-  const [liveSourceMode, setLiveSourceMode] = useState<
-    "persisted" | "sandbox-fallback"
-  >("sandbox-fallback");
   const [activeView, setActiveView] = useState<WorkspaceView>(
     initialView && validViews.includes(initialView as WorkspaceView)
       ? (initialView as WorkspaceView)
