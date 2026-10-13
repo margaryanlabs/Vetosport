@@ -28,3 +28,13 @@ Those are hypotheses and literature leads, **not discovered profitable signals**
 - `GET /api/intelligence/research/discovery/selfcheck` has ten deterministic checks, no provider calls.
 - Open `/research/discovery` on mobile, confirm source labels, empty-data states, and no fabricated percentages.
 - Before considering real-money recommendations: add independent final score backfill, quote-to-contract join, chronological holdout, multiple testing correction, calibration / net returns and auditable paper trading.
+
+
+## Free result-completion layer
+A protected Vercel Cron `/api/cron/api-football-finals` now requests today's or yesterday's API-Football **regulation-time FT** scores 6 times/day (one upstream request each run). Existing nominal calls: 48 score + 12 in-play odds + 6 final = **66/day**, under the published 100/day free allowance, but shared-key external usage and quota reset are not under our control. We keep the provider's 20-call reserve and do not poll on user page visits.
+
+- Only matches already observed by **exact** API-Football fixture ID and identical original kickoff are updated. Ambiguous IDs, AET/PEN/ET, missing score, unknown date and matches not stored previously are skipped.
+- The original live sample and the independently fetched FT score are preserved as separate event-state observations, with an audit journal entry. Fetch timestamp is not labelled the actual final whistle.
+- A match's finishing status is updated on that existing canonical event. This allows Pattern Discovery to gradually count verifiable outcomes; it still does **not** know an executable bookmaker quote or validated profit edge.
+- A result fetch can legitimately return zero matching scores. /api/intelligence/research/discovery/finals-selfcheck verifies the deterministic FT parsing and exact join.
+- The page and research endpoint remain read-only with no direct provider usage. Cron is protected by CRON_SECRET and uses the already-enabled VETO_API_FOOTBALL_ENABLED key; no secrets in browser.
