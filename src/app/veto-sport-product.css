@@ -1,0 +1,35 @@
+/* VETO Sport / Product Experience. Live observations before simulations. */
+.todayDemoConsent{margin-top:18px;padding:16px 17px;border:1px solid rgba(210,224,232,.19);border-radius:13px;background:linear-gradient(130deg,rgba(255,255,255,.045),rgba(255,255,255,.009));display:flex;align-items:center;justify-content:space-between;gap:20px}
+.todayDemoConsent>div{min-width:0}
+.todayDemoConsent strong{font-size:10px;letter-spacing:.12em;color:#f5d6b4}
+.todayDemoConsent p{font-size:11px;color:#abb6b0;line-height:1.65;margin:5px 0 0}
+.todayDemoConsent button{flex:none;color:#f8f8f8;border:1px solid rgba(245,226,210,.23);border-radius:9px;background:#2a2727;padding:12px 15px;font-size:11px;font-weight:800;cursor:pointer}
+.todayDemoConsent button:hover{background:#403435}
+.todayStartGrid>a{position:relative;display:flex;flex-direction:column;gap:11px;text-decoration:none;color:inherit;cursor:pointer;border-radius:15px;padding:21px 23px;border:1px solid rgba(224,232,241,.12);background:linear-gradient(130deg,rgba(255,255,255,.035),rgba(255,255,255,.012));min-width:0;transition:transform .2s ease,background .2s ease}
+.todayStartGrid>a:hover{transform:translateY(-2px);background:rgba(255,255,255,.06)}
+.todayStartGrid>a>strong{font-size:16px;color:#fff;line-height:1.2}
+.todayStartGrid>a>small{font-size:12px;color:#a8b5bc;line-height:1.65}
+.todayStartGrid>a>b{position:absolute;right:16px;top:17px;color:#f1edef}
+.todayResearchList article>a{color:var(--vs-text,#f4f4f6);font-size:11px;font-weight:800;border:1px solid rgba(225,231,238,.18);border-radius:8px;padding:10px 11px;text-decoration:none;align-self:center}
+.todayResearchList article>a:hover{border-color:#cb4347}
+.vetoTruthEmpty{width:min(950px,100%);margin:clamp(24px,4vw,50px) auto;padding:clamp(27px,5vw,65px);background:radial-gradient(ellipse at 100% 0%,rgba(210,50,52,.1),transparent 60%),#121518;border-radius:21px;border:1px solid rgba(226,232,241,.15);box-shadow:0 24px 65px rgba(0,0,0,.14);display:flex;flex-wrap:wrap;gap:13px;align-items:center}
+.vetoTruthEmpty>span{width:100%;font-size:10px;font-weight:850;color:#e7827b;letter-spacing:.15em}
+.vetoTruthEmpty>strong{width:100%;font-size:clamp(23px,3vw,42px);letter-spacing:-.05em;line-height:1.15;color:#f6f8fa}
+.vetoTruthEmpty>p{width:100%;max-width:760px;color:#a4b1ba;line-height:1.8;font-size:14px;margin:0 0 10px}
+.vetoTruthEmpty>a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:12px 17px;border:1px solid rgba(235,238,244,.18);background:rgba(255,255,255,.05);border-radius:9px;text-decoration:none;color:#f1f5f9;font-size:12px;font-weight:800}
+.vetoDiscoveryLanding>a:first-of-type{background:#d83237;color:#fff;border-color:#d83237}
+html[data-veto-sport-appearance="light"] .todayDemoConsent{background:#f3f6fa;border-color:rgba(24,42,61,.2)}
+html[data-veto-sport-appearance="light"] .todayDemoConsent strong{color:#9a4530}
+html[data-veto-sport-appearance="light"] .todayDemoConsent p{color:#4e5c6b}
+html[data-veto-sport-appearance="light"] .todayDemoConsent button{background:#e6ebf2;color:#223548;border-color:rgba(24,42,61,.2)}
+html[data-veto-sport-appearance="light"] .todayStartGrid>a{background:linear-gradient(140deg,#fff,#f2f5f9)!important;color:#17212e!important;border-color:rgba(24,42,61,.15)!important}
+html[data-veto-sport-appearance="light"] .todayStartGrid>a :is(strong,b){color:#17212e!important}
+html[data-veto-sport-appearance="light"] .todayStartGrid>a small{color:#526175!important}
+html[data-veto-sport-appearance="light"] .todayResearchList article>a{color:#28384c!important;border-color:rgba(24,42,61,.2)}
+html[data-veto-sport-appearance="light"] .vetoTruthEmpty{background:linear-gradient(140deg,#fff,#f2f5f9)!important;border-color:rgba(24,42,61,.16)!important;box-shadow:0 12px 42px rgba(20,40,60,.065)}
+html[data-veto-sport-appearance="light"] .vetoTruthEmpty strong{color:#17212e!important}
+html[data-veto-sport-appearance="light"] .vetoTruthEmpty p{color:#526175!important}
+html[data-veto-sport-appearance="light"] .vetoTruthEmpty>a{color:#28384c;border-color:rgba(24,42,61,.19);background:#eaf0f6}
+html[data-veto-sport-appearance="light"] .vetoDiscoveryLanding>a:first-of-type{color:#fff!important;background:#c92b32}
+@media(max-width:680px){.todayDemoConsent{align-items:stretch;flex-direction:column}.todayDemoConsent button{width:100%;min-height:46px}.vetoTruthEmpty{margin:20px auto;padding:24px}.vetoTruthEmpty>a{width:100%}}
+@media(prefers-reduced-motion:reduce){.todayStartGrid>a{transition:none}}
