@@ -151,3 +151,26 @@ test("API-Football application-level errors are distinguished without raw provid
  assert.match(labels,/Дневной лимит API исчерпан/);
  assert.match(labels,/UPSTREAM_SUBSCRIPTION/);
 });
+
+test("Independent football scoreboard reports source and stops at read-only boundary",()=>{
+ const reader=read("src/lib/providers/openligadb-results.ts");
+ const page=read("src/app/research/results/page.tsx");
+ const selfcheck=read("src/app/api/intelligence/research/results/selfcheck/route.ts");
+ assert.match(reader,/resultTypeKind==="After90Minutes"/);
+ assert.match(reader,/matchIsFinished===true/);
+ assert.match(reader,/ODbL 1\.0/);
+ assert.match(reader,/openLigaSelfcheck/);
+ assert.doesNotMatch(reader,/upsertEvent|appendEventState|appendTruthJournal|appendQuotes/);
+ assert.match(page,/resultsAttribution\.licenseUrl/);
+ assert.match(page,/реальном времени/);
+ assert.match(selfcheck,/openLigaSelfcheck/);
+});
+test("Known API-Football subscription denial is throttled, not spammed",()=>{
+ const gate=read("src/lib/providers/api-football-finals.ts");
+ const cron=read("src/app/api/cron/api-football-finals/route.ts");
+ assert.match(gate,/subscriptionPollGate/);
+ assert.match(gate,/24\*3600000/);
+ assert.match(cron,/store\.listRecentProviderHealth/);
+ assert.match(cron,/if\(!planGate\.allowed\)/);
+ assert.match(cron,/subscriptionUpgradeMayBeRequired:true/);
+});
