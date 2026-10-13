@@ -62,12 +62,15 @@ export function Terminal({
   const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
   const [remoteWorkspace, setRemoteWorkspace] = useState<LiveWorkspace | null>(null);
   const [remoteObservation, setRemoteObservation] = useState<LiveObservation | null>(null);
-  const [eventSummaries, setEventSummaries] = useState<LiveEventSummary[]>(
-    sandboxEventSummaries,
-  );
+  const [loadedEvents, setLoadedEvents] = useState<LiveEventSummary[]>([]);
+  const [demoEnabled, setDemoEnabled] = useState(false);
   const [liveSourceMode, setLiveSourceMode] = useState<
     "persisted" | "sandbox-fallback"
   >("sandbox-fallback");
+  // Real events are the default. A deliberate click is required to display sandbox matches.
+  const eventSummaries = liveSourceMode === "persisted"
+    ? loadedEvents
+    : demoEnabled ? sandboxEventSummaries : [];
   const [activeView, setActiveView] = useState<WorkspaceView>(
     initialView && validViews.includes(initialView as WorkspaceView)
       ? (initialView as WorkspaceView)
@@ -111,8 +114,8 @@ export function Terminal({
               | null,
           ) => {
             if (!active || !payload || !Array.isArray(payload.events)) return;
-            setEventSummaries(payload.events);
             const persistedMode = payload.mode === "persisted";
+            setLoadedEvents(persistedMode ? payload.events : []);
             setLiveSourceMode(persistedMode ? "persisted" : "sandbox-fallback");
 
             if (persistedMode) {
@@ -124,7 +127,7 @@ export function Terminal({
             }
           },
         )
-        .catch(() => {});
+        .catch(() => { if(active) setLiveSourceMode("sandbox-fallback"); });
     };
 
     refreshEvents();
@@ -324,6 +327,11 @@ export function Terminal({
           onOpenSystem={() => setActiveView("system")}
           onSelectEvent={selectEvent}
           onSportChange={selectSport}
+          demoEnabled={demoEnabled}
+          onToggleDemo={() => {
+            setDemoEnabled(enabled => !enabled);
+            if (!demoEnabled && liveSourceMode !== "persisted") setSelectedEventId(liveWorkspaces[0].id);
+          }}
         />
       )}
 
@@ -360,6 +368,10 @@ export function Terminal({
         <div className="workspaceScene workspaceIntelligence">
           {remoteObservation ? (
             <ObservedEventRoom observation={remoteObservation} />
+          ) : activeSummary?.source === "persisted" ? (
+            <div className="vetoTruthEmpty"><strong>Открываем реальные данные матча…</strong><p>Не подменяем выбранный матч демонстрационными прогнозами. Если данные не приходят, проверьте статус источника.</p><a href="/research/watchlist">Радар и состояние данных ↗</a></div>
+          ) : !demoEnabled ? (
+            <div className="vetoTruthEmpty"><strong>Нет выбранного подтверждённого матча</strong><p>Выберите реальное событие в разделе матчей или явно включите обучающий пример на главной.</p><a href="/research/watchlist">Открыть реальные наблюдения ↗</a></div>
           ) : (
             <MatchRoom
               workspace={activeWorkspace}
@@ -381,6 +393,10 @@ export function Terminal({
           </div>
           {remoteObservation ? (
             <ObservedEventRoom observation={remoteObservation} />
+          ) : activeSummary?.source === "persisted" ? (
+            <div className="vetoTruthEmpty"><strong>История источника загружается…</strong><p>Архив реального матча не заменяется данными симуляции.</p><a href="/research/watchlist">Реальные матчи ↗</a></div>
+          ) : !demoEnabled ? (
+            <div className="vetoTruthEmpty"><strong>История пока недоступна</strong><p>Выберите реальный матч или включите учебный режим на главной.</p></div>
           ) : (
             <MatchRoom
               initialMode="replay"
@@ -394,15 +410,24 @@ export function Terminal({
         </div>
       )}
 
-      {activeView === "research" && (
+      {activeView === "research" && (!demoEnabled || activeSummary?.source === "persisted") && (
+        <section className="workspaceScene workspaceResearch vetoDiscoveryGate" id="research">
+          <div className="vetoTruthEmpty vetoDiscoveryLanding">
+            <span>VETO / DISCOVERY LAB</span>
+            <strong>Искать доказательства, а не обещания.</strong>
+            <p>Автономный поиск проверяет реальные игровые снимки и публикует гипотезы. Модельные симуляции доступны отдельно, только по явному выбору.</p>
+            <a href="/research/discovery">Открыть автономные исследования ↗</a>
+            <a href="/research/watchlist">Проверить матчи и котировки ↗</a>
+          </div>
+        </section>
+      )}
+      {activeView === "research" && demoEnabled && activeSummary?.source !== "persisted" && (
         <section className="workspaceScene workspaceResearch" id="research">
           <div className="workspaceSceneIntro researchIntro">
             <span>RESEARCH LAB</span>
             <strong>PARALLAX · probability surface · model council · validation</strong>
             <small>
-              {activeSummary?.source === "persisted"
-                ? "Research layers linked to the selected observed event."
-                : "Simulation dataset · research logic only · not a live-market claim."}
+              Simulation dataset · research logic only · not a live-market claim.
             </small>
           </div>
 

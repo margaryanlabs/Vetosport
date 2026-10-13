@@ -9,6 +9,7 @@ import "./veto-sport-system.css";
 import "./veto-sport-showcase.css";
 import "./veto-sport-observation.css";
 import "./veto-sport-light.css";
+import "./veto-sport-product.css";
 
 export const metadata: Metadata = {
   title: "VETO Sport — Sports Market Intelligence",
