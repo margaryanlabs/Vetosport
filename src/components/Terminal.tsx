@@ -374,6 +374,10 @@ export function Terminal({
         <div className="workspaceScene workspaceIntelligence">
           {remoteObservation ? (
             <ObservedEventRoom observation={remoteObservation} />
+          ) : workspaceStatus === "loading" ? (
+            <div className="vetoTruthEmpty" role="status"><strong>Проверяем выбранный матч…</strong><p>Читаем реальное наблюдение и исходные данные. Демонстрационный прогноз не подставляется.</p></div>
+          ) : workspaceStatus === "error" && (initialEventId || activeSummary?.source === "persisted") ? (
+            <div className="vetoTruthEmpty" role="alert"><strong>Реальные данные матча временно недоступны</strong><p>Не можем подтвердить содержимое по указанному событию. Ни симуляции, ни выдуманной ставки не показываем.</p><a href="/research/watchlist">Выбрать другой реальный матч ↗</a></div>
           ) : activeSummary?.source === "persisted" ? (
             <div className="vetoTruthEmpty"><strong>Открываем реальные данные матча…</strong><p>Не подменяем выбранный матч демонстрационными прогнозами. Если данные не приходят, проверьте статус источника.</p><a href="/research/watchlist">Радар и состояние данных ↗</a></div>
           ) : !demoEnabled ? (
@@ -399,6 +403,10 @@ export function Terminal({
           </div>
           {remoteObservation ? (
             <ObservedEventRoom observation={remoteObservation} />
+          ) : workspaceStatus === "loading" ? (
+            <div className="vetoTruthEmpty" role="status"><strong>Читаем подтверждённую историю…</strong><p>Сопоставляем реальные архивные наблюдения; демо в историю не подставляется.</p></div>
+          ) : workspaceStatus === "error" && (initialEventId || activeSummary?.source === "persisted") ? (
+            <div className="vetoTruthEmpty" role="alert"><strong>Архив матча не получен</strong><p>Проверьте исходный матч в радаре; синтетическая история не показывается.</p><a href="/research/watchlist">Радар матчей ↗</a></div>
           ) : activeSummary?.source === "persisted" ? (
             <div className="vetoTruthEmpty"><strong>История источника загружается…</strong><p>Архив реального матча не заменяется данными симуляции.</p><a href="/research/watchlist">Реальные матчи ↗</a></div>
           ) : !demoEnabled ? (
