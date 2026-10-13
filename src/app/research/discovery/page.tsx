@@ -3,6 +3,7 @@ import {useEffect,useState} from "react";
 import {VetoMark} from "@/components/VetoMark";
 import {SportAppearanceToggle} from "@/components/SportAppearanceToggle";
 import type {PatternDiscoveryResult} from "@/lib/research/auto-discovery";
+import type {EvidenceCoverage} from "@/lib/research/evidence-coverage";
 import "./discovery.css";
 
 const percentage=(n:number|null)=>n===null?"—":(n*100).toFixed(1).replace(".",",")+"%";
@@ -13,6 +14,8 @@ export default function DiscoveryPage(){
   const [failed,setFailed]=useState(false);
   const [filter,setFilter]=useState<"all"|"with-outcomes">("all");
   const [cycle,setCycle]=useState(0);
+  const [coverage,setCoverage]=useState<EvidenceCoverage|null>(null);
+  const [coverageFailed,setCoverageFailed]=useState(false);
   useEffect(()=>{
     let active=true;
     async function load(){
@@ -25,6 +28,14 @@ export default function DiscoveryPage(){
       finally{if(active)setLoading(false);}
     }
     void load();
+    return()=>{active=false;};
+  },[cycle]);
+  useEffect(()=>{
+    let active=true;
+    fetch("/api/intelligence/research/data-readiness",{cache:"no-store"})
+      .then(response=>{if(!response.ok)throw Error("source coverage unavailable");return response.json()})
+      .then((result:EvidenceCoverage)=>{if(active){setCoverage(result);setCoverageFailed(false);}})
+      .catch(()=>{if(active){setCoverageFailed(true);setCoverage(null);}});
     return()=>{active=false;};
   },[cycle]);
   const patterns=feed?.patterns.filter(p=>filter==="all"||p.settled>0)||[];
@@ -56,9 +67,35 @@ export default function DiscoveryPage(){
       <span>● ИСТОЧНИК: {feed?.source??(loading?"ПРОВЕРЯЕМ":"НЕТ")}</span>
       <p>{failed?"Нет доступа к реальным данным. Учебные результаты не подставляются.":feed?.note??"Ожидаем результат из хранилища VETO."} {feed?.fetchCoverage?.windowMayBeCapped?"Внимание: часть временных окон достигла лимита выборки.":""}</p>
     </div>
+    <section className="discoveryEvidence" aria-labelledby="discovery-evidence-title">
+      <div className="discoveryEvidenceHead">
+        <div><span>02 / DATA READINESS</span><h2 id="discovery-evidence-title">Что мешает доказать преимущество?</h2>
+          <p>Проверяем не только сигналы, но и сам путь данных: реальный счёт → независимый финальный результат → совпадающая цена → вневыборочная проверка.</p>
+        </div>
+        <a href="/research/watchlist">Проверить матчи ↗</a>
+      </div>
+      {coverageFailed?<div className="discoveryEvidenceEmpty" role="status">Статистика источников недоступна. Мы не подставляем примерные значения.</div>:
+       !coverage?<div className="discoveryEvidenceEmpty" role="status">Проверяем сохранённые результаты, время и котировки…</div>:
+       <>
+         <div className="discoveryEvidenceNumbers">
+           <article><small>НАБЛЮДАЕМЫЕ МАТЧИ</small><strong>{coverage.eventsWithLiveSamples}</strong><span>из {coverage.eventsScanned} в текущем окне</span></article>
+           <article><small>ОТДЕЛЬНО ПОДТВЕРЖДЁННЫЕ FT</small><strong>{coverage.certifiedRegulationFinals}</strong><span>не равны количеству верных прогнозов</span></article>
+           <article><small>МАТЧИ С ЗАПИСАННЫМИ ЦЕНАМИ</small><strong>{coverage.eventsWithRecordedPrices}</strong><span>включая исторические, неактуальные</span></article>
+           <article><small>ОДНОВРЕМЕННО СВЕЖИЙ СЧЁТ + ЦЕНА</small><strong>{coverage.freshScoreAndPriceEvents}</strong><span>техническая связка, не доказанный EV</span></article>
+         </div>
+         <div className="discoveryGates" aria-label="Этапы готовности спортивных данных">
+           {coverage.gates.map((gate,i)=><article key={gate.id} className={"discoveryGate discoveryGate-"+gate.stage}>
+             <div className="discoveryGateHead"><span>{String(i+1).padStart(2,"0")}</span><h3>{gate.label}</h3><b>{gate.stage==="blocked"?"НЕ ГОТОВО":gate.stage==="partial"?"ЧАСТИЧНО":"ГОТОВО"}</b></div>
+             <p>{gate.detail}</p>
+           </article>)}
+         </div>
+         {coverage.sampleMayBeCapped&&<p className="discoveryCoverageWarning">Выборка ограничена лимитами чтения; показатели не следует считать полным архивом.</p>}
+         <p className="discoveryCoverageFoot">Период: {coverage.windowHours} ч · Прочитаны только сохранённые источники · 0 новых платных вызовов API · {new Date(coverage.generatedAt).toLocaleString("ru-RU")}</p>
+       </>}
+    </section>
     <section className="discoverySection">
       <div className="discoverySectionHead">
-        <div><span>01 / AUTOMATED HYPOTHESIS MINING</span><h2>Что система нашла для проверки</h2></div>
+        <div><span>03 / AUTOMATED HYPOTHESIS MINING</span><h2>Что система нашла для проверки</h2></div>
         <div className="discoveryFilters">
           <button type="button" className={filter==="all"?"selected":""} onClick={()=>setFilter("all")}>Все идеи</button>
           <button type="button" className={filter==="with-outcomes"?"selected":""} onClick={()=>setFilter("with-outcomes")}>С исходами</button>
@@ -80,13 +117,13 @@ export default function DiscoveryPage(){
          </div>
          <div className="discoveryConfidence">
            <span>Нижняя граница Wilson: <b>{percentage(pattern.lower95)}</b></span>
-           <span>Будущая часть выборки: <b>{pattern.holdoutCount?String(pattern.holdoutCount)+" игр / "+percentage(pattern.holdoutHitRate):"недостаточно"}</b></span>
+           <span>Отложенная ретроспективная часть: <b>{pattern.holdoutCount?String(pattern.holdoutCount)+" игр / "+percentage(pattern.holdoutHitRate):"недостаточно"}</b></span>
          </div>
          <footer><span>НЕ ДОКАЗАН ROI</span><a href="/research/watchlist">Открыть радар ↗</a></footer>
        </article>)}</div>}
     </section>
     <section className="discoveryNext">
-      <div><small>02 / NEXT FRONTIER</small><h2>Следующий слой исследования</h2><p>Эти направления не привязаны к одной заранее выбранной стратегии. Пока они не доказаны на данных VETO.</p></div>
+      <div><small>04 / NEXT FRONTIER</small><h2>Следующий слой исследования</h2><p>Эти направления не привязаны к одной заранее выбранной стратегии. Пока они не доказаны на данных VETO.</p></div>
       <div className="discoveryNextGrid">
         <article><span>01 / MARKET STRUCTURE</span><h3>Аномалии фаворитов и аутсайдеров</h3><p>Сравнение исходов с букмекерскими вероятностями без маржи.</p></article>
         <article><span>02 / PRICE TRANSITIONS</span><h3>Расхождение букмекеров</h3><p>Одновременные коэффициенты разных источников по одному контракту.</p></article>

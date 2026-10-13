@@ -47,3 +47,19 @@ test("Deep-linked real fixtures remain selected and show genuine source loading/
  assert.match(terminal,/Реальные данные матча временно недоступны/);
  assert.match(terminal,/Читаем подтверждённую историю/);
 });
+
+test("Evidence coverage has certified FT gate, timestamp alignment and no betting promotion",()=>{
+ const readiness=read("src/lib/research/evidence-coverage.ts");
+ const route=read("src/app/api/intelligence/research/data-readiness/route.ts");
+ const discovery=read("src/lib/research/auto-discovery.ts");
+ const page=read("src/app/research/discovery/page.tsx");
+ assert.match(readiness,/api-football\.fixtures\.results/);
+ assert.match(readiness,/regulationTimeOnly===true/);
+ assert.match(readiness,/freshScoreAndPriceEvents/);
+ assert.match(readiness,/researchReadyForRealMoney:false/);
+ assert.match(discovery,/certifiedRegulationFinal\(row,event\)/);
+ assert.match(route,/sampleMayBeCapped/);
+ assert.doesNotMatch(route,/v3\.football\.api-sports\.io|the-odds-api\.com/);
+ assert.match(page,/Что мешает доказать преимущество/);
+ assert.match(page,/Отложенная ретроспективная часть/);
+});
