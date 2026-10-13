@@ -17,7 +17,7 @@ export function liveFeedWindows(now:number):FeedWindow[]{
  ];
 }
 const finiteKickoff=(event:PersistedEvent|LiveEventSummary)=>{
- const x=event.event?.startsAt??(event as LiveEventSummary).startsAt;
+ const x="event" in event?event.event.startsAt:event.startsAt;
  const m=x?Date.parse(x):NaN;
  return Number.isFinite(m)?m:NaN;
 };
@@ -39,7 +39,7 @@ function feedSort(a:PersistedEvent|LiveEventSummary,b:PersistedEvent|LiveEventSu
  const atA=finiteKickoff(a),atB=finiteKickoff(b);
  const dA=Math.abs(now-atA-45*60000),dB=Math.abs(now-atB-45*60000);
  if(dA!==dB)return dA-dB;
- return ("event" in a?a.id:a.id).localeCompare(("event" in b?b.id:b.id));
+ return a.id.localeCompare(b.id);
 }
 export function selectFeedCandidates(rows:PersistedEvent[],now:number,limit=LIVE_FEED_SCAN_LIMIT){
  const distinct=[...new Map(rows.map(e=>[e.id,e])).values()];
