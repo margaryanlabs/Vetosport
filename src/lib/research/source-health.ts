@@ -18,6 +18,7 @@ export interface SourceHealthView{
   scannedRecords:number|null;
   pendingFixtureChecks:number|null;
   lastRunCode:string|null;
+  lastFailureStage:string|null;
   upstreamAttempted:boolean|null;
   note:string;
 }
@@ -52,6 +53,8 @@ export function toSourceHealthView(input:{
   typeof info.reason==="string"?info.reason:null;
  const lastRunCode=candidateCode&&safeCodes.has(candidateCode)?candidateCode:null;
  const upstreamAttempted=typeof info.upstreamAttempted==="boolean"?info.upstreamAttempted:null;
+ const validStages=new Set(["FETCH_EVENTS","FETCH_STATE_HISTORY","FETCH_UPSTREAM","PERSIST_FINALS","WRITE_PROVIDER_HEALTH"]);
+ const lastFailureStage=typeof info.failureStage==="string"&&validStages.has(info.failureStage)?info.failureStage:null;
  const note=state==="unknown"?"Нет подтверждённого запуска этого источника.":
   state==="stale"?"Последний запуск устарел; новые данные не подтверждены.":
   state==="degraded"?"Последний запуск сообщил об ограничении, ошибке или неполных данных.":
@@ -60,7 +63,7 @@ export function toSourceHealthView(input:{
    "Последняя проверка источника прошла. Это не гарантирует полноту и секундную свежесть.";
  return{id:descriptor.id,label:descriptor.label,state,updatedAt:ageMinutes===null?null:latest!.checkedAt,
   ageMinutes,receivedRecords:stored,scannedRecords:scanned,pendingFixtureChecks:pending,
-  lastRunCode,upstreamAttempted,note};
+  lastRunCode,lastFailureStage,upstreamAttempted,note};
 }
 export function sourceHealthSelfcheck(){
  const at="2026-10-13T15:00:00Z";
@@ -86,6 +89,9 @@ export function sourceHealthSelfcheck(){
    toSourceHealthView({descriptor,latest:{...sample,metadata:{failureCode:"STORAGE_OR_PROVIDER_FAILURE",
     upstreamAttempted:false}},now:at}).lastRunCode==="STORAGE_OR_PROVIDER_FAILURE" &&
    toSourceHealthView({descriptor,latest:{...sample,metadata:{failureCode:"TOP_SECRET"}},now:at}).lastRunCode===null},
+  {name:"No arbitrary diagnostic stage can cross into public source-health",passed:
+   toSourceHealthView({descriptor,latest:{...sample,metadata:{failureStage:"FETCH_STATE_HISTORY"}},now:at}).lastFailureStage==="FETCH_STATE_HISTORY" &&
+   toSourceHealthView({descriptor,latest:{...sample,metadata:{failureStage:"TOP_SECRET"}},now:at}).lastFailureStage===null},
   {name:"Server diagnostics and provider quota never leaked",passed:!json.includes("TOP_SECRET")&&!json.includes("quotaRemaining")&&!json.includes("SHOULD_NOT_EXPOSE")&&!json.includes("private service diagnostics")},
  ];
  return{passed:checks.every(c=>c.passed),checks};
