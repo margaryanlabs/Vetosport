@@ -2,7 +2,7 @@ import {NextResponse} from "next/server";
 import {getPersistence,persistenceConfiguration} from "@/lib/persistence/factory";
 import {isSelfcheckEvent} from "@/lib/live/persisted-utils";
 import {
-  normalizeFinishedFixture,selectFinalReconciliationTargets,
+  normalizeFinishedFixture,selectFinalReconciliationTargets,classifyFixtureProviderFailure,
 } from "@/lib/providers/api-football-finals";
 import {journalizeEventState} from "@/lib/data-plane/journalize";
 import type {ApiFootballFixture} from "@/lib/providers/api-football";
@@ -101,10 +101,12 @@ export async function GET(req:Request){
   if(!payload||typeof payload!=="object"||Array.isArray(payload))
    throw new Error("MALFORMED_PROVIDER_PAYLOAD");
   const data=payload as {response?:unknown;errors?:unknown};
-  const providerErrors=Array.isArray(data.errors)?data.errors.length>0:
-   !!data.errors&&typeof data.errors==="object"&&Object.keys(data.errors).length>0;
-  if(providerErrors||!Array.isArray(data.response))
-   throw new Error("UPSTREAM_REJECTED_TARGETED_IDS");
+  // API-Football may return HTTP 200 while setting errors.requests when daily
+  // quota is exhausted. Distinguish that condition without exposing messages.
+  const providerFailure=classifyFixtureProviderFailure(data.errors);
+  if(providerFailure)throw new Error(providerFailure);
+  if(!Array.isArray(data.response))
+   throw new Error("MALFORMED_PROVIDER_PAYLOAD");
   const raw=data.response as ApiFootballFixture[];
   const remainingHeader=response.headers.get("x-ratelimit-requests-remaining");
   const remaining=remainingHeader===null?null:Number(remainingHeader);
@@ -178,7 +180,7 @@ export async function GET(req:Request){
   },{headers,status:failures?502:200});
  }catch(error){
   const failureCode=error instanceof Error&&
-   /^(UPSTREAM_HTTP_\d+|MALFORMED_PROVIDER_PAYLOAD|UPSTREAM_REJECTED_TARGETED_IDS)$/.test(error.message)
+   /^(UPSTREAM_HTTP_\d+|MALFORMED_PROVIDER_PAYLOAD|UPSTREAM_REJECTED_TARGETED_IDS|UPSTREAM_DAILY_QUOTA|UPSTREAM_MINUTE_QUOTA|UPSTREAM_SUBSCRIPTION|UPSTREAM_AUTH|UPSTREAM_INVALID_PARAMETERS|UPSTREAM_UNCLASSIFIED)$/.test(error.message)
    ?error.message:"STORAGE_OR_PROVIDER_FAILURE";
   try{
    await store.appendProviderHealth({
