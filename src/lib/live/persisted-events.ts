@@ -1,4 +1,5 @@
 import { getPersistence } from "@/lib/persistence/factory";
+import {liveFeedWindows,selectFeedCandidates,prioritizeLiveFeed} from "@/lib/live/feed-priority";
 import type { LiveEventSummary } from "@/lib/live/types";
 import {
   buildPersistedSummary,
@@ -10,20 +11,31 @@ export const listPersistedLiveEvents =
   async (): Promise<LiveEventSummary[]> => {
     const persistence = getPersistence();
     const now = Date.now();
-    const events = (
-      await persistence.listRecentEvents({
-        from: new Date(now - 12 * 60 * 60 * 1000).toISOString(),
-        to: new Date(now + 36 * 60 * 60 * 1000).toISOString(),
-        statuses: ["live", "scheduled", "finished", "suspended"],
-        limit: 40,
+    // The storage adapter sorts by starts_at ASC. One 12h+ query with
+    // limit=40 returned only the *oldest* matches, hiding real active games.
+    // Search non-overlapping kickoff windows and prioritize current fixtures.
+    const windows=liveFeedWindows(now);
+    const batches=await Promise.all(windows.map(window=>
+      persistence.listRecentEvents({
+        from:window.from,to:window.to,
+        statuses:["live","scheduled","finished","suspended"],
+        limit:window.limit,
       })
-    ).filter((event) => !isSelfcheckEvent(event));
+    ));
+    const events=selectFeedCandidates(
+      batches.flat().filter(event=>!isSelfcheckEvent(event)),now,60,
+    );
 
     if (events.length === 0) return [];
 
     const eventIds = events.map((event) => event.id);
     const [states, quotes, predictions, decisions] = await Promise.all([
-      persistence.listRecentEventStates({ eventIds }),
+      Promise.all(Array.from({length:Math.ceil(eventIds.length/20)},(_,index)=>
+        persistence.listRecentEventStates({
+          eventIds:eventIds.slice(index*20,(index+1)*20),
+          limit:550,
+        })
+      )).then(chunks=>chunks.flat()),
       persistence.listRecentQuotesForEvents({
         eventIds,
         limit: 4000,
@@ -54,16 +66,7 @@ export const listPersistedLiveEvents =
       );
     }
 
-    const statusRank = (status: LiveEventSummary["status"]) =>
-      status === "live"
-        ? 0
-        : status === "scheduled"
-          ? 1
-          : status === "suspended"
-            ? 2
-            : 3;
-
-    return events
+    return prioritizeLiveFeed(events
       .map((event) =>
         buildPersistedSummary({
           event,
@@ -73,10 +76,5 @@ export const listPersistedLiveEvents =
           shadowPredictionCount: shadowCountByEvent.get(event.id) ?? 0,
         }),
       )
-      .sort(
-        (a, b) =>
-          statusRank(a.status) - statusRank(b.status) ||
-          new Date(a.startsAt ?? 0).getTime() -
-            new Date(b.startsAt ?? 0).getTime(),
-      );
+      ,now,40);
   };
