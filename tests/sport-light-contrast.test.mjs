@@ -45,3 +45,16 @@ test("Sports research uses light semantic surfaces and leaves the pitch dark", (
   assert.match(appCss, /\.matchShellTop \.vetoSportAppearanceToggle/);
   assert.doesNotMatch(appCss, /bottom:\s*calc\(78px/);
 });
+
+test("Sport light contrast guard runs on both terminal and research routes without touching plotting canvases", () => {
+  const guard = read("src/lib/light-contrast-guard.ts");
+  const toggle = read("src/components/SportAppearanceToggle.tsx");
+  assert.match(toggle, /installLightContrastGuard\("data-veto-sport-appearance"\)/);
+  assert.match(guard, /data-veto-sport-appearance/);
+  assert.match(guard, /getComputedStyle/);
+  assert.match(guard, /contrast\(finalForeground, backdrop\) >= 3/);
+  assert.match(guard, /\.pitchVision/);
+  assert.match(guard, /\.observedChartFrame/);
+  assert.match(guard, /gradientText/);
+  assert.match(guard, /pageObserver\.disconnect/);
+});

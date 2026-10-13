@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { installLightContrastGuard } from "@/lib/light-contrast-guard";
 
 type Appearance = "dark" | "light";
 const STORAGE_KEY = "veto-sport-appearance";
@@ -24,6 +25,7 @@ function applyAppearance(next: Appearance) {
 
 export function SportAppearanceToggle() {
   const [appearance, setAppearance] = useState<Appearance>("dark");
+  useEffect(() => installLightContrastGuard("data-veto-sport-appearance"), []);
 
   useEffect(() => {
     const value = storedAppearance();
