@@ -174,3 +174,22 @@ test("Known API-Football subscription denial is throttled, not spammed",()=>{
  assert.match(cron,/if\(!planGate\.allowed\)/);
  assert.match(cron,/subscriptionUpgradeMayBeRequired:true/);
 });
+
+test("Cross-source verification never settles private VETO decisions or imports OpenLigaDB",()=>{
+ const audit=read("src/lib/research/result-corroboration.ts");
+ const route=read("src/app/api/intelligence/research/results/crosscheck/route.ts");
+ const ui=read("src/app/research/results/SourceCrosscheck.tsx");
+ const page=read("src/app/research/results/page.tsx");
+ assert.match(audit,/sourceComparisonSelfcheck/);
+ assert.match(audit,/participantScore>=\.82/);
+ assert.match(audit,/ambiguousRejected/);
+ assert.match(audit,/verifiedVetoFinalsAdded:0/);
+ assert.match(audit,/crossSourceComparisonIsNotSettlement:true/);
+ assert.doesNotMatch(route,/appendEventState|appendDecisionOutcome|upsertEvent|appendQuotes|appendTruthJournal/);
+ assert.doesNotMatch(audit,/appendEventState|appendDecisionOutcome|upsertEvent|appendQuotes|appendTruthJournal/);
+ assert.match(route,/sourceAcquisition:"user-initiated"/);
+ assert.match(route,/quotaPaidApiCalls:0/);
+ assert.match(route,/limitedByStorage:capped/);
+ assert.match(ui,/fetch\("\/api\/intelligence\/research\/results\/crosscheck"/);
+ assert.match(page,/SourceCrosscheck/);
+});
