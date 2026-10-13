@@ -1214,6 +1214,32 @@ export class SupabaseRestPersistence implements VetoPersistence {
       : null;
   }
 
+  async listRecentProviderHealth(input: {
+    providerId: string;
+    limit?: number;
+  }): Promise<ProviderHealthSample[]> {
+    // Bounded read from an existing server-only table. This method is never
+    // used by a browser; callers must sanitize metadata before disclosure.
+    const query = new URLSearchParams();
+    query.set("provider_id", `eq.${input.providerId}`);
+    query.set("order", "checked_at.desc");
+    query.set("limit", String(Math.min(6, Math.max(1, input.limit ?? 1))));
+    query.set("select", "provider_id,status,checked_at,quota_remaining,message,metadata");
+    const rows = await this.request<Array<{
+      provider_id: string;
+      status: ProviderHealthSample["status"];
+      checked_at: string;
+      quota_remaining?: number | null;
+      message?: string | null;
+      metadata?: Record<string, unknown> | null;
+    }>>(this.tablePath("provider_health_samples",query.toString()),{method:"GET"});
+    return rows.map(row=>({
+      providerId:row.provider_id,status:row.status,checkedAt:row.checked_at,
+      quotaRemaining:row.quota_remaining??undefined,message:row.message??undefined,
+      metadata:row.metadata??undefined,
+    }));
+  }
+
   async appendProviderHealth(sample: ProviderHealthSample): Promise<void> {
     await this.request(
       this.tablePath("provider_health_samples"),
