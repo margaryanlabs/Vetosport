@@ -18,6 +18,10 @@ const sportNames: Record<Sport, string> = {
 
 const readinessLabel = (event: LiveEventSummary) => {
   if (event.source === "sandbox") return "СИМУЛЯЦИЯ";
+  const freshness=getObservedFreshness(event);
+  if(freshness.unverifiedArchive)return "ФИНАЛ НЕ ПОДТВЕРЖДЁН";
+  if(freshness.delayedLive)return "СНИМОК С ЗАДЕРЖКОЙ";
+  if(event.status==="scheduled")return "МАТЧ ПО РАСПИСАНИЮ";
   if (event.primarySignal) return "АНАЛИЗ ДОСТУПЕН";
   if (event.shadowPredictionCount) return "ИССЛЕДОВАНИЕ";
 
@@ -69,9 +73,14 @@ export function TodayExperience({
   const sportEvents = events.filter((event) => event.sport === activeSport);
   // Never show another sport as though it belonged to the selected tab.
   const visibleEvents = sportEvents;
+  const presentationPriority=(event:LiveEventSummary)=>{
+    const freshness=getObservedFreshness(event);
+    return freshness.freshLive?0:freshness.delayedLive?1:
+      event.status==="scheduled"?2:freshness.unverifiedArchive?4:3;
+  };
   const heroEvent = [...sportEvents].sort((a,b)=>
     Number(b.source==="persisted")-Number(a.source==="persisted") ||
-    Number(getObservedFreshness(b).freshLive)-Number(getObservedFreshness(a).freshLive) ||
+    presentationPriority(a)-presentationPriority(b) ||
     (Date.parse(b.lastUpdatedAt??"")||0)-(Date.parse(a.lastUpdatedAt??"")||0)
   )[0];
   const sportOptions = Array.from(new Set(events.map((event) => event.sport)));
