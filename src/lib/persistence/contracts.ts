@@ -222,6 +222,8 @@ export interface VetoPersistence {
     immutableFingerprint: string;
   }): Promise<void>;
 
+  listRecentProviderHealth(input: {providerId:string;limit?:number}): Promise<ProviderHealthSample[]>;
+
   appendProviderHealth(sample: ProviderHealthSample): Promise<void>;
 
   recordHistoricalImport(record: HistoricalImportRecord): Promise<void>;
