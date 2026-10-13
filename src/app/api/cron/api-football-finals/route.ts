@@ -49,14 +49,23 @@ export async function GET(req:Request){
   }
   const events=[...new Map(blocks.flat().filter(e=>e.event.sport==="football"&&!isSelfcheckEvent(e))
    .map(e=>[e.id,e])).values()];
-  const chunks=Array.from({length:Math.ceil(events.length/30)},(_,i)=>
-   events.slice(i*30,(i+1)*30).map(e=>e.id));
-  const states=(
-   await Promise.all(chunks.map(ids=>store.listRecentEventStates({eventIds:ids,limit:1200})))
-  ).flat();
+  // Do not read every match's history when it cannot yet have an FT.
+  const eligible=events.filter(e=>{
+   const age=now.getTime()-Date.parse(e.event.startsAt);
+   return Number.isFinite(age)&&age>=100*60000&&age<=72*HOUR;
+  });
+  failureStage="FETCH_STATE_HISTORY";
+  const chunks=Array.from({length:Math.ceil(eligible.length/24)},(_,i)=>
+   eligible.slice(i*24,(i+1)*24).map(e=>e.id));
+  const states=[] as Awaited<ReturnType<typeof store.listRecentEventStates>>;
+  for(let i=0;i<chunks.length;i+=2){
+   const part=await Promise.all(chunks.slice(i,i+2).map(ids=>
+    store.listRecentEventStates({eventIds:ids,limit:900})));
+   states.push(...part.flat());
+  }
   const rotationIndex=Math.floor(now.getTime()/(4*HOUR));
   const selection=selectFinalReconciliationTargets({
-   events,states,asOf,rotationIndex,limit:20,minimumKickoffAgeMinutes:100,
+   events:eligible,states,asOf,rotationIndex,limit:20,minimumKickoffAgeMinutes:100,
   });
   const targets=selection.targets;
   selectedIds=targets.length;
