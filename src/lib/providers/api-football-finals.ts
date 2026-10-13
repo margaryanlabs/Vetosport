@@ -83,6 +83,32 @@ export function selectFinalReconciliationTargets(input:{
   };
 }
 
+/** API-Football commonly sends application-level failures as HTTP 200
+ * with an errors object. Never log or persist error values: they may contain
+ * provider-sensitive details. Classify keys only, strictly allowlisted. */
+export type FixtureProviderFailure=
+ "UPSTREAM_DAILY_QUOTA"|"UPSTREAM_MINUTE_QUOTA"|
+ "UPSTREAM_SUBSCRIPTION"|"UPSTREAM_AUTH"|
+ "UPSTREAM_INVALID_PARAMETERS"|"UPSTREAM_UNCLASSIFIED";
+export function classifyFixtureProviderFailure(errors:unknown):FixtureProviderFailure|null {
+ if(errors===null||errors===undefined)return null;
+ if(Array.isArray(errors))return errors.length?"UPSTREAM_UNCLASSIFIED":null;
+ if(typeof errors!=="object")return errors?"UPSTREAM_UNCLASSIFIED":null;
+ const names=Object.keys(errors).map(x=>x.toLowerCase().replace(/[^a-z]/g,""));
+ if(!names.length)return null;
+ if(names.some(k=>/requests|requestlimit|dailyquota|dailylimit|quota/.test(k)))
+  return "UPSTREAM_DAILY_QUOTA";
+ if(names.some(k=>/ratelimit|toomany|minutelimit|throttl/.test(k)))
+  return "UPSTREAM_MINUTE_QUOTA";
+ if(names.some(k=>/plan|subscription|access|season/.test(k)))
+  return "UPSTREAM_SUBSCRIPTION";
+ if(names.some(k=>/token|auth|key|credential/.test(k)))
+  return "UPSTREAM_AUTH";
+ if(names.some(k=>/parameter|fixture|ids|invalid|format/.test(k)))
+  return "UPSTREAM_INVALID_PARAMETERS";
+ return "UPSTREAM_UNCLASSIFIED";
+}
+
 export function finalResultBackfillSelfcheck(){
   const fixture:ApiFootballFixture={fixture:{id:10,date:"2026-10-13T09:00:00Z",status:{short:"FT"}},
     goals:{home:2,away:1}};
@@ -99,6 +125,19 @@ export function finalResultBackfillSelfcheck(){
   const first=sel(many,manyStates,0);
   const second=sel(many,manyStates,1);
   const checks=[
+    {name:"HTTP-200 daily quota is not interpreted as a successful empty fixture list",
+      passed:classifyFixtureProviderFailure({requests:"Sensitive provider body"})==="UPSTREAM_DAILY_QUOTA"},
+    {name:"Subscription restrictions are classified without extracting content",
+      passed:classifyFixtureProviderFailure({plan:"Private subscription value"})==="UPSTREAM_SUBSCRIPTION"},
+    {name:"Invalid IDs are distinguished from quota restrictions",
+      passed:classifyFixtureProviderFailure({parameters:"Sensitive parameter list"})==="UPSTREAM_INVALID_PARAMETERS"},
+    {name:"Empty upstream error objects are accepted",
+      passed:classifyFixtureProviderFailure({})===null&&classifyFixtureProviderFailure([])===null},
+    {name:"Provider authentication classified without exposing token",
+      passed:classifyFixtureProviderFailure({token:"PRIVATE_TOKEN"})==="UPSTREAM_AUTH"},
+    {name:"Unknown error response fails closed",
+      passed:classifyFixtureProviderFailure({unexpected:"SECRET"})==="UPSTREAM_UNCLASSIFIED"},
+
     {name:"FT returns real final score",passed:valid?.score.home===2&&valid?.score.away===1},
     {name:"Never treat AET as regulation-time score",passed:normalizeFinishedFixture({...fixture,fixture:{...fixture.fixture,status:{short:"AET"}}})===null},
     {name:"Never treat live as final",passed:normalizeFinishedFixture({...fixture,fixture:{...fixture.fixture,status:{short:"2H"}}})===null},
