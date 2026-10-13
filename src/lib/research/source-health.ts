@@ -17,6 +17,8 @@ export interface SourceHealthView{
   receivedRecords:number|null;
   scannedRecords:number|null;
   pendingFixtureChecks:number|null;
+  lastRunCode:string|null;
+  upstreamAttempted:boolean|null;
   note:string;
 }
 export function toSourceHealthView(input:{
@@ -36,6 +38,20 @@ export function toSourceHealthView(input:{
  const scanned=asSafeCount(info.scannedEvents??info.upstreamFixtures??info.providerRows);
  const pending=descriptor.id==="api-football-finals"
   ?asSafeCount(info.eligibleCandidates??info.candidateCount):null;
+ // Error labels are a strict, non-sensitive allowlist. Raw provider payloads,
+ // bridge URLs, credentials, quota headers and arbitrary messages remain private.
+ const safeCodes=new Set([
+  "STORAGE_OR_PROVIDER_FAILURE","UPSTREAM_REJECTED_TARGETED_IDS",
+  "MALFORMED_PROVIDER_PAYLOAD","NO_ELIGIBLE_OBSERVED_FIXTURES",
+  "QUOTA_RESERVE","LIVE_FOOTBALL_OR_STORAGE_NOT_ENABLED",
+  "UPSTREAM_HTTP_400","UPSTREAM_HTTP_401","UPSTREAM_HTTP_403",
+  "UPSTREAM_HTTP_404","UPSTREAM_HTTP_429","UPSTREAM_HTTP_500",
+  "UPSTREAM_HTTP_502","UPSTREAM_HTTP_503","UPSTREAM_HTTP_504",
+ ]);
+ const candidateCode=typeof info.failureCode==="string"?info.failureCode:
+  typeof info.reason==="string"?info.reason:null;
+ const lastRunCode=candidateCode&&safeCodes.has(candidateCode)?candidateCode:null;
+ const upstreamAttempted=typeof info.upstreamAttempted==="boolean"?info.upstreamAttempted:null;
  const note=state==="unknown"?"Нет подтверждённого запуска этого источника.":
   state==="stale"?"Последний запуск устарел; новые данные не подтверждены.":
   state==="degraded"?"Последний запуск сообщил об ограничении, ошибке или неполных данных.":
@@ -43,7 +59,8 @@ export function toSourceHealthView(input:{
    "Проверка окончательных результатов выполнена. Положительная доходность не следует из количества FT.":
    "Последняя проверка источника прошла. Это не гарантирует полноту и секундную свежесть.";
  return{id:descriptor.id,label:descriptor.label,state,updatedAt:ageMinutes===null?null:latest!.checkedAt,
-  ageMinutes,receivedRecords:stored,scannedRecords:scanned,pendingFixtureChecks:pending,note};
+  ageMinutes,receivedRecords:stored,scannedRecords:scanned,pendingFixtureChecks:pending,
+  lastRunCode,upstreamAttempted,note};
 }
 export function sourceHealthSelfcheck(){
  const at="2026-10-13T15:00:00Z";
@@ -65,6 +82,10 @@ export function sourceHealthSelfcheck(){
   {name:"Old formerly healthy cron is stale",passed:old.state==="stale"},
   {name:"Degraded data source is never called active",passed:bad.state==="degraded"},
   {name:"Safe counts emitted from allowlist only",passed:result.scannedRecords===150&&result.pendingFixtureChecks===21},
+  {name:"Whitelisted stage error codes shown without arbitrary messages",passed:
+   toSourceHealthView({descriptor,latest:{...sample,metadata:{failureCode:"STORAGE_OR_PROVIDER_FAILURE",
+    upstreamAttempted:false}},now:at}).lastRunCode==="STORAGE_OR_PROVIDER_FAILURE" &&
+   toSourceHealthView({descriptor,latest:{...sample,metadata:{failureCode:"TOP_SECRET"}},now:at}).lastRunCode===null},
   {name:"Server diagnostics and provider quota never leaked",passed:!json.includes("TOP_SECRET")&&!json.includes("quotaRemaining")&&!json.includes("SHOULD_NOT_EXPOSE")&&!json.includes("private service diagnostics")},
  ];
  return{passed:checks.every(c=>c.passed),checks};
