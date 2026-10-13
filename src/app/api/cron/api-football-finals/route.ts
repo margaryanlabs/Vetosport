@@ -32,31 +32,48 @@ export async function GET(req:Request){
  const now=new Date(),asOf=now.toISOString();
  let upstreamAttempted=false;
  let selectedIds=0;
+ let failureStage="FETCH_EVENTS";
  try{
   // Six non-overlapping 12-hour kickoff windows. 72h allows delayed coverage
   // and matches that finished after midnight UTC.
   const slots=6,slotHours=12,HOUR=3600000;
-  const blocks=await Promise.all(Array.from({length:slots},(_,i)=>
-   store.listRecentEvents({
-    from:new Date(now.getTime()-(i+1)*slotHours*HOUR).toISOString(),
-    to:new Date(now.getTime()-i*slotHours*HOUR).toISOString(),
+  // Bound bridge concurrency to two windows at a time.
+  const blocks=[] as Awaited<ReturnType<typeof store.listRecentEvents>>[];
+  for(let i=0;i<slots;i+=2){
+   const part=await Promise.all([i,i+1].filter(k=>k<slots).map(k=>store.listRecentEvents({
+    from:new Date(now.getTime()-(k+1)*slotHours*HOUR).toISOString(),
+    to:new Date(now.getTime()-k*slotHours*HOUR).toISOString(),
     statuses:["live"],limit:100,
    })));
+   blocks.push(...part);
+  }
   const events=[...new Map(blocks.flat().filter(e=>e.event.sport==="football"&&!isSelfcheckEvent(e))
    .map(e=>[e.id,e])).values()];
-  const chunks=Array.from({length:Math.ceil(events.length/30)},(_,i)=>
-   events.slice(i*30,(i+1)*30).map(e=>e.id));
-  const states=(
-   await Promise.all(chunks.map(ids=>store.listRecentEventStates({eventIds:ids,limit:1200})))
-  ).flat();
+  // Do not read every match's history when it cannot yet have an FT.
+  const eligible=events.filter(e=>{
+   const age=now.getTime()-Date.parse(e.event.startsAt);
+   return Number.isFinite(age)&&age>=100*60000&&age<=72*HOUR;
+  });
+  // 10-match batches prevent a few high-frequency timelines from crowding out
+  // the latest provider ID for other matches in the storage row cap.
+  failureStage="FETCH_STATE_HISTORY";
+  const chunks=Array.from({length:Math.ceil(eligible.length/10)},(_,i)=>
+   eligible.slice(i*10,(i+1)*10).map(e=>e.id));
+  const states=[] as Awaited<ReturnType<typeof store.listRecentEventStates>>;
+  for(let i=0;i<chunks.length;i+=2){
+   const part=await Promise.all(chunks.slice(i,i+2).map(ids=>
+    store.listRecentEventStates({eventIds:ids,limit:1800})));
+   states.push(...part.flat());
+  }
   const rotationIndex=Math.floor(now.getTime()/(4*HOUR));
   const selection=selectFinalReconciliationTargets({
-   events,states,asOf,rotationIndex,limit:20,minimumKickoffAgeMinutes:100,
+   events:eligible,states,asOf,rotationIndex,limit:20,minimumKickoffAgeMinutes:100,
   });
   const targets=selection.targets;
   selectedIds=targets.length;
   const scanMayBeCapped=blocks.some(x=>x.length>=100);
   if(!selectedIds){
+   failureStage="WRITE_PROVIDER_HEALTH";
    await store.appendProviderHealth({
     providerId:"api-football-finals",status:"degraded",checkedAt:asOf,
     message:"No 100min+ previously observed unresolved API-Football fixtures to reconcile; no quota used.",
@@ -73,6 +90,7 @@ export async function GET(req:Request){
   }
 
   const ids=targets.map(t=>t.providerEventId).join("-");
+  failureStage="FETCH_UPSTREAM";
   upstreamAttempted=true;
   const response=await fetch("https://v3.football.api-sports.io/fixtures?ids="+ids,{
    headers:{"x-apisports-key":process.env.API_FOOTBALL_KEY!,accept:"application/json"},
@@ -94,6 +112,7 @@ export async function GET(req:Request){
   const selected=new Map(targets.map(t=>[t.providerEventId,t]));
   let returned=0,confirmed=0,matched=0,finishedStored=0,failures=0,invalidFinal=0,notFinished=0;
   const capturedAt=new Date().toISOString();
+  failureStage="PERSIST_FINALS";
   if(!lowQuota){
    for(const row of raw){
     const id=row.fixture?.id;
@@ -140,6 +159,7 @@ export async function GET(req:Request){
    scannedEvents:events.length,statesRead:states.length,scanMayBeCapped,
    upstreamAttempted:true,lowQuota,estimatedCallsPerDay:6,
   };
+  failureStage="WRITE_PROVIDER_HEALTH";
   await store.appendProviderHealth({
    providerId:"api-football-finals",
    status:lowQuota||failures?"degraded":"healthy",
@@ -165,11 +185,11 @@ export async function GET(req:Request){
     providerId:"api-football-finals",status:"degraded",checkedAt:new Date().toISOString(),
     message:"FT reconciliation failed: "+failureCode,
     metadata:{strategy:"TARGETED_PROVIDER_IDS_V2",failureCode,
-     selectedFixtureCount:selectedIds,upstreamAttempted,estimatedCallsPerDay:6},
+     selectedFixtureCount:selectedIds,upstreamAttempted,failureStage,estimatedCallsPerDay:6},
    });
   }catch{/* Do not overwrite the initial failure or reveal storage diagnostics. */}
   return NextResponse.json({ok:false,source:"api-football",strategy:"TARGETED_PROVIDER_IDS_V2",
-   error:failureCode,upstreamAttempted,selectedFixtureCount:selectedIds,
+   error:failureCode,failureStage,upstreamAttempted,selectedFixtureCount:selectedIds,
    bookmakerOddsVerified:false},
    {status:502,headers});
  }

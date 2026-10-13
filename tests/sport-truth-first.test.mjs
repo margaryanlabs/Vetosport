@@ -117,3 +117,25 @@ test("Public provider status is bounded, accurate and sanitized",()=>{
  assert.match(page,/Откуда поступают данные/);
  assert.match(page,/К проверке FT/);
 });
+
+test("Provider pipeline failure is classified without leaking private diagnostics",()=>{
+ const parser=read("src/lib/research/source-health.ts");
+ const page=read("src/app/research/discovery/page.tsx");
+ assert.match(parser,/safeCodes=new Set/);
+ assert.match(parser,/lastRunCode/);
+ assert.match(parser,/UPSTREAM_REJECTED_TARGETED_IDS/);
+ assert.match(page,/provider\.lastRunCode/);
+});
+
+test("Final-score recovery bounds internal requests and isolates failure stage",()=>{
+ const route=read("src/app/api/cron/api-football-finals/route.ts");
+ assert.match(route,/i\+=2/);
+ assert.match(route,/eligible=events.filter/);
+ assert.match(route,/failureStage="FETCH_STATE_HISTORY"/);
+ assert.match(route,/failureStage="FETCH_UPSTREAM"/);
+ assert.match(route,/failureStage="PERSIST_FINALS"/);
+ assert.match(route,/failureStage="WRITE_PROVIDER_HEALTH"/);
+ assert.match(route,/states.push\(\.\.\.part.flat\(\)\)/);
+ assert.match(route,/failureStage,estimatedCallsPerDay/);
+ assert.match(route,/events:eligible,states/);
+});
