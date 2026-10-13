@@ -126,6 +126,7 @@ export function installLightContrastGuard(
   const changed = new Map<HTMLElement, { value: string; priority: string; fillValue: string; fillPriority: string; gradientText: boolean }>();
   let timeout: number | undefined;
   let disposed = false;
+  let lastRun = 0;
 
   function restore() {
     for (const [element, original] of changed) {
@@ -178,9 +179,15 @@ export function installLightContrastGuard(
   }
 
   function schedule() {
-    if (disposed) return;
-    window.clearTimeout(timeout);
-    timeout = window.setTimeout(scan, 130);
+    if (disposed || timeout !== undefined) return;
+    // Sports/markets update frequently. Avoid blocking live updates with
+    // repeated full-DOM color scans; one pass per ~800ms is sufficient.
+    const delay = Math.max(120, 800 - (Date.now() - lastRun));
+    timeout = window.setTimeout(() => {
+      timeout = undefined;
+      lastRun = Date.now();
+      scan();
+    }, delay);
   }
 
   const pageObserver = new MutationObserver(schedule);
