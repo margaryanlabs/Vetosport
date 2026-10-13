@@ -109,6 +109,15 @@ function visibleText(element: Element): boolean {
     ((tag === "BUTTON" || tag === "A") && element.querySelector("svg") !== null);
 }
 
+/** Pure contrast probe used by regression tests, independent of DOM APIs. */
+export function measureTextContrast(foregroundCss: string, backgroundCss: string): number | null {
+  const front = rgb(foregroundCss);
+  const back = rgb(backgroundCss);
+  if (!front || !back) return null;
+  const opaque = blend(back, [255, 255, 255, 1]);
+  return contrast(blend(front, opaque), opaque);
+}
+
 function replacementColor(original: Rgba, backgroundColor: Rgba): string {
   if (luminance(backgroundColor) < .3) return "#f5f7fb";
   // Preserve the VETO meaning of visible coral/red, green and blue accents.
