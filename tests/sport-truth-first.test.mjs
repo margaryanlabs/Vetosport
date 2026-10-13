@@ -193,3 +193,21 @@ test("Cross-source verification never settles private VETO decisions or imports 
  assert.match(ui,/fetch\("\/api\/intelligence\/research\/results\/crosscheck"/);
  assert.match(page,/SourceCrosscheck/);
 });
+
+test("Live feed samples current kickoffs instead of first 40 stale ascending rows",()=>{
+ const reader=read("src/lib/live/persisted-events.ts");
+ const sorter=read("src/lib/live/feed-priority.ts");
+ const freshness=read("src/lib/live/freshness.ts");
+ const today=read("src/components/TodayExperience.tsx");
+ const watch=read("src/app/research/watchlist/page.tsx");
+ assert.match(reader,/liveFeedWindows\(now\)/);
+ assert.match(reader,/selectFeedCandidates/);
+ assert.match(reader,/prioritizeLiveFeed/);
+ assert.doesNotMatch(reader,/now - 12 \* 60 \* 60 \* 1000/);
+ assert.match(sorter,/sinceKickoff|feedTier\(event/);
+ assert.match(sorter,/LIVE_FEED_OUTPUT_LIMIT=40/);
+ assert.match(freshness,/АРХИВ · ФИНАЛ НЕ ПОДТВЕРЖДЁН/);
+ assert.match(freshness,/СНИМОК С ЗАДЕРЖКОЙ/);
+ assert.match(today,/presentationPriority/);
+ assert.match(watch,/FT НЕ ПОДТВЕРЖДЁН/);
+});

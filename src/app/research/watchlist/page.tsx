@@ -134,7 +134,7 @@ export default function ResearchWatchlistPage(){
        return <article className={"watchRealMatch "+(focus?.id===event.id?"selected":"")} key={event.id}>
         <div className="watchMatchTop"><span>{event.competition}</span><b>{matched?"ПРОВЕРИТЬ УСЛОВИЕ":age.freshLive?"СВЕЖИЙ СНИМОК":age.stale?"АРХИВНЫЙ СНИМОК":"НЕТ ВРЕМЕНИ"}</b></div>
         <h3>{event.homeName} — {event.awayName}</h3>
-        <div className="watchScore"><strong>{event.homeScore}:{event.awayScore}</strong><span>{event.clock} / {event.status==="live"?"ИСТОЧНИК: LIVE":"СТАТУС: "+event.status}</span></div>
+        <div className="watchScore"><strong>{event.homeScore}:{event.awayScore}</strong><span>{event.clock} / {event.status==="live"?(age.freshLive?"СВЕЖИЙ LIVE-СНИМОК":age.delayedLive?"ИСТОЧНИК: LIVE · ДАННЫЕ ЗАДЕРЖАНЫ":"LIVE БЫЛ В ПОСЛЕДНЕЙ ЗАПИСИ · FT НЕ ПОДТВЕРЖДЁН"):"СТАТУС: "+event.status}</span></div>
         <p>{matched?"1:1 после 80′. Имеет смысл изучить наличие и условия Total Under 4.5. Коэффициент не подтверждён.":event.status==="live"?"Снимок матча сохранён. Сам по себе счёт не означает наличия ставки с преимуществом.":"Событие сохранено в хранилище."}</p>
         <div className="watchMeta"><span>{age.label}</span><span>{ageLabel(age.ageSeconds)}</span><span>Рынков: {event.markets}</span></div>
         <div className="watchMatchActions"><button type="button" onClick={()=>{setSelectedId(event.id);document.getElementById("watchResearch")?.scrollIntoView({behavior:"smooth"});}}>Исследовать ↓</button><a href={"/?event="+encodeURIComponent(event.id)+"&view=check"}>Открыть анализ ↗</a></div>
