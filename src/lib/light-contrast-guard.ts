@@ -123,7 +123,7 @@ export function installLightContrastGuard(
   themeAttribute: "data-veto-appearance" | "data-veto-sport-appearance",
 ): () => void {
   if (typeof window === "undefined" || typeof document === "undefined") return () => {};
-  const changed = new Map<HTMLElement, { value: string; priority: string }>();
+  const changed = new Map<HTMLElement, { value: string; priority: string; fillValue: string; fillPriority: string; gradientText: boolean }>();
   let timeout: number | undefined;
   let disposed = false;
 
@@ -131,6 +131,10 @@ export function installLightContrastGuard(
     for (const [element, original] of changed) {
       if (original.value) element.style.setProperty("color", original.value, original.priority);
       else element.style.removeProperty("color");
+      if (original.gradientText) {
+        if (original.fillValue) element.style.setProperty("-webkit-text-fill-color", original.fillValue, original.fillPriority);
+        else element.style.removeProperty("-webkit-text-fill-color");
+      }
       element.removeAttribute("data-veto-contrast-repaired");
     }
     changed.clear();
@@ -149,8 +153,9 @@ export function installLightContrastGuard(
       if (el.closest(EXCLUSIONS) || !visibleText(el) || !el.getClientRects().length) continue;
       const style = getComputedStyle(el);
       if (style.visibility !== "visible" || style.display === "none" || Number(style.opacity) < .35) continue;
-      if (style.backgroundClip === "text" || style.webkitTextFillColor === "transparent") continue;
-      const foreground = rgb(style.color);
+      const fill = rgb(style.webkitTextFillColor);
+      const gradientText = style.webkitTextFillColor === "transparent" || fill?.[3] === 0;
+      const foreground = gradientText ? gradientColor(style.backgroundImage) : rgb(style.color);
       if (!foreground || foreground[3] < .3) continue;
       const backdrop = background(el, cache);
       const finalForeground = blend(foreground, backdrop);
@@ -161,8 +166,12 @@ export function installLightContrastGuard(
       changed.set(el, {
         value: el.style.getPropertyValue("color"),
         priority: el.style.getPropertyPriority("color"),
+        fillValue: el.style.getPropertyValue("-webkit-text-fill-color"),
+        fillPriority: el.style.getPropertyPriority("-webkit-text-fill-color"),
+        gradientText,
       });
       el.style.setProperty("color", color, "important");
+      if (gradientText) el.style.setProperty("-webkit-text-fill-color", color, "important");
       el.setAttribute("data-veto-contrast-repaired", "");
     }
     document.documentElement.setAttribute("data-veto-contrast-repairs", String(changed.size));
