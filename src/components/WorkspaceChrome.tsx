@@ -103,7 +103,7 @@ export function WorkspaceChrome({
               {item.desktop}
             </button>
           ))}
-          <a className="matchShellWatchLink" href="/research/watchlist">РАДАР МАТЧЕЙ ↗</a>
+          <a className="matchShellWatchLink" href="/research/discovery">DISCOVERY ↗</a>
         </nav>
 
         <div className="matchShellTools">
@@ -183,6 +183,9 @@ export function WorkspaceChrome({
                 </button>
               );
             })}
+            <a href="/research/discovery" onClick={()=>setMoreOpen(false)}>AUTONOMOUS DISCOVERY ↗</a>
+            <a href="/research/watchlist" onClick={()=>setMoreOpen(false)}>РАДАР РЕАЛЬНЫХ МАТЧЕЙ ↗</a>
+            <a href="/plans" onClick={()=>setMoreOpen(false)}>ПЛАНЫ ДОСТУПА ↗</a>
           </div>
           <div className="matchShellMoreMeta">
             <span className={`matchShellStatus ${providerTone}`}><i />{providerMode}</span>
