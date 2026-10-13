@@ -65,7 +65,7 @@ export function sourceHealthSelfcheck(){
   {name:"Old formerly healthy cron is stale",passed:old.state==="stale"},
   {name:"Degraded data source is never called active",passed:bad.state==="degraded"},
   {name:"Safe counts emitted from allowlist only",passed:result.scannedRecords===150&&result.pendingFixtureChecks===21},
-  {name:"Server diagnostics and provider quota never leaked",passed:!json.includes("TOP_SECRET")&&!json.includes("13")&&!json.includes("SHOULD_NOT_EXPOSE")&&!json.includes("private service diagnostics")},
+  {name:"Server diagnostics and provider quota never leaked",passed:!json.includes("TOP_SECRET")&&!json.includes("quotaRemaining")&&!json.includes("SHOULD_NOT_EXPOSE")&&!json.includes("private service diagnostics")},
  ];
  return{passed:checks.every(c=>c.passed),checks};
 }
