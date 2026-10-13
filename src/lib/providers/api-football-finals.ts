@@ -1,0 +1,55 @@
+import type {ApiFootballFixture} from "@/lib/providers/api-football";
+import type {PersistedEvent, PersistedEventStateRecord} from "@/lib/persistence/contracts";
+
+export interface FinishedFixture {
+  providerEventId:number;
+  startsAt:string;
+  score:{home:number;away:number};
+}
+/** FT = regulation time; AET/PEN excluded to avoid mis-settling 90-min totals. */
+export function normalizeFinishedFixture(row:ApiFootballFixture):FinishedFixture|null{
+  if(row.fixture?.status?.short!=="FT")return null;
+  const id=row.fixture.id,date=row.fixture.date;
+  const home=row.goals?.home,away=row.goals?.away;
+  if(typeof id!=="number"||!Number.isSafeInteger(id)||id<=0||
+    !date||!Number.isFinite(Date.parse(date))||
+    typeof home!=="number"||typeof away!=="number"||
+    !Number.isInteger(home)||!Number.isInteger(away)||home<0||away<0||home>40||away>40)return null;
+  return{providerEventId:id,startsAt:new Date(date).toISOString(),score:{home,away}};
+}
+export function exactStoredFixtureIndex(events:PersistedEvent[],states:PersistedEventStateRecord[]){
+  const eligible=new Map(events.filter(e=>e.event.sport==="football").map(e=>[e.id,e]));
+  const index=new Map<number,PersistedEvent>();
+  const ambiguous=new Set<number>();
+  for(const s of states){
+    if(s.sourceProvider!=="api-football")continue;
+    const event=eligible.get(s.eventId);
+    if(!event)continue;
+    const raw=s.state?.providerEventId;
+    const id=typeof raw==="number"?raw:typeof raw==="string"&&/^\d+$/.test(raw)?Number(raw):NaN;
+    if(!Number.isSafeInteger(id)||id<=0)continue;
+    const current=index.get(id);
+    if(current&&current.id!==event.id){ambiguous.add(id);index.delete(id);}
+    else if(!ambiguous.has(id))index.set(id,event);
+  }
+  for(const id of ambiguous)index.delete(id);
+  return{index,ambiguous:[...ambiguous]};
+}
+export function finalResultBackfillSelfcheck(){
+  const fixture:ApiFootballFixture={fixture:{id:10,date:"2026-10-13T09:00:00Z",status:{short:"FT"}},
+    goals:{home:2,away:1}};
+  const event:PersistedEvent={id:"id",canonicalKey:"stable",event:{id:"id",sport:"football",competition:"Test",startsAt:"2026-10-13T09:00:00Z",status:"live"}};
+  const state:PersistedEventStateRecord={eventId:"id",sourceProvider:"api-football",capturedAt:"2026-10-13T10:00:00Z",
+    state:{providerEventId:10,status:"live",score:{home:1,away:1},clock:"80′"}};
+  const valid=normalizeFinishedFixture(fixture);
+  const checks=[
+    {name:"FT returns real final score",passed:valid?.score.home===2&&valid?.score.away===1},
+    {name:"Never treat AET as regulation-time score",passed:normalizeFinishedFixture({...fixture,fixture:{...fixture.fixture,status:{short:"AET"}}})===null},
+    {name:"Never treat live as final",passed:normalizeFinishedFixture({...fixture,fixture:{...fixture.fixture,status:{short:"2H"}}})===null},
+    {name:"Missing goals excluded",passed:normalizeFinishedFixture({...fixture,goals:{home:2,away:null}})===null},
+    {name:"Exact provider fixture ID only",passed:exactStoredFixtureIndex([event],[state]).index.get(10)?.id==="id"},
+    {name:"Reject different-provider ID collision",passed:exactStoredFixtureIndex([event],[{...state,sourceProvider:"sportmonks"}]).index.size===0},
+    {name:"Duplicate provider IDs on different canonical events rejected",passed:exactStoredFixtureIndex([event,{...event,id:"other",canonicalKey:"other"}],[state,{...state,eventId:"other"}]).index.size===0},
+  ];
+  return{passed:checks.every(x=>x.passed),checks};
+}
