@@ -9,7 +9,6 @@ import "./veto-sport-system.css";
 import "./veto-sport-showcase.css";
 import "./veto-sport-observation.css";
 import "./veto-sport-light.css";
-import { SportAppearanceToggle } from "@/components/SportAppearanceToggle";
 
 export const metadata: Metadata = {
   title: "VETO Sport — Sports Market Intelligence",
@@ -31,7 +30,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#07090c" />
         <script dangerouslySetInnerHTML={{ __html: `try { document.documentElement.dataset.vetoSportAppearance = localStorage.getItem("veto-sport-appearance") === "light" ? "light" : "dark"; } catch { document.documentElement.dataset.vetoSportAppearance = "dark"; }` }} />
       </head>
-      <body>{children}<SportAppearanceToggle /></body>
+      <body>{children}</body>
     </html>
   );
 }

@@ -20,12 +20,28 @@ test("Observed chart remains on a dark canvas when light appearance is active", 
   assert.match(css, /\.todayHero \.pitchVision/);
 });
 
-test("Sport has a single accessible, persisted appearance toggle in the shared root layout", () => {
+test("Sport exposes an accessible theme toggle in the terminal and research headers", () => {
   const layout = read("src/app/layout.tsx");
   const toggle = read("src/components/SportAppearanceToggle.tsx");
-  assert.match(layout, /<SportAppearanceToggle\s*\/>/);
+  const chrome = read("src/components/WorkspaceChrome.tsx");
+  const research = read("src/app/research/watchlist/page.tsx");
+  assert.doesNotMatch(layout, /<SportAppearanceToggle\s*\/>/, "No floating duplicates from the root layout");
+  assert.match(chrome, /<SportAppearanceToggle\s*\/>/);
+  assert.match(research, /<SportAppearanceToggle\s*\/>/);
   assert.match(layout, /veto-sport-light\.css/);
   assert.match(toggle, /aria-pressed/);
   assert.match(toggle, /localStorage\.setItem/);
   assert.match(toggle, /addEventListener\("storage"/);
+});
+
+test("Sports research uses light semantic surfaces and leaves the pitch dark", () => {
+  const css = read("src/app/research/watchlist/watchlist.css");
+  assert.match(css, /data-veto-sport-appearance="light"/);
+  assert.match(css, /\.watchHeaderActions/);
+  assert.match(css, /\.watchReal \.watchStats article/);
+  assert.match(css, /\.watchMatches article/);
+  assert.match(css, /\.watchRealHeroVision/);
+  const appCss = read("src/app/veto-sport-light.css");
+  assert.match(appCss, /\.matchShellTop \.vetoSportAppearanceToggle/);
+  assert.doesNotMatch(appCss, /bottom:\s*calc\(78px/);
 });

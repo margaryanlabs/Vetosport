@@ -58,3 +58,97 @@
 .watchRealQuote b{font-size:21px;color:#eff8f1;font-variant-numeric:tabular-nums;text-align:right}
 .watchRealQuote small{grid-column:1/-1;color:#adc1b6;font-size:11px}
 @media(max-width:600px){.watchRealQuote{padding:12px}.watchRealQuote strong{font-size:13px}.watchRealQuote b{font-size:18px}}
+
+/* Appearance control in research top bar. Link remains at the right. */
+.watchHeaderActions{display:flex;align-items:center;gap:10px;margin-left:auto}
+.watchHeaderActions>a{font-size:11px;font-weight:750;color:#acc8d8;white-space:nowrap}
+.watchHeaderActions .vetoSportAppearanceToggle{background:rgba(255,255,255,.05)}
+@media(max-width:560px){.watchHeader>span{display:none}.watchHeaderActions{gap:6px}.watchHeaderActions>a{font-size:10px}}
+
+/* White VETO Sport research mode: the original Watchlist uses five dark-mode
+   variables and many static off-white labels. Adapt all surfaced sections;
+   keep embedded pitch analysis dark to retain its visual encoding. */
+html[data-veto-sport-appearance="light"] .watchRoot.watchReal,
+html[data-veto-sport-appearance="light"] .watchRoot {
+  --ink:#17212e;
+  --muted:#56677b;
+  --line:rgba(27,49,71,.17);
+  --panel:#ffffff;
+  --accent:#bd2e35;
+  background:radial-gradient(ellipse 60% 36% at 80% 0%,rgba(135,168,151,.08),transparent 75%),#f5f7fb !important;
+  color:#17212e !important;
+}
+html[data-veto-sport-appearance="light"] .watchHeader{
+  border-color:var(--line);
+  background:rgba(255,255,255,.96);
+}
+html[data-veto-sport-appearance="light"] :is(.watchHeader>span,.watchRealHeroCopy>p,
+  .watchRealHeroCopy .watchRealDisclosure,.watchSub,.watchSource,.watchFooter,
+  .watchEyebrow,.watchMatches p,.watchPrice>p,.watchSetup p,
+  .watchMatchTop,.watchScore span,.watchStats span,.watchIdea p,
+  .watchPrice label,.watchDetail small,.watchSurfaceTitle small,
+  .watchMatchTop span,.watchBottomLinks a) {
+  color:#4d6074 !important;
+}
+html[data-veto-sport-appearance="light"] :is(.watchHeaderActions>a,
+  .watchBottomLinks a,.watchSetup a,.watchMatches article>a) {
+  color:#224e70 !important;
+}
+html[data-veto-sport-appearance="light"] :is(.watchRealHero h1,
+  .watchRealHero h1 em,.watchSurfaceTitle h2,.watchBrand,
+  .watchScore strong,.watchMatches h3,.watchEmpty strong,
+  .watchDetail strong,.watchStats strong,.watchSelected h2) {
+  color:#17212e !important;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .watchReal .watchStats article,.watchReal .watchMatches article,
+  .watchStats article,.watchMatches article,.watchIdea,.watchIdea.selected,
+  .watchPrice,.watchReal .watchPrice,.watchEmpty,.watchSetup,
+  .watchSelected,.watchRealResearch,.watchLaunchHealth>div
+) {
+  background:linear-gradient(145deg,#ffffff,#f3f6fa) !important;
+  color:#17212e !important;
+  border-color:var(--line) !important;
+  box-shadow:0 12px 36px rgba(25,46,68,.055);
+}
+html[data-veto-sport-appearance="light"] :is(.watchReal .watchMeta span,
+  .watchMeta span,.watchFilters button,.watchReal .watchFilters button,
+  .watchMatchActions button,.watchReal .watchMatchActions button,
+  .watchRefresh,.watchHeroActions a:not(:first-child),
+  .watchRealHero .watchHeroActions a:not(:first-child)) {
+  background:#edf2f8 !important;
+  color:#2f435a !important;
+  border-color:rgba(27,49,71,.23) !important;
+}
+html[data-veto-sport-appearance="light"] .watchFilters button.active,
+html[data-veto-sport-appearance="light"] .watchReal .watchFilters button.active,
+html[data-veto-sport-appearance="light"] .watchRealHero .watchHeroActions a:first-child,
+html[data-veto-sport-appearance="light"] .watchReal .watchPrice>button {
+  background:#c82e37 !important;
+  color:#ffffff !important;
+  border-color:#c82e37 !important;
+}
+html[data-veto-sport-appearance="light"] .watchMatchActions a:last-child,
+html[data-veto-sport-appearance="light"] .watchReal .watchMatchActions a:last-child {
+  background:#fff0ec !important;
+  color:#92372e !important;
+  border-color:rgba(177,62,53,.35) !important;
+}
+html[data-veto-sport-appearance="light"] :is(.watchPrice input,.watchPrice textarea) {
+  background:#ffffff !important;
+  color:#17212e !important;
+  border-color:rgba(27,49,71,.25) !important;
+  caret-color:#17212e;
+}
+html[data-veto-sport-appearance="light"] .watchRoot :is(button,a,input,textarea):focus-visible {
+  outline:2px solid #ad2931;
+  outline-offset:3px;
+}
+html[data-veto-sport-appearance="light"] .watchHeaderActions .vetoSportAppearanceToggle {
+  color:#25384a !important;
+  background:#eaf0f7 !important;
+}
+/* Observed match football diagram remains a high contrast dark field. */
+html[data-veto-sport-appearance="light"] .watchRealHeroVision :is(.pitchVision,.pitchVision *) {
+  color-scheme:dark;
+}

@@ -4,6 +4,7 @@ import {useEffect,useMemo,useState} from "react";
 import {PitchVision} from "@/components/PitchVision";
 import {OpportunityRadar} from "@/components/OpportunityRadar";
 import {VetoMark} from "@/components/VetoMark";
+import {SportAppearanceToggle} from "@/components/SportAppearanceToggle";
 import type {LiveEventSummary, LiveQuotePreview} from "@/lib/live/types";
 import {getObservedFreshness} from "@/lib/live/freshness";
 import {screenPersistedResearchMatches} from "@/lib/research/watchlist/engine";
@@ -89,7 +90,7 @@ export default function ResearchWatchlistPage(){
   <header className="watchHeader">
    <a href="/" className="watchBrand" aria-label="VETO Sport — главный экран"><VetoMark size={30}/> VETO <span>SPORT</span></a>
    <span>LIVE / SOURCE / RESEARCH</span>
-   <a href="/?view=matches">← К МАТЧАМ</a>
+   <div className="watchHeaderActions"><SportAppearanceToggle /><a href="/?view=matches">← К МАТЧАМ</a></div>
   </header>
   <section className="watchRealHero">
     <div className="watchRealHeroCopy">

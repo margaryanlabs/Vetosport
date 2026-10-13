@@ -128,36 +128,45 @@ html[data-veto-sport-appearance="light"] :is(.pitchVisionArena,.pitchVision,.obs
 html[data-veto-sport-appearance="light"] .matchShellMobile {
   box-shadow:0 -9px 32px rgba(26,49,73,.075);
 }
+/* VETO Sport appearance switch now lives in the physical top bar, not
+   floating over the live scoreboard or bottom mobile navigation. */
 .vetoSportAppearanceToggle {
-  position:fixed;
-  z-index:130;
-  right:max(17px,env(safe-area-inset-right));
-  bottom:calc(78px + env(safe-area-inset-bottom));
-  min-width:48px;
-  min-height:48px;
+  position:relative;
+  flex:none;
+  z-index:1;
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  gap:9px;
-  padding:11px 14px;
-  border:1px solid rgba(255,255,255,.15);
-  border-radius:999px;
-  background:rgba(14,18,24,.96);
+  width:44px;
+  height:44px;
+  min-width:44px;
+  min-height:44px;
+  padding:0;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:12px;
   color:#f5f7fa;
-  box-shadow:0 13px 38px rgba(0,0,0,.24);
-  backdrop-filter:blur(18px);
-  font:700 12px/1.2 var(--font-veto-sans),sans-serif;
+  background:rgba(255,255,255,.045);
   cursor:pointer;
-  transition:transform .17s ease,box-shadow .17s ease;
+  box-shadow:none;
+  transition:background .17s ease,border-color .17s ease;
 }
-.vetoSportAppearanceToggle:hover{transform:translateY(-2px)}
+.vetoSportAppearanceToggle > span {display:none}
+.vetoSportAppearanceToggle:hover {background:rgba(255,255,255,.095)}
+.vetoSportAppearanceToggle:focus-visible {
+  outline:2px solid #ee655c;
+  outline-offset:3px;
+}
 html[data-veto-sport-appearance="light"] .vetoSportAppearanceToggle {
-  color:#17212e;background:rgba(255,255,255,.97);
-  border-color:rgba(24,42,61,.2);
-  box-shadow:0 13px 36px rgba(26,49,73,.13);
+  background:#eef3f8;
+  color:#25384a;
+  border-color:rgba(26,43,63,.2);
+  box-shadow:none;
 }
-@media(min-width:900px){.vetoSportAppearanceToggle{bottom:22px;right:22px}}
-@media(max-width:540px){.vetoSportAppearanceToggle{width:48px;height:48px;padding:0}.vetoSportAppearanceToggle>span{display:none}}
+html[data-veto-sport-appearance="light"] .vetoSportAppearanceToggle:hover {background:#e0eaf5}
+@media(max-width:650px){
+  .matchShellTop .vetoSportAppearanceToggle {width:42px;min-width:42px;height:42px;min-height:42px}
+  .matchShellTools {gap:4px}
+}
 @media(prefers-reduced-motion:reduce){.vetoSportAppearanceToggle{transition:none}}
 
 /* VETO Sport / LIGHT CONTRAST CORRECTION 2026-10-12
@@ -360,3 +369,31 @@ html[data-veto-sport-appearance="light"] :is(.paperTicketMetrics span,.paperCont
 html[data-veto-sport-appearance="light"] .paperPerformance strong.positive{color:#0f7541!important}
 html[data-veto-sport-appearance="light"] .paperPerformance strong.negative{color:#b42e38!important}
 html[data-veto-sport-appearance="light"] .paperTicketCommit{color:#fff!important;background:#bd3542!important}
+
+/* Sport navigation action hierarchy — retain readability on mobile. */
+html[data-veto-sport-appearance="light"] .matchShellTop {
+  background:rgba(255,255,255,.97) !important;
+  border-bottom-color:rgba(30,48,72,.14) !important;
+}
+html[data-veto-sport-appearance="light"] .matchShellBrand,
+html[data-veto-sport-appearance="light"] .matchShellBrand .matchShellWordmark,
+html[data-veto-sport-appearance="light"] .matchShellTools {
+  color:#17212e !important;
+}
+html[data-veto-sport-appearance="light"] .matchShellBrand>span,
+html[data-veto-sport-appearance="light"] .matchShellStatus,
+html[data-veto-sport-appearance="light"] .matchShellLang button {
+  color:#4f6074 !important;
+}
+html[data-veto-sport-appearance="light"] .matchShellNav button,
+html[data-veto-sport-appearance="light"] .matchShellSports button {
+  color:#45576b !important;
+}
+html[data-veto-sport-appearance="light"] .matchShellNav button.active,
+html[data-veto-sport-appearance="light"] .matchShellSports button.active {
+  color:#192b40 !important;
+  background:#e7edf5 !important;
+}
+/* Keep data-status badges and semantic sports model colors distinct. */
+html[data-veto-sport-appearance="light"] .matchShellStatus.ready {color:#106746 !important}
+html[data-veto-sport-appearance="light"] .matchShellStatus.unavailable {color:#99412b !important}
