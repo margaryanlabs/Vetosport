@@ -64,3 +64,8 @@ html[data-veto-sport-appearance="light"] .vrsMatchMeta small{color:#91622b}
 @media(max-width:910px){.vrsColumns{grid-template-columns:1fr}.vrsTruth{flex-direction:column;gap:13px}.vrsLeagueHead{align-items:start}.vrsLeagueCount{min-width:135px}}
 @media(max-width:560px){.vrsRoot :is(.vrsNav,.vrsHero,.vrsTruth,.vrsLeague,.vrsFooter){width:calc(100% - 30px)}.vrsHero{padding:67px 0 45px}.vrsTruth{padding:18px}.vrsLeagueHead{flex-direction:column}.vrsLeagueCount{width:100%;flex-direction:row;align-items:baseline;gap:12px}.vrsLeagueCount strong{font-size:32px}.vrsMatch{padding:14px 11px}.vrsTeam{font-size:11px;gap:5px}.vrsScore{font-size:21px}.vrsMatchMeta{font-size:9px}.vrsFooter{flex-direction:column}.vrsFooter>div:last-child{align-items:start;text-align:left}}
 @media(prefers-reduced-motion:reduce){.vrsMatch{transition:none}}
+
+.vrsSourceBadge{display:flex;align-items:center;flex-wrap:wrap;gap:13px;margin-top:25px}
+.vrsSourceBadge>span{font-size:10px;letter-spacing:.06em;border:1px solid var(--r-line);padding:10px 13px;border-radius:9px;color:var(--r-muted)}
+.vrsSourceBadge a{color:var(--r-ink);text-decoration:underline;text-decoration-color:rgba(222,157,157,.6);text-underline-offset:3px;font-weight:790}
+.vrsSourceBadge small{font-size:10px;line-height:1.5;color:var(--r-muted)}

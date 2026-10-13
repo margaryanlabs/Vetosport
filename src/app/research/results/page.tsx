@@ -67,9 +67,14 @@ export default async function ResultsPage(){
    <span className="vrsEyebrow"><i/> VETO SPORT / INDEPENDENT RESULTS MONITOR</span>
    <h1>Результаты.<br/><em>Без выдуманных данных.</em></h1>
    <p>Проверяемый внешний источник настоящих футбольных результатов. Начинаем с двух немецких лиг — без API-ключа, без платного запроса и без подмены доказательств спортивными сигналами.</p>
+   <div className="vrsSourceBadge" aria-label="Лицензия и происхождение результатов">
+    <span>ДАННЫЕ: <a href={resultsAttribution.sourceUrl} target="_blank" rel="noopener noreferrer">OpenLigaDB ↗</a></span>
+    <span>ЛИЦЕНЗИЯ: <a href={resultsAttribution.licenseUrl} target="_blank" rel="noopener noreferrer">ODbL 1.0 ↗</a></span>
+    <small>Сообщество · не официальный сертификат прогнозов</small>
+   </div>
    <div className="vrsHeroPills">
     <span><b>{shown}</b> отображённых завершённых матчей</span>
-    <span><b>2</b> источника лиг</span>
+    <span><b>2</b> футбольные лиги</span>
     <span><b>0</b> подтверждённых прибыльных сигналов</span>
    </div>
    <div className="vrsHeroLinks"><a href="#bl1">Bundesliga ↗</a><a href="#bl2">2. Bundesliga ↗</a>
