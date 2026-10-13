@@ -4,6 +4,7 @@ import type { Locale, Sport } from "@/lib/domain/types";
 import { SportGlyph } from "@/components/SportGlyph";
 import { useEffect, useState } from "react";
 import { VetoMark, VetoWordmark } from "@/components/VetoMark";
+import { SportAppearanceToggle } from "@/components/SportAppearanceToggle";
 
 export type WorkspaceView =
   | "today"
@@ -120,6 +121,7 @@ export function WorkspaceChrome({
               </button>
             ))}
           </div>
+          <SportAppearanceToggle />
           <span className={`matchShellStatus ${providerTone}`}><i />{providerMode}</span>
           <div className="matchShellLang">
             {(["ru","en","hy"] as Locale[]).map((item) => (
