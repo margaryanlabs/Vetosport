@@ -66,6 +66,7 @@ export default function DiscoveryPage(){
         <div className="discoveryHeroActions">
           <button type="button" onClick={()=>{setLoading(true);setCycle(v=>v+1);}} disabled={loading}>{loading?"Анализируем…":"Пересчитать исследование ↻"}</button>
           <a href="/research/watchlist">Открыть реальный радар ↗</a>
+          <a href="/research/results">Независимые результаты ↗</a>
         </div>
       </div>
       <div className="discoveryHeroMetric"><span>VALIDATED EDGE</span><strong>0</strong><p>Не маскируем совпадения под готовые ставки.</p><div className="discoveryPulseLine"/></div>
