@@ -1,5 +1,5 @@
 import type {ApiFootballFixture} from "@/lib/providers/api-football";
-import type {PersistedEvent, PersistedEventStateRecord} from "@/lib/persistence/contracts";
+import type {PersistedEvent, PersistedEventStateRecord, ProviderHealthSample} from "@/lib/persistence/contracts";
 
 export interface FinishedFixture {
   providerEventId:number;
@@ -109,6 +109,25 @@ export function classifyFixtureProviderFailure(errors:unknown):FixtureProviderFa
  return "UPSTREAM_UNCLASSIFIED";
 }
 
+/**
+ * Avoid wasting requests on a plan that already rejected the same operation.
+ * One scheduled probe per 24 hours still detects an account upgrade.
+ */
+export function subscriptionPollGate(input:{last:ProviderHealthSample|null;asOf:string}):
+ {allowed:boolean;reason:"RETRY"|"SUBSCRIPTION_COOLDOWN";nextProbeAt:string|null}{
+ const row=input.last,now=Date.parse(input.asOf);
+ const failure=row?.metadata?.failureCode;
+ const lastAt=row?Date.parse(row.checkedAt):NaN;
+ if(row?.providerId!=="api-football-finals"||row.status!=="degraded"||
+  failure!=="UPSTREAM_SUBSCRIPTION"||!Number.isFinite(now)||
+  !Number.isFinite(lastAt)||lastAt>now){
+  return{allowed:true,reason:"RETRY",nextProbeAt:null};
+ }
+ const next=lastAt+24*3600000;
+ return now<next?{allowed:false,reason:"SUBSCRIPTION_COOLDOWN",
+  nextProbeAt:new Date(next).toISOString()}:{allowed:true,reason:"RETRY",nextProbeAt:null};
+}
+
 export function finalResultBackfillSelfcheck(){
   const fixture:ApiFootballFixture={fixture:{id:10,date:"2026-10-13T09:00:00Z",status:{short:"FT"}},
     goals:{home:2,away:1}};
@@ -124,7 +143,18 @@ export function finalResultBackfillSelfcheck(){
   const manyStates=many.map((e,i)=>({...state,eventId:e.id,state:{...state.state,providerEventId:i+100}}));
   const first=sel(many,manyStates,0);
   const second=sel(many,manyStates,1);
+  const authError:ProviderHealthSample={providerId:"api-football-finals",status:"degraded",
+   checkedAt:"2026-10-13T22:00:00Z",metadata:{failureCode:"UPSTREAM_SUBSCRIPTION"}};
+  const cooldown=subscriptionPollGate({last:authError,asOf:"2026-10-14T01:00:00Z"});
+  const retry=subscriptionPollGate({last:authError,asOf:"2026-10-14T22:00:00Z"});
   const checks=[
+    {name:"Denied plan is not polled repeatedly each 4h",passed:
+     !cooldown.allowed&&cooldown.reason==="SUBSCRIPTION_COOLDOWN"&&cooldown.nextProbeAt==="2026-10-14T22:00:00.000Z"},
+    {name:"After cooldown source rechecks whether subscription changed",passed:retry.allowed},
+    {name:"Healthy or missing provider status never blocks source polling",
+     passed:subscriptionPollGate({last:{...authError,status:"healthy"},asOf:"2026-10-14T01:00:00Z"}).allowed&&
+      subscriptionPollGate({last:null,asOf:"2026-10-14T01:00:00Z"}).allowed},
+
     {name:"HTTP-200 daily quota is not interpreted as a successful empty fixture list",
       passed:classifyFixtureProviderFailure({requests:"Sensitive provider body"})==="UPSTREAM_DAILY_QUOTA"},
     {name:"Subscription restrictions are classified without extracting content",

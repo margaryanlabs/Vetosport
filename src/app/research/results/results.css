@@ -1,0 +1,66 @@
+.vrsRoot{--r-bg:#090b0e;--r-ink:#f4f6f8;--r-muted:#a4afbe;--r-line:rgba(229,235,244,.14);--r-card:#111519;background:var(--r-bg);color:var(--r-ink);min-height:100vh;padding:0 0 40px;font-family:inherit}
+.vrsRoot :is(.vrsNav,.vrsHero,.vrsTruth,.vrsLeague,.vrsFooter){width:min(1410px,calc(100% - 42px));margin-left:auto;margin-right:auto}
+.vrsNav{min-height:84px;display:flex;justify-content:space-between;align-items:center;gap:14px;border-bottom:1px solid var(--r-line)}
+.vrsBrand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--r-ink);letter-spacing:.13em}
+.vrsBrand strong{font-size:16px}
+.vrsBrand em{font-style:normal;color:#ec4747}
+.vrsNav>div{display:flex;align-items:center;gap:11px}
+.vrsNav>div>a{font-size:12px;font-weight:750;color:var(--r-ink);border:1px solid var(--r-line);border-radius:9px;padding:11px 13px;text-decoration:none}
+.vrsHero{padding:clamp(70px,8vw,127px) 0 70px}
+.vrsEyebrow{font-size:10px;letter-spacing:.16em;color:#e47772;font-weight:850;display:inline-flex;align-items:center;gap:10px}
+.vrsEyebrow i{width:8px;height:8px;background:#ed4b48;display:inline-block;border-radius:50%;box-shadow:0 0 0 5px rgba(237,75,72,.1)}
+.vrsHero h1{font-weight:880;font-size:clamp(49px,7.1vw,108px);line-height:1.04;letter-spacing:-.082em;margin:25px 0}
+.vrsHero h1 em{font-style:normal;color:#929eaa}
+.vrsHero>p{font-size:clamp(14px,1.45vw,17px);max-width:850px;color:var(--r-muted);line-height:1.75}
+.vrsHeroPills{display:flex;flex-wrap:wrap;gap:10px;margin-top:30px}
+.vrsHeroPills span{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--r-line);border-radius:99px;padding:13px 17px;font-size:11px;color:var(--r-muted)}
+.vrsHeroPills b{font-size:20px;color:var(--r-ink);letter-spacing:-.045em}
+.vrsHeroLinks{display:flex;gap:9px;flex-wrap:wrap;margin-top:34px}
+.vrsHeroLinks a{font-size:12px;color:var(--r-ink);padding:15px 20px;background:var(--r-card);border:1px solid var(--r-line);border-radius:9px;text-decoration:none;font-weight:770}
+.vrsHeroLinks a:first-child{background:#d73539;border-color:#d73539;color:#fff}
+.vrsTruth{display:flex;gap:42px;align-items:start;padding:25px 28px;border:1px solid var(--r-line);background:linear-gradient(120deg,rgba(190,46,50,.08),transparent),var(--r-card);border-radius:16px}
+.vrsTruth>div{min-width:220px}
+.vrsTruth small{font-size:10px;letter-spacing:.14em;color:#e47772;font-weight:830}
+.vrsTruth h2{font-size:24px;line-height:1.1;letter-spacing:-.05em;margin:10px 0}
+.vrsTruth p{font-size:12px;color:var(--r-muted);line-height:1.78;margin:0;max-width:800px}
+.vrsTruth b{color:var(--r-ink)}
+.vrsLeague{margin-top:clamp(70px,7vw,108px)}
+.vrsLeagueHead{display:flex;align-items:end;justify-content:space-between;gap:20px;padding-bottom:25px;border-bottom:1px solid var(--r-line)}
+.vrsLeagueHead h2{font-size:clamp(30px,4.4vw,63px);letter-spacing:-.065em;line-height:1.1;margin:14px 0}
+.vrsLeagueHead p{color:var(--r-muted);font-size:12px;line-height:1.6}
+.vrsLeagueCount{min-width:220px;display:flex;flex-direction:column;gap:8px;align-items:end}
+.vrsLeagueCount small{font-size:9px;letter-spacing:.13em;color:var(--r-muted)}
+.vrsLeagueCount strong{font-size:49px;letter-spacing:-.065em;line-height:1}
+.vrsLeagueCount span{font-size:10px;color:var(--r-muted)}
+.vrsColumns{display:grid;grid-template-columns:1.15fr 1fr;gap:28px;margin-top:28px}
+.vrsColumns>div{min-width:0}
+.vrsColumns h3{display:flex;justify-content:space-between;font-size:16px;letter-spacing:-.02em;margin:0 0 17px}
+.vrsColumns h3 span{font-size:12px;color:var(--r-muted)}
+.vrsMatch{border:1px solid var(--r-line);border-radius:11px;background:var(--r-card);padding:16px 18px;margin:0 0 8px;transition:border-color .2s ease}
+.vrsMatch:hover{border-color:rgba(240,240,247,.34)}
+.vrsMatchMeta{display:flex;justify-content:space-between;gap:12px;align-items:center;color:var(--r-muted);font-size:10px;margin-bottom:13px}
+.vrsMatchMeta small{font-weight:750;font-size:9px;letter-spacing:.065em;color:#dcb896}
+.vrsParticipants{display:grid;grid-template-columns:minmax(0,1fr) minmax(68px,93px) minmax(0,1fr);gap:8px;align-items:center}
+.vrsTeam{min-width:0;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:760;line-height:1.3}
+.vrsTeam.away{justify-content:end;text-align:right}
+.vrsTeam i{width:7px;height:7px;flex-shrink:0;background:#d94a49;border-radius:50%}
+.vrsTeam.away i{display:none}
+.vrsScore{display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;font-size:27px;font-weight:850;letter-spacing:-.055em}
+.vrsScore b{color:#a96c6c;font-size:19px}
+.vrsScore strong{font-size:15px;color:var(--r-muted)}
+.vrsProvenance{font-size:8px;letter-spacing:.09em;color:#81909d;margin-top:15px;padding-top:11px;border-top:1px solid var(--r-line)}
+.vrsUnavailable{padding:25px;border:1px dashed var(--r-line);border-radius:11px;color:var(--r-muted);font-size:12px;line-height:1.7}
+.vrsUnavailable strong{color:var(--r-ink)}
+.vrsFooter{margin-top:87px;padding:28px 0;border-top:1px solid var(--r-line);display:flex;gap:30px;justify-content:space-between}
+.vrsFooter>div{max-width:750px}
+.vrsFooter strong{font-size:10px;letter-spacing:.13em}
+.vrsFooter p{font-size:11px;line-height:1.8;color:var(--r-muted)}
+.vrsFooter a{color:var(--r-ink)}
+.vrsFooter>div:last-child{display:flex;flex-direction:column;gap:18px;align-items:end;text-align:right}
+.vrsFooter span{font-size:11px;color:var(--r-muted);line-height:1.55}
+html[data-veto-sport-appearance="light"] .vrsRoot{--r-bg:#f6f8fb;--r-ink:#1a2737;--r-muted:#516276;--r-line:rgba(23,39,59,.15);--r-card:#fff}
+html[data-veto-sport-appearance="light"] .vrsHero h1 em{color:#778695}
+html[data-veto-sport-appearance="light"] .vrsMatchMeta small{color:#91622b}
+@media(max-width:910px){.vrsColumns{grid-template-columns:1fr}.vrsTruth{flex-direction:column;gap:13px}.vrsLeagueHead{align-items:start}.vrsLeagueCount{min-width:135px}}
+@media(max-width:560px){.vrsRoot :is(.vrsNav,.vrsHero,.vrsTruth,.vrsLeague,.vrsFooter){width:calc(100% - 30px)}.vrsHero{padding:67px 0 45px}.vrsTruth{padding:18px}.vrsLeagueHead{flex-direction:column}.vrsLeagueCount{width:100%;flex-direction:row;align-items:baseline;gap:12px}.vrsLeagueCount strong{font-size:32px}.vrsMatch{padding:14px 11px}.vrsTeam{font-size:11px;gap:5px}.vrsScore{font-size:21px}.vrsMatchMeta{font-size:9px}.vrsFooter{flex-direction:column}.vrsFooter>div:last-child{align-items:start;text-align:left}}
+@media(prefers-reduced-motion:reduce){.vrsMatch{transition:none}}

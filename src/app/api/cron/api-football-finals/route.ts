@@ -2,7 +2,7 @@ import {NextResponse} from "next/server";
 import {getPersistence,persistenceConfiguration} from "@/lib/persistence/factory";
 import {isSelfcheckEvent} from "@/lib/live/persisted-utils";
 import {
-  normalizeFinishedFixture,selectFinalReconciliationTargets,classifyFixtureProviderFailure,
+  normalizeFinishedFixture,selectFinalReconciliationTargets,classifyFixtureProviderFailure,subscriptionPollGate,
 } from "@/lib/providers/api-football-finals";
 import {journalizeEventState} from "@/lib/data-plane/journalize";
 import type {ApiFootballFixture} from "@/lib/providers/api-football";
@@ -34,6 +34,20 @@ export async function GET(req:Request){
  let selectedIds=0;
  let failureStage="FETCH_EVENTS";
  try{
+  // The provider already returned a plan-level rejection in production.
+  // We preserve one self-recovery probe every 24 hours but do not exhaust a
+  // free daily allowance on the same known unsupported operation.
+  const recent=await store.listRecentProviderHealth({providerId:"api-football-finals",limit:1});
+  const planGate=subscriptionPollGate({last:recent[0]??null,asOf});
+  if(!planGate.allowed){
+   return NextResponse.json({
+    ok:true,skipped:true,source:"api-football",
+    reason:planGate.reason,nextProbeAt:planGate.nextProbeAt,
+    upstreamAttempted:false,subscriptionUpgradeMayBeRequired:true,
+    verifiedFinalsAdded:0,validatedEdgeCount:0,
+   },{headers});
+  }
+
   // Six non-overlapping 12-hour kickoff windows. 72h allows delayed coverage
   // and matches that finished after midnight UTC.
   const slots=6,slotHours=12,HOUR=3600000;
