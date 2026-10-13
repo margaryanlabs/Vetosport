@@ -427,9 +427,7 @@ export function Terminal({
             <span>RESEARCH LAB</span>
             <strong>PARALLAX · probability surface · model council · validation</strong>
             <small>
-              {activeSummary?.source === "persisted"
-                ? "Research layers linked to the selected observed event."
-                : "Simulation dataset · research logic only · not a live-market claim."}
+              Simulation dataset · research logic only · not a live-market claim.
             </small>
           </div>
 
