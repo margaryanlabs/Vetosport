@@ -220,3 +220,24 @@ test("Unverified stale LIVE statuses are quarantined, not relabeled as certified
  assert.match(feed,/At most eight unverified archived LIVE flags/);
  assert.doesNotMatch(feed,/appendEventState|upsertEvent|status:"finished"/);
 });
+
+test("No historical quote or 12-hour-old LIVE fixture can authorize shadow/live decisions",()=>{
+ const gate=read("src/lib/live/temporal-data-safety.ts");
+ const readiness=read("src/lib/live/decision-readiness.ts");
+ const shadow=read("src/lib/live/shadow-football.ts");
+ const shadowCron=read("src/app/api/cron/shadow-football/route.ts");
+ const summary=read("src/lib/live/persisted-utils.ts");
+ assert.match(gate,/function temporalDataSafety/);
+ assert.match(gate,/eligibleShadowQuotes/);
+ assert.match(gate,/eligibleLiveQuotes/);
+ assert.match(gate,/age\(q.providerLastUpdate,now\)/);
+ assert.match(gate,/Source-backed recent and aligned quote/);
+ assert.match(readiness,/temporalDataSafety\(input\)/);
+ assert.match(readiness,/temporal.shadowObservationReady/);
+ assert.match(readiness,/temporal.liveExecutionInputsReady/);
+ assert.match(shadow,/quotes:evidence.eligibleShadowQuotes/);
+ assert.match(shadowCron,/noOldUnverifiedLiveMatches:true/);
+ assert.match(shadowCron,/selectFeedCandidates\(/);
+ assert.match(summary,/primarySignal: currentDecision\?signalFromDecision/);
+ assert.match(summary,/temporal.eligibleLiveQuotes.some/);
+});
