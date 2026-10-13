@@ -127,3 +127,88 @@
 @media(max-width:720px){
   .observedShadowList article{grid-template-columns:1fr 58px 58px}
 }
+
+
+/* Readability pass: previous micro-labels at 5–8px made scores, odds and
+ * decision provenance functionally invisible, especially on Android.
+ * Preserve the compact terminal layout without microscopic typography. */
+.observedRoom :is(
+  .observedMeta,.observedScore small,.observedStatusBand span,
+  .observedStatusBand small,.observedState>header span,
+  .observedMarketTape>header span,.observedState>header small,
+  .observedMarketTape>header small,.observedStateGrid span,
+  .observedEmpty span,.observedEmpty p,.observedMarketTape article>span,
+  .observedMarketTape article small,.observedMarketTape article>em,
+  .observedDecisionHead>span,.observedDecisionHead em,
+  .observedDecisionNumbers span,.observedLineage span,
+  .observedDecision>p,.observedAwaiting span,.observedAwaiting p,
+  .observedReadinessChecks span,.observedReadinessChecks b,
+  .observedShadowPanel>header span,.observedShadowPanel>header small,
+  .observedShadowPanel>p,.observedShadowList article>div>small,
+  .observedShadowList article>span>small
+) {
+  font-size:clamp(10px, .75vw, 12px);
+  line-height:1.45;
+}
+.observedRoom :is(
+  .observedStateGrid strong,.observedMarketTape article strong,
+  .observedLineage strong,.observedShadowPanel>header strong,
+  .observedShadowList article>div>strong
+) {
+  font-size:clamp(12px, .95vw, 15px);
+  line-height:1.35;
+}
+.observedRoom :is(
+  .observedDecisionNumbers strong,.observedMarketTape article>b,
+  .observedShadowList article>span>b
+) {
+  font-size:clamp(14px, 1.2vw, 20px);
+  line-height:1.2;
+  font-variant-numeric:tabular-nums;
+}
+.observedRoom :is(
+  .observedMeta,.observedScore small,.observedStatusBand span,
+  .observedStatusBand small,.observedStateGrid span,
+  .observedMarketTape article>span,.observedMarketTape article small,
+  .observedMarketTape article>em,.observedDecisionNumbers span,
+  .observedLineage span,.observedDecision>p,.observedAwaiting p,
+  .observedReadinessChecks span,.observedShadowPanel>header small
+) {color:#bbc6d3}
+.observedRoom :is(
+  .observedStatusBand strong,.observedStateGrid strong,
+  .observedDecisionNumbers strong,.observedLineage strong,
+  .observedShadowList article>span>b,.observedMarketTape article>b
+) {
+  color:#f3f6fa;
+  font-variant-numeric:tabular-nums;
+}
+.observedRoom .observedScoreCore i {color:#c0cad4}
+.observedRoom .observedScoreCore em {font-size:11px;line-height:1.25}
+.observedRoom .observedDecisionNumbers>div {min-width:0;padding-inline:5px}
+.observedRoom .observedMarketTape article {min-width:0}
+.observedRoom .observedMarketTape article>div {min-width:0}
+.observedRoom .observedMarketTape article :is(span,strong,small) {overflow-wrap:anywhere}
+html[data-veto-sport-appearance="light"] .observedRoom {
+  background:#101820 !important;
+  color:#f3f6fa !important;
+  border-color:rgba(27,51,66,.34) !important;
+}
+html[data-veto-sport-appearance="light"] .observedRoom :is(
+  .observedHero,.observedState,.observedDecision,.observedStatusBand
+) {
+  color:#f3f6fa;
+}
+html[data-veto-sport-appearance="light"] .observedRoom
+  :is(.observedScoreCore b,.observedDecisionNumbers strong,
+      .observedStateGrid strong,.observedMarketTape article>b) {
+  color:#f3f6fa !important;
+}
+@media(max-width:720px) {
+  .observedRoom .observedScore small {font-size:10px}
+  .observedRoom .observedScoreCore em {font-size:10px}
+  .observedRoom .observedMarketTape article {
+    grid-template-columns:minmax(56px, .65fr) minmax(0, 1.4fr) minmax(50px, .65fr);
+    gap:8px;
+  }
+  .observedRoom .observedStatusBand>div {padding:12px}
+}
