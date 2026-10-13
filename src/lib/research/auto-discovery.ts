@@ -1,3 +1,4 @@
+import {certifiedRegulationFinal} from "@/lib/research/evidence-coverage";
 import type {PersistedEvent, PersistedEventStateRecord} from "@/lib/persistence/contracts";
 
 export type PatternStatus = "NEEDS_FINAL_RESULTS"|"EXPLORATORY"|"HOLDOUT_PENDING";
@@ -108,7 +109,7 @@ export function discoverObservedPatterns(input:{
     for(const row of rows){
       const score=validScore(row.state.score);
       if(!score)continue;
-      if(row.state.status==="finished"&&event?.event.status==="finished"){
+      if(event&&certifiedRegulationFinal(row,event)){
         finalScores.set(id,{score,at:row.capturedAt});
       }
       if(row.state.status!=="live")continue;
@@ -171,7 +172,7 @@ export function observedPatternDiscoverySelfcheck(){
     id,canonicalKey:id,event:{id,sport:"football",competition:"Test source",startsAt:"2026-10-13T08:00:00Z",status}
   });
   const st=(eventId:string,atTime:string,status:string,home:number,away:number,clock:string):PersistedEventStateRecord=>({
-    eventId,sourceProvider:"api-football",capturedAt:atTime,state:{status,score:{home,away},clock}
+    eventId,sourceProvider:"api-football",capturedAt:atTime,state:{status,score:{home,away},clock,...(status==="finished"?{source:"api-football.fixtures.results",providerEventId:10,regulationTimeOnly:true}:{})}
   });
   const base={events:[ev("a","finished"),ev("b","live")],
     states:[st("a","2026-10-13T09:30:00Z","live",1,0,"80′"),
@@ -193,6 +194,7 @@ export function observedPatternDiscoverySelfcheck(){
     {name:"Multiple scoreline/time rules generated",passed:r.hypothesesScreened>=8},
     {name:"Unknown clocks excluded",passed:discoverObservedPatterns({...base,states:[st("a","2026-10-13T09:30:00Z","live",1,0,"UNKNOWN")]}).usableLiveObservations===0},
     {name:"No demo/selfcheck events",passed:discoverObservedPatterns({...base,events:[{...ev("a","finished"),canonicalKey:"veto-sport-storage-selfcheck"}]}).eventsScanned===0},
+    {name:"A status-only or forged FT row is never certified",passed:discoverObservedPatterns({...base,states:base.states.map(row=>row.state.status==="finished"?{...row,state:{...row.state,source:"unknown"}}:row)}).verifiedFinals===0},
   ];
   return{passed:checks.every(x=>x.passed),checks};
 }
