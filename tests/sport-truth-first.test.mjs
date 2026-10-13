@@ -211,3 +211,12 @@ test("Live feed samples current kickoffs instead of first 40 stale ascending row
  assert.match(today,/presentationPriority/);
  assert.match(watch,/FT НЕ ПОДТВЕРЖДЁН/);
 });
+
+test("Unverified stale LIVE statuses are quarantined, not relabeled as certified finals",()=>{
+ const feed=read("src/lib/live/feed-priority.ts");
+ assert.match(feed,/let archived=0/);
+ assert.match(feed,/unverifiedArchive/);
+ assert.match(feed,/archived<=8/);
+ assert.match(feed,/At most eight unverified archived LIVE flags/);
+ assert.doesNotMatch(feed,/appendEventState|upsertEvent|status:"finished"/);
+});
