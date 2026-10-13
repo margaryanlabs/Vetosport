@@ -120,6 +120,7 @@ export default function DiscoveryPage(){
           </div>
           <p>{provider.note}</p>
           {provider.lastRunCode&&<p className="discoverySourceFailure">Причина: {provider.lastRunCode}</p>}
+          {provider.lastFailureStage&&<p className="discoverySourceFailure">Этап: {provider.lastFailureStage}</p>}
           <footer><span>{provider.updatedAt?new Date(provider.updatedAt).toLocaleString("ru-RU"):"Нет сохранённого запуска"}</span>
             {provider.receivedRecords!==null&&<small>Записей: {provider.receivedRecords}</small>}
             {provider.pendingFixtureChecks!==null&&<small>К проверке FT: {provider.pendingFixtureChecks}</small>}
