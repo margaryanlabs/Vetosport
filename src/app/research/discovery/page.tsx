@@ -119,6 +119,7 @@ export default function DiscoveryPage(){
             <b>{provider.state==="active"?"РАБОТАЕТ":provider.state==="degraded"?"ОГРАНИЧЕНИЯ":provider.state==="stale"?"УСТАРЕЛО":"НЕИЗВЕСТНО"}</b>
           </div>
           <p>{provider.note}</p>
+          {provider.lastRunCode&&<p className="discoverySourceFailure">Причина: {provider.lastRunCode}</p>}
           <footer><span>{provider.updatedAt?new Date(provider.updatedAt).toLocaleString("ru-RU"):"Нет сохранённого запуска"}</span>
             {provider.receivedRecords!==null&&<small>Записей: {provider.receivedRecords}</small>}
             {provider.pendingFixtureChecks!==null&&<small>К проверке FT: {provider.pendingFixtureChecks}</small>}
