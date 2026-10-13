@@ -139,3 +139,15 @@ test("Final-score recovery bounds internal requests and isolates failure stage",
  assert.match(route,/failureStage,estimatedCallsPerDay/);
  assert.match(route,/events:eligible,states/);
 });
+
+test("API-Football application-level errors are distinguished without raw provider details",()=>{
+ const validator=read("src/lib/providers/api-football-finals.ts");
+ const cron=read("src/app/api/cron/api-football-finals/route.ts");
+ const labels=read("src/lib/research/source-health.ts");
+ assert.match(validator,/classifyFixtureProviderFailure/);
+ assert.match(validator,/UPSTREAM_DAILY_QUOTA/);
+ assert.match(cron,/const providerFailure=classifyFixtureProviderFailure\(data.errors\)/);
+ assert.match(cron,/if\(providerFailure\)throw new Error\(providerFailure\)/);
+ assert.match(labels,/Дневной лимит API исчерпан/);
+ assert.match(labels,/UPSTREAM_SUBSCRIPTION/);
+});
