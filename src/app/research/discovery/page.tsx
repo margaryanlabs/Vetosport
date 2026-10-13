@@ -4,6 +4,7 @@ import {VetoMark} from "@/components/VetoMark";
 import {SportAppearanceToggle} from "@/components/SportAppearanceToggle";
 import type {PatternDiscoveryResult} from "@/lib/research/auto-discovery";
 import type {EvidenceCoverage} from "@/lib/research/evidence-coverage";
+import type {SourceHealthView} from "@/lib/research/source-health";
 import "./discovery.css";
 
 const percentage=(n:number|null)=>n===null?"—":(n*100).toFixed(1).replace(".",",")+"%";
@@ -16,6 +17,8 @@ export default function DiscoveryPage(){
   const [cycle,setCycle]=useState(0);
   const [coverage,setCoverage]=useState<EvidenceCoverage|null>(null);
   const [coverageFailed,setCoverageFailed]=useState(false);
+  const [sourceHealth,setSourceHealth]=useState<SourceHealthView[]|null>(null);
+  const [sourceHealthFailed,setSourceHealthFailed]=useState(false);
   useEffect(()=>{
     let active=true;
     async function load(){
@@ -36,6 +39,16 @@ export default function DiscoveryPage(){
       .then(response=>{if(!response.ok)throw Error("source coverage unavailable");return response.json()})
       .then((result:EvidenceCoverage)=>{if(active){setCoverage(result);setCoverageFailed(false);}})
       .catch(()=>{if(active){setCoverageFailed(true);setCoverage(null);}});
+    return()=>{active=false;};
+  },[cycle]);
+  useEffect(()=>{
+    let active=true;
+    fetch("/api/intelligence/research/source-health",{cache:"no-store"})
+      .then(response=>{if(!response.ok)throw Error("source health unavailable");return response.json()})
+      .then((report:{providers:SourceHealthView[]})=>{
+        if(active&&Array.isArray(report.providers)){setSourceHealth(report.providers);setSourceHealthFailed(false);}
+      })
+      .catch(()=>{if(active){setSourceHealth(null);setSourceHealthFailed(true);}});
     return()=>{active=false;};
   },[cycle]);
   const patterns=feed?.patterns.filter(p=>filter==="all"||p.settled>0)||[];
@@ -93,9 +106,28 @@ export default function DiscoveryPage(){
          <p className="discoveryCoverageFoot">Период: {coverage.windowHours} ч · Прочитаны только сохранённые источники · 0 новых платных вызовов API · {new Date(coverage.generatedAt).toLocaleString("ru-RU")}</p>
        </>}
     </section>
+    <section className="discoveryProviderPanel" aria-labelledby="discovery-provider-title">
+      <div className="discoveryProviderIntro"><div><span>03 / SOURCE OBSERVABILITY</span>
+        <h2 id="discovery-provider-title">Откуда поступают данные?</h2>
+        <p>Последние подтверждённые запуски источников. Статус «работает» означает успешную техническую проверку, а не наличие актуального коэффициента или проверенной стратегии.</p>
+      </div><a href="/research/watchlist">Смотреть реальные матчи ↗</a></div>
+      {sourceHealthFailed?<p className="discoveryProviderMissing">История источников пока недоступна. Мы не выдаём отсутствие данных за успешную работу.</p>:
+       !sourceHealth?<p className="discoveryProviderMissing">Проверяем реальные записи о выполнении загрузки…</p>:
+       <div className="discoveryProviderGrid">{sourceHealth.map(provider=><article key={provider.id}>
+          <div className="discoveryProviderCardHead"><span className={"discoveryProviderDot "+provider.state}/>
+            <strong>{provider.label}</strong>
+            <b>{provider.state==="active"?"РАБОТАЕТ":provider.state==="degraded"?"ОГРАНИЧЕНИЯ":provider.state==="stale"?"УСТАРЕЛО":"НЕИЗВЕСТНО"}</b>
+          </div>
+          <p>{provider.note}</p>
+          <footer><span>{provider.updatedAt?new Date(provider.updatedAt).toLocaleString("ru-RU"):"Нет сохранённого запуска"}</span>
+            {provider.receivedRecords!==null&&<small>Записей: {provider.receivedRecords}</small>}
+            {provider.pendingFixtureChecks!==null&&<small>К проверке FT: {provider.pendingFixtureChecks}</small>}
+          </footer>
+        </article>)}</div>}
+    </section>
     <section className="discoverySection">
       <div className="discoverySectionHead">
-        <div><span>03 / AUTOMATED HYPOTHESIS MINING</span><h2>Что система нашла для проверки</h2></div>
+        <div><span>04 / AUTOMATED HYPOTHESIS MINING</span><h2>Что система нашла для проверки</h2></div>
         <div className="discoveryFilters">
           <button type="button" className={filter==="all"?"selected":""} onClick={()=>setFilter("all")}>Все идеи</button>
           <button type="button" className={filter==="with-outcomes"?"selected":""} onClick={()=>setFilter("with-outcomes")}>С исходами</button>
@@ -123,7 +155,7 @@ export default function DiscoveryPage(){
        </article>)}</div>}
     </section>
     <section className="discoveryNext">
-      <div><small>04 / NEXT FRONTIER</small><h2>Следующий слой исследования</h2><p>Эти направления не привязаны к одной заранее выбранной стратегии. Пока они не доказаны на данных VETO.</p></div>
+      <div><small>05 / NEXT FRONTIER</small><h2>Следующий слой исследования</h2><p>Эти направления не привязаны к одной заранее выбранной стратегии. Пока они не доказаны на данных VETO.</p></div>
       <div className="discoveryNextGrid">
         <article><span>01 / MARKET STRUCTURE</span><h3>Аномалии фаворитов и аутсайдеров</h3><p>Сравнение исходов с букмекерскими вероятностями без маржи.</p></article>
         <article><span>02 / PRICE TRANSITIONS</span><h3>Расхождение букмекеров</h3><p>Одновременные коэффициенты разных источников по одному контракту.</p></article>

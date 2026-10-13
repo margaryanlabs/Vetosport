@@ -98,3 +98,22 @@ test("Final-score ingestion spends no additional provider calls and cannot settl
  assert.match(candidates,/Rotate targets fairly/);
  assert.match(candidates,/Ambiguous/mi);
 });
+
+test("Public provider status is bounded, accurate and sanitized",()=>{
+ const contracts=read("src/lib/persistence/contracts.ts");
+ const adapter=read("src/lib/persistence/supabase-rest.ts");
+ const source=read("src/lib/research/source-health.ts");
+ const route=read("src/app/api/intelligence/research/source-health/route.ts");
+ const page=read("src/app/research/discovery/page.tsx");
+ assert.match(contracts,/listRecentProviderHealth/);
+ assert.match(adapter,/provider_health_samples/);
+ assert.match(adapter,/checked_at.desc/);
+ assert.match(adapter,/Math.min\(6/);
+ assert.match(source,/quotaRemaining/);
+ assert.match(source,/TOP_SECRET/);
+ assert.match(source,/state==="stale"|state==="degraded"/);
+ assert.match(route,/externalProviderCalls:0/);
+ assert.doesNotMatch(route,/\.metadata\b|quotaRemaining|process\.env\.[A-Z_]*SECRET/);
+ assert.match(page,/Откуда поступают данные/);
+ assert.match(page,/К проверке FT/);
+});
