@@ -7,7 +7,7 @@ import type {EvidenceCoverage} from "@/lib/research/evidence-coverage";
 import "./discovery.css";
 
 const percentage=(n:number|null)=>n===null?"—":(n*100).toFixed(1).replace(".",",")+"%";
-type DiscoveryFeed=PatternDiscoveryResult&{source:string;error?:string;fetchCoverage?:{windowMayBeCapped:boolean;statesFetched:number}};
+type DiscoveryFeed=PatternDiscoveryResult&{source:string;error?:string;fetchCoverage?:{windowMayBeCapped:boolean;statesFetched:number;historicalRangeDays?:number;archivedFinishedEventsRetained?:number;archivedFinishedEventsDroppedByLimit?:number}};
 export default function DiscoveryPage(){
   const [feed,setFeed]=useState<DiscoveryFeed|null>(null);
   const [loading,setLoading]=useState(true);
@@ -58,14 +58,14 @@ export default function DiscoveryPage(){
       <div className="discoveryHeroMetric"><span>VALIDATED EDGE</span><strong>0</strong><p>Не маскируем совпадения под готовые ставки.</p><div className="discoveryPulseLine"/></div>
     </section>
     <section className="discoveryMetrics" aria-live="polite">
-      <article><small>МАТЧЕЙ В ВЫБОРКЕ</small><strong>{loading?"…":feed?.eventsScanned??0}</strong><span>из нашего сохранённого источника</span></article>
+      <article><small>МАТЧЕЙ В ВЫБОРКЕ</small><strong>{loading?"…":feed?.eventsScanned??0}</strong><span>{feed?.fetchCoverage?.historicalRangeDays?`за ${feed.fetchCoverage.historicalRangeDays} дней, из архива VETO`:"из нашего сохранённого источника"}</span></article>
       <article><small>СНИМКОВ ИГРОВОГО СОСТОЯНИЯ</small><strong>{loading?"…":feed?.usableLiveObservations??0}</strong><span>с достоверным счётом и временем</span></article>
       <article><small>ГИПОТЕЗ СФОРМИРОВАНО</small><strong>{loading?"…":feed?.hypothesesScreened??0}</strong><span>разные минуты, счета и рынки</span></article>
       <article><small>ПРОВЕРЕННЫХ ФИНАЛОВ</small><strong>{loading?"…":feed?.verifiedFinals??0}</strong><span>источник должен подтвердить FT отдельно</span></article>
     </section>
     <div className="discoveryTruth">
       <span>● ИСТОЧНИК: {feed?.source??(loading?"ПРОВЕРЯЕМ":"НЕТ")}</span>
-      <p>{failed?"Нет доступа к реальным данным. Учебные результаты не подставляются.":feed?.note??"Ожидаем результат из хранилища VETO."} {feed?.fetchCoverage?.windowMayBeCapped?"Внимание: часть временных окон достигла лимита выборки.":""}</p>
+      <p>{failed?"Нет доступа к реальным данным. Учебные результаты не подставляются.":feed?.note??"Ожидаем результат из хранилища VETO."} {feed?.fetchCoverage?.windowMayBeCapped?"Внимание: часть временных окон достигла лимита выборки.":""} {feed?.fetchCoverage?.historicalRangeDays?`Исследование охватывает последние ${feed.fetchCoverage.historicalRangeDays} дней, включая до ${feed.fetchCoverage.archivedFinishedEventsRetained??0} ранее завершённых событий.`:""} {feed?.fetchCoverage?.archivedFinishedEventsDroppedByLimit?`Из-за лимита чтения не включено ${feed.fetchCoverage.archivedFinishedEventsDroppedByLimit} старых матчей.`:""}</p>
     </div>
     <section className="discoveryEvidence" aria-labelledby="discovery-evidence-title">
       <div className="discoveryEvidenceHead">
