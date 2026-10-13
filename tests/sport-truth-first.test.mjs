@@ -63,3 +63,16 @@ test("Evidence coverage has certified FT gate, timestamp alignment and no bettin
  assert.match(page,/Что мешает доказать преимущество/);
  assert.match(page,/Отложенная ретроспективная часть/);
 });
+
+test("Discovery covers bounded week-old certified results without provider requests",()=>{
+ const route=read("src/app/api/intelligence/research/discovery/route.ts");
+ const engine=read("src/lib/research/auto-discovery.ts");
+ assert.match(route,/lookbackHours:168/);
+ assert.match(route,/historicalRangeDays:7/);
+ assert.match(route,/statuses:\["finished"\]/);
+ assert.match(route,/maxArchived=220/);
+ assert.match(route,/statesCapped/);
+ assert.match(route,/externalProviderCalls:0/);
+ assert.match(engine,/Certified 6-day-old historical result/);
+ assert.match(engine,/Observations older than the seven-day boundary/);
+});

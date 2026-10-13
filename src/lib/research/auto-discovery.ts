@@ -183,6 +183,16 @@ export function observedPatternDiscoverySelfcheck(){
   const under=r.patterns.find(x=>x.id==="late__score-1-0__under-2.5");
   const rules=discoverObservedPatterns({...base,states:base.states.filter(s=>s.eventId==="b")});
   const future=discoverObservedPatterns({...base,states:[st("a","2026-10-13T13:00:00Z","finished",1,0,"FT")]});
+  const historicalInput={...base,events:[ev("archive","finished")],states:[
+    st("archive","2026-10-07T09:30:00Z","live",1,0,"80′"),
+    st("archive","2026-10-08T10:00:00Z","finished",1,0,"FT")],
+  };
+  const retainedSevenDays=discoverObservedPatterns({...historicalInput,lookbackHours:168});
+  const lostAfterTwoDays=discoverObservedPatterns({...historicalInput,lookbackHours:48});
+  const olderThanWindow=discoverObservedPatterns({...historicalInput,states:[
+    st("archive","2026-10-04T09:30:00Z","live",1,0,"80′"),
+    st("archive","2026-10-04T10:00:00Z","finished",1,0,"FT"),
+  ],lookbackHours:168});
   const checks=[
     {name:"No real-money validated edge ever minted",passed:r.validatedEdgeCount===0&&r.patterns.every(x=>!x.validatedEdge)},
     {name:"Deduplicate same event within pattern",passed:under?.observations===1},
@@ -195,6 +205,10 @@ export function observedPatternDiscoverySelfcheck(){
     {name:"Unknown clocks excluded",passed:discoverObservedPatterns({...base,states:[st("a","2026-10-13T09:30:00Z","live",1,0,"UNKNOWN")]}).usableLiveObservations===0},
     {name:"No demo/selfcheck events",passed:discoverObservedPatterns({...base,events:[{...ev("a","finished"),canonicalKey:"veto-sport-storage-selfcheck"}]}).eventsScanned===0},
     {name:"A status-only or forged FT row is never certified",passed:discoverObservedPatterns({...base,states:base.states.map(row=>row.state.status==="finished"?{...row,state:{...row.state,source:"unknown"}}:row)}).verifiedFinals===0},
+    {name:"Certified 6-day-old historical result is retained in 7-day study",passed:retainedSevenDays.verifiedFinals===1&&retainedSevenDays.patterns.some(x=>x.settled===1)},
+    {name:"48-hour-only study would omit the same historical outcome",passed:lostAfterTwoDays.verifiedFinals===0},
+    {name:"Observations older than the seven-day boundary are excluded",passed:olderThanWindow.verifiedFinals===0&&olderThanWindow.usableLiveObservations===0},
+
   ];
   return{passed:checks.every(x=>x.passed),checks};
 }
