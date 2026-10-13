@@ -35,6 +35,54 @@ export function exactStoredFixtureIndex(events:PersistedEvent[],states:Persisted
   for(const id of ambiguous)index.delete(id);
   return{index,ambiguous:[...ambiguous]};
 }
+
+export interface FinalReconciliationTarget{
+  event:PersistedEvent;
+  providerEventId:number;
+  kickoffAgeMinutes:number;
+}
+/**
+ * Reconcile only *previously observed* exact API-Football fixture IDs.
+ * API-Football supports up to 20 IDs in one request. We rotate over candidates
+ * to avoid permanently starving matches that are beyond the first batch.
+ *
+ * No team-name fuzzy match, no provider call from this pure function.
+ */
+export function selectFinalReconciliationTargets(input:{
+  events:PersistedEvent[];
+  states:PersistedEventStateRecord[];
+  asOf:string;
+  rotationIndex:number;
+  limit?:number;
+  minimumKickoffAgeMinutes?:number;
+}){
+  const now=Date.parse(input.asOf);
+  const {index,ambiguous}=exactStoredFixtureIndex(input.events,input.states);
+  const minimum=input.minimumKickoffAgeMinutes??100;
+  const count=Math.max(1,Math.min(20,Math.floor(input.limit??20)));
+  const candidates:FinalReconciliationTarget[]=[];
+  if(Number.isFinite(now)){
+    for(const [id,event] of index){
+      const kickoff=Date.parse(event.event.startsAt);
+      if(!Number.isFinite(kickoff)||event.event.status!=="live")continue;
+      const age=(now-kickoff)/60000;
+      if(age<minimum||age>72*60)continue;
+      candidates.push({event,providerEventId:id,kickoffAgeMinutes:Math.floor(age)});
+    }
+  }
+  candidates.sort((a,b)=>a.providerEventId-b.providerEventId);
+  const rotation=Math.max(0,Math.floor(input.rotationIndex));
+  const offset=candidates.length?(rotation*count)%candidates.length:0;
+  const ordered=[...candidates.slice(offset),...candidates.slice(0,offset)];
+  return{
+    targets:ordered.slice(0,count),
+    eligibleCandidates:candidates.length,
+    ambiguousFixtureIds:ambiguous.length,
+    rotationOffset:offset,
+    maximumIdsPerRequest:20,
+  };
+}
+
 export function finalResultBackfillSelfcheck(){
   const fixture:ApiFootballFixture={fixture:{id:10,date:"2026-10-13T09:00:00Z",status:{short:"FT"}},
     goals:{home:2,away:1}};
@@ -42,6 +90,14 @@ export function finalResultBackfillSelfcheck(){
   const state:PersistedEventStateRecord={eventId:"id",sourceProvider:"api-football",capturedAt:"2026-10-13T10:00:00Z",
     state:{providerEventId:10,status:"live",score:{home:1,away:1},clock:"80′"}};
   const valid=normalizeFinishedFixture(fixture);
+  const selectionTime="2026-10-13T14:30:00Z";
+  const sel=(events:PersistedEvent[],states:PersistedEventStateRecord[],rotationIndex=0)=>
+    selectFinalReconciliationTargets({events,states,asOf:selectionTime,rotationIndex});
+  const many=Array.from({length:30},(_,i)=>({...event,id:"ev-"+i,canonicalKey:"k-"+i,
+    event:{...event.event,id:"ev-"+i,startsAt:"2026-10-13T09:00:00Z"}}));
+  const manyStates=many.map((e,i)=>({...state,eventId:e.id,state:{...state.state,providerEventId:i+100}}));
+  const first=sel(many,manyStates,0);
+  const second=sel(many,manyStates,1);
   const checks=[
     {name:"FT returns real final score",passed:valid?.score.home===2&&valid?.score.away===1},
     {name:"Never treat AET as regulation-time score",passed:normalizeFinishedFixture({...fixture,fixture:{...fixture.fixture,status:{short:"AET"}}})===null},
@@ -50,6 +106,13 @@ export function finalResultBackfillSelfcheck(){
     {name:"Exact provider fixture ID only",passed:exactStoredFixtureIndex([event],[state]).index.get(10)?.id==="id"},
     {name:"Reject different-provider ID collision",passed:exactStoredFixtureIndex([event],[{...state,sourceProvider:"sportmonks"}]).index.size===0},
     {name:"Duplicate provider IDs on different canonical events rejected",passed:exactStoredFixtureIndex([event,{...event,id:"other",canonicalKey:"other"}],[state,{...state,eventId:"other"}]).index.size===0},
+    {name:"Targeted lookup takes only observed IDs",passed:sel([event],[state]).targets[0]?.providerEventId===10},
+    {name:"Do not spend quota on a match before realistic final whistle",passed:sel([{...event,event:{...event.event,startsAt:"2026-10-13T14:00:00Z"}}],[state]).targets.length===0},
+    {name:"Exclude already settled matches",passed:sel([{...event,event:{...event.event,status:"finished"}}],[state]).targets.length===0},
+    {name:"Never query more than 20 fixture ids",passed:first.targets.length===20&&first.maximumIdsPerRequest===20},
+    {name:"Rotate targets fairly for unverified historic fixtures",passed:second.targets.length===20&&first.targets[0].providerEventId!==second.targets[0].providerEventId&&new Set([...first.targets,...second.targets].map(t=>t.providerEventId)).size===30},
+    {name:"Unknown or ambiguous exact fixture ids are rejected",passed:sel([event,{...event,id:"other"}],[state,{...state,eventId:"other"}]).targets.length===0},
+
   ];
   return{passed:checks.every(x=>x.passed),checks};
 }
