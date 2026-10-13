@@ -397,3 +397,125 @@ html[data-veto-sport-appearance="light"] .matchShellSports button.active {
 /* Keep data-status badges and semantic sports model colors distinct. */
 html[data-veto-sport-appearance="light"] .matchShellStatus.ready {color:#106746 !important}
 html[data-veto-sport-appearance="light"] .matchShellStatus.unavailable {color:#99412b !important}
+
+
+/*
+ * OCT 2026 / NUMERIC READABILITY
+ * Do not repaint plot canvases: strengthen actual values, odds, paper ledger
+ * metrics and source explanations on the bright panels where legacy colors
+ * were calibrated for the original dark theme.
+ */
+html[data-veto-sport-appearance="light"] :is(
+  .paperTicketMetrics strong,
+  .paperTicketHistory article b,
+  .paperTicketHistory article>div:first-child strong,
+  .paperTicketHistoryHeading,
+  .paperTicketHistoryHeading b,
+  .paperControlBar span strong,
+  .paperEquityWrap>header strong,
+  .paperPerformance strong:not(.positive):not(.negative),
+  .paperOutcomeNet:not(.positive):not(.negative)
+) {
+  color:#162d20 !important;
+  -webkit-text-fill-color:currentColor;
+  font-variant-numeric:tabular-nums;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .paperTicketHistory article>div:first-child span,
+  .paperTicketHistory article small,
+  .paperTicketHistory article time,
+  .paperTicketHistory article em,
+  .paperTicketHistoryHeading b,
+  .paperTicketMetrics span,
+  .paperPerformance span,
+  .paperEquityWrap>header small,
+  .paperQuoteCaveat,
+  .paperJournalCaveat,
+  .paperTicketMessage,
+  .paperRiskNotice p
+) {
+  color:#506354 !important;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .paperTicketMetrics article,
+  .paperTicketHistory article,
+  .paperPerformance article,
+  .paperEquityWrap,
+  .paperEquityEmpty,
+  .paperControlBar,
+  .paperTicketHistoryHeading
+) {
+  border-color:rgba(26,57,38,.16) !important;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .paperTicketHistory article,
+  .paperTicketMetrics article
+) {
+  background:#f1f7f2 !important;
+}
+html[data-veto-sport-appearance="light"] .paperPerformance strong.positive,
+html[data-veto-sport-appearance="light"] .paperOutcomeNet.positive {
+  color:#106b40 !important;
+}
+html[data-veto-sport-appearance="light"] .paperPerformance strong.negative,
+html[data-veto-sport-appearance="light"] .paperOutcomeNet.negative {
+  color:#b22e3d !important;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .observedOddsMetrics strong,
+  .observedOddsRowPrice b,
+  .observedOddsBarHead b,
+  .observedChartFacts strong,
+  .observedOddsRowMain strong,
+  .observedScoreStory .observedScore strong
+) {
+  color:#1c3026 !important;
+  font-variant-numeric:tabular-nums;
+  -webkit-text-fill-color:currentColor;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .observedOddsMetrics small,
+  .observedOddsMetrics span,
+  .observedOddsRowPrice small,
+  .observedOddsRowMain small,
+  .observedOddsBarHead,
+  .observedChartFacts span,
+  .observedOddsRows time
+) {
+  color:#506456 !important;
+}
+html[data-veto-sport-appearance="light"] :is(
+  .observedOddsRows article,
+  .observedOddsMetrics article,
+  .observedChartFacts>div,
+  .observedOddsExplanation,
+  .observedOddsEmpty
+) {
+  background:#f4f8f5 !important;
+  border-color:rgba(28,62,43,.16) !important;
+}
+html[data-veto-sport-appearance="light"] .observedOddsRows article:hover {
+  background:#eaf2eb !important;
+  border-color:rgba(24,95,57,.3) !important;
+}
+/* Don't turn percentage bars into invisible lines on a bright background. */
+html[data-veto-sport-appearance="light"] .observedOddsBarTrack {
+  background:#d9e6dc !important;
+}
+html[data-veto-sport-appearance="light"] .observedOddsBarTrack i {
+  background:linear-gradient(90deg,#23734c,#50a777) !important;
+}
+/* A selected tab is red with white text; no generic dark-text override. */
+html[data-veto-sport-appearance="light"] .observedOddsFilters button.active,
+html[data-veto-sport-appearance="light"] .observedOddsFilters button:hover {
+  background:#b92c36 !important;
+  color:#fff !important;
+}
+html[data-veto-sport-appearance="light"] .observedOddsFilters button.active :is(strong,span,small) {
+  color:#fff !important;
+}
+/* Extremely small sports digits should not disappear at mobile font scaling. */
+html[data-veto-sport-appearance="light"] :is(
+  .paperTicketMetrics strong,.paperTicketHistory article b,
+  .observedOddsRowPrice b,.observedOddsMetrics strong,.paperPerformance strong
+) {text-rendering:optimizeLegibility}
