@@ -62,6 +62,7 @@ export function Terminal({
   const [providerStatus, setProviderStatus] = useState<ProviderStatus | null>(null);
   const [remoteWorkspace, setRemoteWorkspace] = useState<LiveWorkspace | null>(null);
   const [remoteObservation, setRemoteObservation] = useState<LiveObservation | null>(null);
+  const [workspaceStatus, setWorkspaceStatus] = useState<"loading"|"ready"|"error">("loading");
   const [loadedEvents, setLoadedEvents] = useState<LiveEventSummary[]>([]);
   const [demoEnabled, setDemoEnabled] = useState(false);
   const [liveSourceMode, setLiveSourceMode] = useState<
@@ -120,7 +121,8 @@ export function Terminal({
 
             if (persistedMode) {
               setSelectedEventId((current) =>
-                payload.events!.some((event) => event.id === current)
+                payload.events!.some((event) => event.id === current) ||
+                (current === initialEventId && /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(current))
                   ? current
                   : payload.events![0].id,
               );
@@ -170,23 +172,27 @@ export function Terminal({
                 }
               | null,
           ) => {
-            if (!active || !payload) return;
+            if (!active) return;
+            if (!payload) { setWorkspaceStatus("error"); return; }
             if (payload.workspace?.id === selectedEventId) {
               setRemoteWorkspace(payload.workspace);
               setRemoteObservation(null);
+              setWorkspaceStatus("ready");
             } else if (payload.observation?.summary.id === selectedEventId) {
               setRemoteWorkspace(null);
               setRemoteObservation(payload.observation);
-            }
+              setWorkspaceStatus("ready");
+            } else setWorkspaceStatus("error");
           },
         )
         .catch(() => {
-          // Static server-rendered workspace remains the safe fallback.
+          if(active) setWorkspaceStatus("error");
         });
     };
 
     setRemoteWorkspace(null);
     setRemoteObservation(null);
+    setWorkspaceStatus("loading");
     refreshWorkspace();
     const interval = window.setInterval(refreshWorkspace, 15_000);
 
