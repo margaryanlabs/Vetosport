@@ -58,3 +58,29 @@ test("Sport light contrast guard runs on both terminal and research routes witho
   assert.match(guard, /gradientText/);
   assert.match(guard, /pageObserver\.disconnect/);
 });
+
+test("light Sport renders paper balances, odds and P&L numerals with explicit foregrounds", () => {
+  const css = read("src/app/veto-sport-light.css");
+  for (const selector of [
+    ".paperTicketMetrics strong", ".paperTicketHistory article b",
+    ".paperOutcomeNet.positive", ".paperOutcomeNet.negative",
+    ".observedOddsMetrics strong", ".observedOddsRowPrice b",
+    ".observedOddsBarTrack", ".observedOddsFilters button.active"
+  ]) {
+    assert.ok(css.includes(selector), "Missing light value styling: " + selector);
+  }
+  assert.match(css, /font-variant-numeric:tabular-nums/);
+  assert.match(css, /#106f47/);
+  assert.match(css, /#b52f40/);
+  assert.doesNotMatch(css, /filter:\s*invert\(/i);
+});
+
+test("observed sports score, status and model values cannot revert to 6px mobile text", () => {
+  const css = read("src/app/observed-room.css");
+  assert.match(css, /\.observedRoom :is\(/);
+  assert.match(css, /font-size:clamp\(10px/);
+  assert.match(css, /\.observedDecisionNumbers strong/);
+  assert.match(css, /\.observedMarketTape article>b/);
+  assert.match(css, /\.observedScoreCore em \{font-size:10px\}/);
+  assert.match(css, /\.observedRoom\s*\{/);
+});
