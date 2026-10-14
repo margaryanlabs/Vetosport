@@ -370,3 +370,20 @@ test("In-play odds survive either individual storage path being unavailable",()=
  assert.match(health,/knownStorageClasses/);
  assert.match(page,/Причина журнала/);
 });
+
+test("Mixed live football odds have identical bulk JSON keys before PostgREST insert",()=>{
+ const normalizer=read("src/lib/persistence/market-quote-rows.ts");
+ const storage=read("src/lib/persistence/supabase-rest.ts");
+ const errors=read("src/lib/persistence/failure-codes.ts");
+ const check=read("src/app/api/intelligence/providers/inplay-odds/selfcheck/route.ts");
+ assert.match(normalizer,/quote.selection.line\?\?null/);
+ assert.match(normalizer,/quote.providerLastUpdate\?\?null/);
+ assert.match(normalizer,/quote.liquidity\?\?null/);
+ assert.match(normalizer,/quote.suspended\?\?null/);
+ assert.match(normalizer,/quote.raw\?\?null/);
+ assert.match(normalizer,/marketQuotePayloadSelfcheck/);
+ assert.match(storage,/toUniformMarketQuoteRows\(eventId, quotes\)/);
+ assert.match(errors,/PGRST102/);
+ assert.match(errors,/STORAGE_PAYLOAD_SHAPE/);
+ assert.match(check,/marketQuotePayloadSelfcheck/);
+});
