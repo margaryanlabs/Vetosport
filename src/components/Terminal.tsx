@@ -115,7 +115,14 @@ export function Terminal({
                 }
               | null,
           ) => {
-            if (!active || !payload || !Array.isArray(payload.events)) return;
+            if(!active)return;
+            if(!payload||!Array.isArray(payload.events)){
+              // A failed real-data HTTP response cannot leave an earlier,
+              // potentially expired live list visible as if it just refreshed.
+              setLoadedEvents([]);
+              setLiveSourceMode("storage-unavailable");
+              return;
+            }
             const persistedMode = payload.mode === "persisted";
             setLoadedEvents(persistedMode ? payload.events : []);
             setLiveSourceMode(persistedMode?"persisted":
