@@ -84,7 +84,7 @@ export default function DiscoveryPage(){
     <section className="discoveryEvidence" aria-labelledby="discovery-evidence-title">
       <div className="discoveryEvidenceHead">
         <div><span>02 / DATA READINESS</span><h2 id="discovery-evidence-title">Что мешает доказать преимущество?</h2>
-          <p>Проверяем не только сигналы, но и сам путь данных: реальный счёт → независимый финальный результат → совпадающая цена → вневыборочная проверка.</p>
+          <p>Проверяем не только сигналы, но и сам путь данных: реальный счёт → независимый финальный результат → совпадающая цена → вневыборочная проверка. Исторические снимки оцениваем отдельно от актуальных сигналов.</p>
         </div>
         <a href="/research/watchlist">Проверить матчи ↗</a>
       </div>
@@ -95,7 +95,8 @@ export default function DiscoveryPage(){
            <article><small>НАБЛЮДАЕМЫЕ МАТЧИ</small><strong>{coverage.eventsWithLiveSamples}</strong><span>из {coverage.eventsScanned} в текущем окне</span></article>
            <article><small>ОТДЕЛЬНО ПОДТВЕРЖДЁННЫЕ FT</small><strong>{coverage.certifiedRegulationFinals}</strong><span>не равны количеству верных прогнозов</span></article>
            <article><small>МАТЧИ С ЗАПИСАННЫМИ ЦЕНАМИ</small><strong>{coverage.eventsWithRecordedPrices}</strong><span>включая исторические, неактуальные</span></article>
-           <article><small>ОДНОВРЕМЕННО СВЕЖИЙ СЧЁТ + ЦЕНА</small><strong>{coverage.freshScoreAndPriceEvents}</strong><span>техническая связка, не доказанный EV</span></article>
+           <article><small>СВЕЖИЕ СЧЁТ + ЦЕНА СЕЙЧАС</small><strong>{coverage.freshScoreAndPriceEvents}</strong><span>за последние 2 минуты; не доказанный EV</span></article>
+           <article className="discoveryHistoricalEvidence"><small>ИСТОРИЧЕСКИЕ СНИМКИ СЧЁТ + ЦЕНА</small><strong>{coverage.historicalScoreAndPriceCoCapturedEvents}</strong><span>пары в пределах {coverage.historicalCoCaptureWindowSeconds} сек · записи источников, не готовые ставки</span></article>
          </div>
          <div className="discoveryGates" aria-label="Этапы готовности спортивных данных">
            {coverage.gates.map((gate,i)=><article key={gate.id} className={"discoveryGate discoveryGate-"+gate.stage}>
