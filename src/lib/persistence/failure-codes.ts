@@ -5,7 +5,7 @@
  * endpoint URLs, or bridge internals in public source-health diagnostics.
  */
 export type StorageFailureClass=
- "STORAGE_AUTH"|"STORAGE_SCHEMA"|"STORAGE_CONFLICT"|
+ "STORAGE_AUTH"|"STORAGE_SCHEMA"|"STORAGE_CONFLICT"|"STORAGE_PAYLOAD_SHAPE"|
  "STORAGE_FOREIGN_KEY"|"STORAGE_CONSTRAINT"|"STORAGE_TIMEOUT"|
  "STORAGE_UNAVAILABLE"|"STORAGE_UNKNOWN";
 
@@ -18,11 +18,13 @@ export function classifyStorageFailure(error:unknown):StorageFailureClass{
  if(sqlState==="42P01"||sqlState==="42703"||
   sqlState==="PGRST204"||sqlState==="PGRST205")
   return "STORAGE_SCHEMA";
+ if(sqlState==="PGRST102")return "STORAGE_PAYLOAD_SHAPE";
  if(sqlState==="23505")return "STORAGE_CONFLICT";
  if(sqlState==="23503")return "STORAGE_FOREIGN_KEY";
  if(["23502","23514","22P02","22001","22003"].includes(sqlState??""))
   return "STORAGE_CONSTRAINT";
  const status=/\bSupabase persistence\s+(\d{3}):/.exec(message)?.[1];
+ if(status==="400")return "STORAGE_PAYLOAD_SHAPE";
  if(status==="401"||status==="403")return "STORAGE_AUTH";
  if(status==="404")return "STORAGE_SCHEMA";
  if(status==="409")return "STORAGE_CONFLICT";
