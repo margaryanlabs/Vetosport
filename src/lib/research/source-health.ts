@@ -17,6 +17,8 @@ export interface SourceHealthView{
   receivedRecords:number|null;
   scannedRecords:number|null;
   pendingFixtureChecks:number|null;
+  matchedFixtures:number|null;
+  scannedActiveFixtures:number|null;
   lastRunCode:string|null;
   lastFailureStage:string|null;
   upstreamAttempted:boolean|null;
@@ -39,6 +41,10 @@ export function toSourceHealthView(input:{
  const scanned=asSafeCount(info.scannedEvents??info.upstreamFixtures??info.providerRows);
  const pending=descriptor.id==="api-football-finals"
   ?asSafeCount(info.eligibleCandidates??info.candidateCount):null;
+ const matchedFixtures=descriptor.id==="api-football-live-odds"?
+  asSafeCount(info.mapped):null;
+ const scannedActiveFixtures=descriptor.id==="api-football-live-odds"?
+  asSafeCount(info.scannedActiveFixtures):null;
  // Error labels are a strict, non-sensitive allowlist. Raw provider payloads,
  // bridge URLs, credentials, quota headers and arbitrary messages remain private.
  const safeCodes=new Set([
@@ -47,6 +53,8 @@ export function toSourceHealthView(input:{
   "UPSTREAM_DAILY_QUOTA","UPSTREAM_MINUTE_QUOTA","UPSTREAM_SUBSCRIPTION",
   "UPSTREAM_AUTH","UPSTREAM_INVALID_PARAMETERS","UPSTREAM_UNCLASSIFIED",
   "QUOTA_RESERVE","LIVE_FOOTBALL_OR_STORAGE_NOT_ENABLED",
+  "NO_OVERLAPPING_FIXTURES","NO_USABLE_BOOKMAKER_QUOTES",
+  "STORAGE_WRITE_FAILURE","API_FOOTBALL_LIVE_ODDS_BAD_BODY",
   "UPSTREAM_HTTP_400","UPSTREAM_HTTP_401","UPSTREAM_HTTP_403",
   "UPSTREAM_HTTP_404","UPSTREAM_HTTP_429","UPSTREAM_HTTP_500",
   "UPSTREAM_HTTP_502","UPSTREAM_HTTP_503","UPSTREAM_HTTP_504",
@@ -54,8 +62,10 @@ export function toSourceHealthView(input:{
  const candidateCode=typeof info.failureCode==="string"?info.failureCode:
   typeof info.reason==="string"?info.reason:null;
  const lastRunCode=candidateCode&&safeCodes.has(candidateCode)?candidateCode:null;
- const upstreamAttempted=typeof info.upstreamAttempted==="boolean"?info.upstreamAttempted:null;
- const validStages=new Set(["FETCH_EVENTS","FETCH_STATE_HISTORY","FETCH_UPSTREAM","PERSIST_FINALS","WRITE_PROVIDER_HEALTH"]);
+ const upstreamAttempted=typeof info.upstreamAttempted==="boolean"?info.upstreamAttempted:
+  typeof info.providerCalled==="boolean"?info.providerCalled:null;
+ const validStages=new Set(["FETCH_EVENTS","FETCH_STATE_HISTORY","FETCH_UPSTREAM","PERSIST_FINALS","WRITE_PROVIDER_HEALTH",
+  "LIST_ACTIVE_EVENTS","LOAD_MATCH_SNAPSHOTS","FETCH_INPLAY_ODDS","PERSIST_MARKET_QUOTES"]);
  const lastFailureStage=typeof info.failureStage==="string"&&validStages.has(info.failureStage)?info.failureStage:null;
  const quotaHint=lastRunCode==="UPSTREAM_DAILY_QUOTA"?
    "Дневной лимит API исчерпан; новые проверки станут возможны после сброса квоты.":
@@ -66,7 +76,15 @@ export function toSourceHealthView(input:{
   lastRunCode==="UPSTREAM_AUTH"?
    "Источник отклонил авторизацию; требуется проверка подключения.":
   lastRunCode==="UPSTREAM_INVALID_PARAMETERS"?
-   "Источник отклонил параметры запроса; требуется исправление интеграции.":null;
+   "Источник отклонил параметры запроса; требуется исправление интеграции.":
+  lastRunCode==="NO_OVERLAPPING_FIXTURES"?
+   "Провайдер передал рынки, но не было точного совпадения с наблюдаемыми активными матчами. Никаких букмекерских линий не придумано.":
+  lastRunCode==="NO_USABLE_BOOKMAKER_QUOTES"?
+   "Матчи совпали, но подходящих актуальных рыночных снимков не удалось записать.":
+  lastRunCode==="QUOTA_RESERVE"?
+   "Достигнут резерв бесплатной квоты; новые цены не записывались.":
+  lastRunCode==="STORAGE_WRITE_FAILURE"?
+   "Ошибка сохранения проверенной котировки; запись и подтверждение рынков неполные.":null;
  const note=quotaHint??(state==="unknown"?"Нет подтверждённого запуска этого источника.":
   state==="stale"?"Последний запуск устарел; новые данные не подтверждены.":
   state==="degraded"?"Последний запуск сообщил об ограничении, ошибке или неполных данных.":
@@ -75,7 +93,7 @@ export function toSourceHealthView(input:{
    "Последняя проверка источника прошла. Это не гарантирует полноту и секундную свежесть.");
  return{id:descriptor.id,label:descriptor.label,state,updatedAt:ageMinutes===null?null:latest!.checkedAt,
   ageMinutes,receivedRecords:stored,scannedRecords:scanned,pendingFixtureChecks:pending,
-  lastRunCode,lastFailureStage,upstreamAttempted,note};
+  matchedFixtures,scannedActiveFixtures,lastRunCode,lastFailureStage,upstreamAttempted,note};
 }
 export function sourceHealthSelfcheck(){
  const at="2026-10-13T15:00:00Z";
@@ -104,6 +122,15 @@ export function sourceHealthSelfcheck(){
   {name:"No arbitrary diagnostic stage can cross into public source-health",passed:
    toSourceHealthView({descriptor,latest:{...sample,metadata:{failureStage:"FETCH_STATE_HISTORY"}},now:at}).lastFailureStage==="FETCH_STATE_HISTORY" &&
    toSourceHealthView({descriptor,latest:{...sample,metadata:{failureStage:"TOP_SECRET"}},now:at}).lastFailureStage===null},
+  {name:"Source mismatch is explainable with safe counters only",passed:(()=>{
+    const row={...sample,providerId:"api-football-live-odds",status:"degraded" as const,
+      metadata:{failureCode:"NO_OVERLAPPING_FIXTURES",mapped:0,scannedActiveFixtures:14,
+        internalAccessToken:"TOP_SECRET"}};
+    const view=toSourceHealthView({descriptor:sourceDescriptors[2],latest:row,now:at});
+    return view.lastRunCode==="NO_OVERLAPPING_FIXTURES"&&
+      view.matchedFixtures===0&&view.scannedActiveFixtures===14&&
+      !JSON.stringify(view).includes("TOP_SECRET");
+   })()},
   {name:"Server diagnostics and provider quota never leaked",passed:!json.includes("TOP_SECRET")&&!json.includes("quotaRemaining")&&!json.includes("SHOULD_NOT_EXPOSE")&&!json.includes("private service diagnostics")},
  ];
  return{passed:checks.every(c=>c.passed),checks};
