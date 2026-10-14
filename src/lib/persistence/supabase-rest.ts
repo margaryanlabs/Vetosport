@@ -1,3 +1,4 @@
+import {toUniformMarketQuoteRows} from "@/lib/persistence/market-quote-rows";
 import type {
   DecisionLedgerEntry,
   Evidence,
@@ -542,21 +543,9 @@ export class SupabaseRestPersistence implements VetoPersistence {
   async appendQuotes(eventId: string, quotes: MarketQuote[]): Promise<number> {
     if (quotes.length === 0) return 0;
 
-    const rows = quotes.map((quote) => ({
-      event_id: eventId,
-      provider: quote.sourceProvider ?? "normalized",
-      bookmaker: quote.bookmaker,
-      market_key: quote.marketId,
-      selection_key: quote.selection.id,
-      selection_label: quote.selection.label,
-      line: quote.selection.line,
-      decimal_odds: quote.decimalOdds,
-      captured_at: quote.capturedAt,
-      provider_last_update: quote.providerLastUpdate,
-      liquidity: quote.liquidity,
-      suspended: quote.suspended,
-      raw: quote.raw,
-    }));
+    // A mixed array of 1X2 and handicap quotes must share all JSON keys.
+    // Otherwise PostgREST rejects the entire batch (PGRST102).
+    const rows = toUniformMarketQuoteRows(eventId, quotes);
 
     await this.request(
       this.tablePath("market_quotes"),
