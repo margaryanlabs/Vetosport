@@ -119,6 +119,7 @@ export async function GET(request:Request){
   }
   failedStage="PERSIST_MARKET_QUOTES";
   let mapped=0,unmatched=0,quotesWritten=0,journalRows=0,failures=0,suspended=0;
+  let quoteWriteFailures=0,journalWriteFailures=0;
   let unsuspendedWritten=0,suspendedWritten=0;
   let skippedStale=0;
   if(!limited&&providerRows.length){
@@ -146,18 +147,30 @@ export async function GET(request:Request){
       seen.add(key);return true;
     }).slice(0,65);
     if(!filtered.length)continue;
-    try {
+    // Quote table and immutable journal are independent persistence writes.
+    // Distinguish their failures rather than reporting an unhelpful blanket
+    // STORAGE_WRITE_FAILURE. We must not claim an incomplete proof chain.
+    try{
      const persisted=await persistence.appendQuotes(linked.eventId,filtered);
      quotesWritten+=persisted;
      if(persisted>0){
       unsuspendedWritten+=filtered.filter(q=>q.suspended!==true).length;
       suspendedWritten+=filtered.filter(q=>q.suspended===true).length;
      }
+    }catch{
+     quoteWriteFailures++;
+     failures++;
+     continue;
+    }
+    try{
      journalRows+=await persistence.appendTruthJournal(journalizeMarketQuotes({
       canonicalEventId:linked.eventId,sourceProvider:"api-football-live-odds",
       gatewayReceivedAt:fetched.fetchedAt,quotes:filtered,
      }));
-    }catch{failures++;}
+    }catch{
+     journalWriteFailures++;
+     failures++;
+    }
    }
   }
   const reasonCode=limited?"QUOTA_RESERVE":failures?"STORAGE_WRITE_FAILURE":
@@ -181,6 +194,7 @@ export async function GET(request:Request){
      ...(targetedFailureCode?{targetedFailureCode}:{}),
      mapped,unmatched,skippedStale,quotesWritten,
      unsuspendedWritten,suspendedWritten,journalRows,failures,
+     quoteWriteFailures,journalWriteFailures,
      suspended,lowQuota:limited,requestedPage:1,totalPages:fetched.pagesTotal,
      matchedSourceIdCount:verified.map.size,ambiguousCount:verified.ambiguous.length,
      bookmakerIdentityProvided:false,estimatedCallsPerDay:18,
@@ -195,6 +209,7 @@ export async function GET(request:Request){
    pagesTotal:fetched.pagesTotal,pagesFetched:1,
    mappedFixtures:mapped,unmatched,skippedStale,quotesWritten,
    unsuspendedWritten,suspendedWritten,journalRows,failures,suspended,
+   quoteWriteFailures,journalWriteFailures,
    exactMatchIndex:verified.map.size,ambiguous:verified.ambiguous.length,
    scannedActiveFixtures:football.length,candidateMayBeCapped,
    ...(reasonCode?{reasonCode}:{}),
