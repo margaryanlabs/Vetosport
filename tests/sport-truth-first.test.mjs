@@ -352,3 +352,21 @@ test("In-play quote-table and immutable-journal failures are diagnosed separatel
  assert.match(page,/Ошибок записи котировок/);
  assert.match(page,/Ошибок журнала доказательств/);
 });
+
+test("In-play odds survive either individual storage path being unavailable",()=>{
+ const cron=read("src/app/api/cron/api-football-inplay/route.ts");
+ const fail=read("src/lib/persistence/failure-codes.ts");
+ const health=read("src/lib/research/source-health.ts");
+ const page=read("src/app/research/discovery/page.tsx");
+ assert.match(cron,/quoteWriteErrorClass\?\?=classifyStorageFailure\(error\)/);
+ assert.match(cron,/journalWriteErrorClass\?\?=classifyStorageFailure\(error\)/);
+ assert.match(cron,/quoteWriteFailures,journalWriteFailures/);
+ assert.match(cron,/journalRows\+=await persistence\.appendTruthJournal/);
+ assert.doesNotMatch(cron,/quoteWriteFailures\+\+;\s*failures\+\+;\s*continue;/);
+ assert.match(fail,/PGRST204/);
+ assert.match(fail,/STORAGE_FOREIGN_KEY/);
+ assert.match(fail,/storageFailureSelfcheck/);
+ assert.match(health,/quoteWriteErrorClass/);
+ assert.match(health,/knownStorageClasses/);
+ assert.match(page,/Причина журнала/);
+});
