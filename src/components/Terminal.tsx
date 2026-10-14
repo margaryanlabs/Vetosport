@@ -24,6 +24,7 @@ import { TodayExperience } from "@/components/TodayExperience";
 import { ResearchDesk } from "@/components/ResearchDesk";
 import type { LiveEventSummary, LiveObservation } from "@/lib/live/types";
 import { sandboxEventSummaries } from "@/lib/live/sandbox";
+import {getObservedFreshness} from "@/lib/live/freshness";
 import { sandboxFootballBeforeSurface, sandboxFootballSurface } from "@/lib/sandbox/football-model";
 import { analyzeModelCouncil } from "@/lib/council/engine";
 import { buildCouncilInputs } from "@/lib/council/registry";
@@ -265,14 +266,13 @@ export function Terminal({
   const providerMode =
     providerStatus == null
       ? "CHECKING DATA"
-      : activeSummary?.source === "persisted" && activeSummary.status === "live" &&
-          activeSummary.lastUpdatedAt && Number.isFinite(Date.parse(activeSummary.lastUpdatedAt)) &&
-          Date.now()-Date.parse(activeSummary.lastUpdatedAt)>=0 &&
-          Date.now()-Date.parse(activeSummary.lastUpdatedAt)<=120_000
+      : activeSummary?.source==="persisted"&&getObservedFreshness(activeSummary).freshLive
         ? "LIVE DATA"
-        : configuredProviders > 0 || gatewayReady
-          ? "AWAITING LIVE DATA"
-          : "DEMO DATA";
+        : demoEnabled&&activeSummary?.source==="sandbox"
+          ? "TRAINING ONLY"
+          : configuredProviders>0||gatewayReady
+            ? "AWAITING LIVE DATA"
+            : "NO LIVE DATA";
   const selectSport = (sport: Sport) => {
     const persisted = eventSummaries.find(
       (item) => item.sport === sport && item.source === "persisted",
