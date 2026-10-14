@@ -4,6 +4,7 @@ import {buildVerifiedOddsMatchIndex} from "@/lib/providers/api-football-odds-joi
 import {getPersistence,persistenceConfiguration} from "@/lib/persistence/factory";
 import {journalizeMarketQuotes} from "@/lib/data-plane/journalize";
 import {isSelfcheckEvent} from "@/lib/live/persisted-utils";
+import {classifyStorageFailure} from "@/lib/persistence/failure-codes";
 
 export const dynamic="force-dynamic";
 /**
@@ -120,6 +121,7 @@ export async function GET(request:Request){
   failedStage="PERSIST_MARKET_QUOTES";
   let mapped=0,unmatched=0,quotesWritten=0,journalRows=0,failures=0,suspended=0;
   let quoteWriteFailures=0,journalWriteFailures=0;
+  let quoteWriteErrorClass:string|null=null,journalWriteErrorClass:string|null=null;
   let unsuspendedWritten=0,suspendedWritten=0;
   let skippedStale=0;
   if(!limited&&providerRows.length){
@@ -147,9 +149,10 @@ export async function GET(request:Request){
       seen.add(key);return true;
     }).slice(0,65);
     if(!filtered.length)continue;
-    // Quote table and immutable journal are independent persistence writes.
-    // Distinguish their failures rather than reporting an unhelpful blanket
-    // STORAGE_WRITE_FAILURE. We must not claim an incomplete proof chain.
+    // Quotes and the immutable journal are distinct persistence paths.
+    // A blocked quote table must not discard separately captured source
+    // evidence if the append-only journal is healthy (and vice versa).
+    // Any incomplete path remains degraded, never execution-authorized.
     try{
      const persisted=await persistence.appendQuotes(linked.eventId,filtered);
      quotesWritten+=persisted;
@@ -157,19 +160,20 @@ export async function GET(request:Request){
       unsuspendedWritten+=filtered.filter(q=>q.suspended!==true).length;
       suspendedWritten+=filtered.filter(q=>q.suspended===true).length;
      }
-    }catch{
+    }catch(error){
      quoteWriteFailures++;
      failures++;
-     continue;
+     quoteWriteErrorClass??=classifyStorageFailure(error);
     }
     try{
      journalRows+=await persistence.appendTruthJournal(journalizeMarketQuotes({
       canonicalEventId:linked.eventId,sourceProvider:"api-football-live-odds",
       gatewayReceivedAt:fetched.fetchedAt,quotes:filtered,
      }));
-    }catch{
+    }catch(error){
      journalWriteFailures++;
      failures++;
+     journalWriteErrorClass??=classifyStorageFailure(error);
     }
    }
   }
@@ -195,6 +199,7 @@ export async function GET(request:Request){
      mapped,unmatched,skippedStale,quotesWritten,
      unsuspendedWritten,suspendedWritten,journalRows,failures,
      quoteWriteFailures,journalWriteFailures,
+     quoteWriteErrorClass,journalWriteErrorClass,
      suspended,lowQuota:limited,requestedPage:1,totalPages:fetched.pagesTotal,
      matchedSourceIdCount:verified.map.size,ambiguousCount:verified.ambiguous.length,
      bookmakerIdentityProvided:false,estimatedCallsPerDay:18,
@@ -210,6 +215,7 @@ export async function GET(request:Request){
    mappedFixtures:mapped,unmatched,skippedStale,quotesWritten,
    unsuspendedWritten,suspendedWritten,journalRows,failures,suspended,
    quoteWriteFailures,journalWriteFailures,
+   quoteWriteErrorClass,journalWriteErrorClass,
    exactMatchIndex:verified.map.size,ambiguous:verified.ambiguous.length,
    scannedActiveFixtures:football.length,candidateMayBeCapped,
    ...(reasonCode?{reasonCode}:{}),
