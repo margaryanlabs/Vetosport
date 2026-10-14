@@ -81,12 +81,12 @@ html[data-veto-sport-appearance="light"] .discoveryHeroActions button{color:#fff
 .discoveryEvidenceHead h2{font-size:clamp(25px,3.4vw,46px);letter-spacing:-.06em;line-height:1.11;margin:12px 0}
 .discoveryEvidenceHead p{font-size:12px;line-height:1.7;max-width:850px;color:var(--dr-muted);margin:0}
 .discoveryEvidenceHead>a{font-size:11px;color:var(--dr-text);font-weight:780;text-decoration:none;border:1px solid var(--dr-border);padding:13px 17px;border-radius:9px;white-space:nowrap}
-.discoveryEvidenceNumbers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:24px}
+.discoveryEvidenceNumbers{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin-top:24px}
 .discoveryEvidenceNumbers article{display:grid;align-content:start;gap:11px;padding:19px 17px;min-width:0;border:1px solid var(--dr-border);background:rgba(255,255,255,.025);border-radius:12px}
 .discoveryEvidenceNumbers small{font-size:9px;letter-spacing:.12em;line-height:1.5;color:var(--dr-muted);font-weight:790}
 .discoveryEvidenceNumbers strong{font-size:clamp(32px,3.3vw,47px);line-height:1;letter-spacing:-.065em;color:var(--dr-text)}
 .discoveryEvidenceNumbers span{font-size:10px;line-height:1.55;color:var(--dr-muted)}
-.discoveryGates{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:15px}
+.discoveryGates{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:15px}
 .discoveryGate{min-width:0;min-height:183px;position:relative;overflow:hidden;padding:16px 14px;border:1px solid var(--dr-border);border-radius:12px;background:rgba(255,255,255,.014)}
 .discoveryGate::before{content:"";position:absolute;left:0;top:0;right:0;height:3px;background:#ad494b}
 .discoveryGate-partial::before{background:#d1a368}
@@ -159,3 +159,9 @@ html[data-veto-sport-appearance="light"] .discoveryProviderGrid footer small{bac
 .discoverySourceTimeline>p{font-size:10px!important;line-height:1.65;color:var(--dr-muted);margin:12px 0 0!important;flex:initial!important}
 html[data-veto-sport-appearance="light"] .discoverySourceRun.recorded span{background:#29855b}
 html[data-veto-sport-appearance="light"] .discoverySourceRun.empty span{background:#b77b40}
+
+/* Retrospective capture pairs are useful evidence, never live execution advice. */
+.discoveryEvidenceNumbers article.discoveryHistoricalEvidence{background:linear-gradient(140deg,rgba(103,149,175,.1),transparent),rgba(255,255,255,.025);border-color:rgba(123,156,180,.35)}
+.discoveryHistoricalEvidence strong{font-variant-numeric:tabular-nums}
+html[data-veto-sport-appearance="light"] .discoveryEvidenceNumbers article.discoveryHistoricalEvidence{background:linear-gradient(140deg,#eff6fc,#fff);border-color:rgba(70,121,158,.34)}
+@media(max-width:1100px){.discoveryEvidenceNumbers article.discoveryHistoricalEvidence{grid-column:span 2}}
