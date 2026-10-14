@@ -144,6 +144,8 @@ export default function DiscoveryPage(){
             {provider.matchedFixtures!==null&&<small>Точно совпали с линией: {provider.matchedFixtures}</small>}
             {provider.targetedFixtureProbeUsed===true&&<small>Поиск по точному ID матча: выполнен · без гарантии наличия рынков</small>}
             {provider.openProviderQuotes!==null&&<small>Неприостановленные цены: {provider.openProviderQuotes} · букмекер не подтверждён</small>}
+            {provider.quoteWriteFailures!==null&&provider.quoteWriteFailures>0&&<small>Ошибок записи котировок: {provider.quoteWriteFailures}</small>}
+            {provider.journalWriteFailures!==null&&provider.journalWriteFailures>0&&<small>Ошибок журнала доказательств: {provider.journalWriteFailures}</small>}
           </footer>
         </article>)}</div>}
     </section>
