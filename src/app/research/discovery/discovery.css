@@ -138,3 +138,24 @@ html[data-veto-sport-appearance="light"] .discoveryProviderCardHead b{color:#855
 html[data-veto-sport-appearance="light"] .discoveryProviderGrid footer small{background:#f2f5f8}
 @media(max-width:930px){.discoveryProviderGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){.discoveryProviderPanel{width:calc(100% - 30px)}.discoveryProviderIntro{flex-direction:column;align-items:start}.discoveryProviderIntro>a{width:100%;text-align:center}.discoveryProviderGrid{grid-template-columns:1fr}}
+
+
+/* Source truth: a successful API response without open bookmaker data is EMPTY. */
+.discoveryProviderDot.empty{background:#e2a260;box-shadow:0 0 0 4px rgba(226,162,96,.11)}
+.discoveryProviderDot.waiting{background:#8293a7;box-shadow:0 0 0 4px rgba(130,147,167,.10)}
+.discoverySourceTimeline{padding:13px 0 15px;border-top:1px solid var(--dr-border)}
+.discoverySourceTimelineHead{display:flex;justify-content:space-between;gap:10px;margin-bottom:15px}
+.discoverySourceTimelineHead b{font-size:9px;letter-spacing:.12em;color:var(--dr-text)}
+.discoverySourceTimelineHead span{font-size:9px;color:var(--dr-muted)}
+.discoverySourceTimelineBars{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;align-items:end;min-height:35px}
+.discoverySourceRun{display:flex;flex-direction:column;gap:6px;align-items:center;min-width:0}
+.discoverySourceRun span{display:block;width:100%;height:10px;border-radius:3px;background:#6d7c8c}
+.discoverySourceRun.recorded span{background:#6abf94;height:24px}
+.discoverySourceRun.empty span{background:#e0ac70;height:14px}
+.discoverySourceRun.waiting span{background:#8796a8;height:9px}
+.discoverySourceRun.degraded span{background:#d77777;height:19px}
+.discoverySourceRun.unverified span{background:#8e8397;height:9px}
+.discoverySourceRun small{font-size:9px;color:var(--dr-muted);font-variant-numeric:tabular-nums}
+.discoverySourceTimeline>p{font-size:10px!important;line-height:1.65;color:var(--dr-muted);margin:12px 0 0!important;flex:initial!important}
+html[data-veto-sport-appearance="light"] .discoverySourceRun.recorded span{background:#29855b}
+html[data-veto-sport-appearance="light"] .discoverySourceRun.empty span{background:#b77b40}
