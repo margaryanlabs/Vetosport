@@ -11,7 +11,7 @@ export type StorageFailureClass=
 
 export function classifyStorageFailure(error:unknown):StorageFailureClass{
  const message=error instanceof Error?error.message:"";
- const sqlState=/\\?"code\\?"\s*:\s*\\?"([A-Z0-9]{5})/i.exec(message)?.[1]?.toUpperCase();
+ const sqlState=/\\?"code\\?"\s*:\s*\\?"([A-Z0-9]{5,12})/i.exec(message)?.[1]?.toUpperCase();
  // PostgreSQL and PostgREST codes are matched only by fixed allowlist.
  if(sqlState==="42501"||/^PGRST30[0-3]$/.test(sqlState??""))
   return "STORAGE_AUTH";
