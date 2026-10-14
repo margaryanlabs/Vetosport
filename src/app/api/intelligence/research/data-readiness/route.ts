@@ -14,10 +14,12 @@ export async function GET(){
   return NextResponse.json({source:"NO_REAL_STORAGE",generatedAt:at,gates:[],
    error:"No verified storage configured; no synthetic diagnostics generated."},{headers});
  try{
-  const store=getPersistence(),windowHours=4,windows=12;
+  // A targeted 24-hour observability report avoids slow 48-hour fan-out.
+  // Historic provenance is reported only for this declared, sampled window.
+  const store=getPersistence(),windowHours=3,windows=8;
   // The storage API orders by starts_at ASC and limits each request to 100.
-  // Three 16-hour windows previously truncated all three reads to 100 each,
-  // hiding real score/market intersections in busy football schedules.
+  // Broad 16-hour windows truncated reads to 100; the observed 3-hour
+  // football windows stay under this cap while keeping requests bounded.
   const batches:Awaited<ReturnType<typeof store.listRecentEvents>>[]=[];
   for(let offset=0;offset<windows;offset+=3){
    const group=await Promise.all(Array.from({length:Math.min(3,windows-offset)},(_,index)=>{
