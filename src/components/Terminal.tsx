@@ -24,6 +24,7 @@ import { TodayExperience } from "@/components/TodayExperience";
 import { ResearchDesk } from "@/components/ResearchDesk";
 import type { LiveEventSummary, LiveObservation } from "@/lib/live/types";
 import { sandboxEventSummaries } from "@/lib/live/sandbox";
+import {getObservedFreshness} from "@/lib/live/freshness";
 import { sandboxFootballBeforeSurface, sandboxFootballSurface } from "@/lib/sandbox/football-model";
 import { analyzeModelCouncil } from "@/lib/council/engine";
 import { buildCouncilInputs } from "@/lib/council/registry";
@@ -66,8 +67,8 @@ export function Terminal({
   const [loadedEvents, setLoadedEvents] = useState<LiveEventSummary[]>([]);
   const [demoEnabled, setDemoEnabled] = useState(false);
   const [liveSourceMode, setLiveSourceMode] = useState<
-    "persisted" | "sandbox-fallback"
-  >("sandbox-fallback");
+    "persisted" | "persisted-empty" | "storage-unavailable"
+  >("persisted-empty");
   // Real events are the default. A deliberate click is required to display sandbox matches.
   const eventSummaries = liveSourceMode === "persisted"
     ? loadedEvents
@@ -109,7 +110,7 @@ export function Terminal({
           (
             payload:
               | {
-                  mode?: "persisted" | "sandbox-fallback";
+                  mode?: "persisted" | "persisted-empty" | "storage-unavailable";
                   events?: LiveEventSummary[];
                 }
               | null,
@@ -117,7 +118,8 @@ export function Terminal({
             if (!active || !payload || !Array.isArray(payload.events)) return;
             const persistedMode = payload.mode === "persisted";
             setLoadedEvents(persistedMode ? payload.events : []);
-            setLiveSourceMode(persistedMode ? "persisted" : "sandbox-fallback");
+            setLiveSourceMode(persistedMode?"persisted":
+              payload.mode==="storage-unavailable"?"storage-unavailable":"persisted-empty");
 
             if (persistedMode) {
               setSelectedEventId((current) =>
@@ -129,7 +131,7 @@ export function Terminal({
             }
           },
         )
-        .catch(() => { if(active) setLiveSourceMode("sandbox-fallback"); });
+        .catch(() => { if(active){setLoadedEvents([]);setLiveSourceMode("storage-unavailable");} });
     };
 
     refreshEvents();
@@ -264,14 +266,13 @@ export function Terminal({
   const providerMode =
     providerStatus == null
       ? "CHECKING DATA"
-      : activeSummary?.source === "persisted" && activeSummary.status === "live" &&
-          activeSummary.lastUpdatedAt && Number.isFinite(Date.parse(activeSummary.lastUpdatedAt)) &&
-          Date.now()-Date.parse(activeSummary.lastUpdatedAt)>=0 &&
-          Date.now()-Date.parse(activeSummary.lastUpdatedAt)<=120_000
+      : activeSummary?.source==="persisted"&&getObservedFreshness(activeSummary).freshLive
         ? "LIVE DATA"
-        : configuredProviders > 0 || gatewayReady
-          ? "AWAITING LIVE DATA"
-          : "DEMO DATA";
+        : demoEnabled&&activeSummary?.source==="sandbox"
+          ? "TRAINING ONLY"
+          : configuredProviders>0||gatewayReady
+            ? "AWAITING LIVE DATA"
+            : "NO LIVE DATA";
   const selectSport = (sport: Sport) => {
     const persisted = eventSummaries.find(
       (item) => item.sport === sport && item.source === "persisted",
@@ -344,20 +345,19 @@ export function Terminal({
       {activeView === "matches" && (
         <div className="workspaceScene workspaceLive">
           <div className="workspaceSceneIntro">
-            <span>{liveSourceMode === "persisted" ? "LIVE EVENTS" : "DEMO EVENTS"}</span>
+            <span>{liveSourceMode==="persisted"?"OBSERVED MATCHES":demoEnabled?"EXPLICIT DEMO · SANDBOX":"NO LIVE DATA"}</span>
             <strong>
               {liveSourceMode === "persisted"
                 ? "Матчи с источником, свежестью и состоянием проверки."
-                : "Симуляции отмечены до открытия анализа."}
+                : demoEnabled?"Учебные симуляции включены вручную. Это не реальные матчи.":
+                  "Сейчас нет подтверждённых матчей. Симуляции не подставляются автоматически."}
             </strong>
             <small>
               {liveSourceMode === "persisted"
                 ? "Persisted live data · source lineage preserved"
-                : configuredProviders > 0
-                  ? `${configuredProviders}/2 direct adapters configured · demo events remain labeled`
-                  : gatewayReady
-                    ? "Gateway ready · waiting for the first real event"
-                    : "Demo fallback · live ingestion not configured"}
+                : demoEnabled?"TRAINING ONLY · explicitly enabled by visitor"
+                  : liveSourceMode==="storage-unavailable"?"Сервис данных временно недоступен · без подмены симуляцией"
+                  : "No real observations in current window · zero generated fixtures"}
             </small>
           </div>
 

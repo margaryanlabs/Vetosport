@@ -259,3 +259,17 @@ test("In-play odds only checks current exact observed fixture ids and reports re
  assert.match(health,/matchedFixtures/);
  assert.match(health,/Точно совпали с линией|NO_OVERLAPPING_FIXTURES/);
 });
+
+test("Public live API fails closed without returning local demo fixtures",()=>{
+ const route=read("src/app/api/live/events/route.ts");
+ const terminal=read("src/components/Terminal.tsx");
+ assert.doesNotMatch(route,/sandboxEventSummaries|mode:"sandbox-fallback"/);
+ assert.match(route,/mode:"storage-unavailable"/);
+ assert.match(route,/mode:events.length\?"persisted":"persisted-empty"/);
+ assert.match(route,/events:\[\]/);
+ assert.match(route,/source:"PERSISTED_ONLY"/);
+ assert.match(terminal,/demoEnabled \? sandboxEventSummaries : \[\]/);
+ assert.match(terminal,/getObservedFreshness\(activeSummary\)\.freshLive/);
+ assert.match(terminal,/NO LIVE DATA/);
+ assert.doesNotMatch(terminal,/DEMO EVENTS|Demo fallback/);
+});
