@@ -337,3 +337,18 @@ test("Optional targeted odds outage cannot discard valid primary market rows",()
  assert.match(health,/targetedFailureCode/);
  assert.match(discovery,/provider\.targetedFailureCode/);
 });
+
+test("In-play quote-table and immutable-journal failures are diagnosed separately",()=>{
+ const cron=read("src/app/api/cron/api-football-inplay/route.ts");
+ const sources=read("src/lib/research/source-health.ts");
+ const page=read("src/app/research/discovery/page.tsx");
+ assert.match(cron,/let quoteWriteFailures=0,journalWriteFailures=0/);
+ assert.match(cron,/quoteWriteFailures\+\+/);
+ assert.match(cron,/journalWriteFailures\+\+/);
+ assert.match(cron,/quoteWriteFailures,journalWriteFailures/);
+ assert.match(cron,/STORAGE_WRITE_FAILURE/);
+ assert.match(sources,/asSafeCount\(info.quoteWriteFailures\)/);
+ assert.match(sources,/asSafeCount\(info.journalWriteFailures\)/);
+ assert.match(page,/Ошибок записи котировок/);
+ assert.match(page,/Ошибок журнала доказательств/);
+});
