@@ -25,6 +25,7 @@ export interface SourceHealthView{
   scannedActiveFixtures:number|null;
   openProviderQuotes:number|null;
   targetedFixtureProbeUsed:boolean|null;
+  targetedFailureCode:string|null;
   lastRunCode:string|null;
   lastFailureStage:string|null;
   upstreamAttempted:boolean|null;
@@ -84,6 +85,12 @@ export function toSourceHealthView(input:{
  const candidateCode=typeof info.failureCode==="string"?info.failureCode:
   typeof info.reason==="string"?info.reason:null;
  const lastRunCode=candidateCode&&safeCodes.has(candidateCode)?candidateCode:null;
+ const targetedSafeCodes=new Set(["UPSTREAM_SUBSCRIPTION","UPSTREAM_DAILY_QUOTA",
+  "UPSTREAM_MINUTE_QUOTA","UPSTREAM_AUTH","UPSTREAM_INVALID_PARAMETERS",
+  "UPSTREAM_UNCLASSIFIED","API_FOOTBALL_LIVE_ODDS_BAD_BODY","TARGETED_QUERY_UNAVAILABLE"]);
+ const targetedFailureCode=descriptor.id==="api-football-live-odds"&&
+  typeof info.targetedFailureCode==="string"&&targetedSafeCodes.has(info.targetedFailureCode)?
+  info.targetedFailureCode:null;
  const upstreamAttempted=typeof info.upstreamAttempted==="boolean"?info.upstreamAttempted:
   typeof info.providerCalled==="boolean"?info.providerCalled:null;
  const validStages=new Set(["FETCH_EVENTS","FETCH_STATE_HISTORY","FETCH_UPSTREAM","PERSIST_FINALS","WRITE_PROVIDER_HEALTH",
@@ -136,7 +143,7 @@ export function toSourceHealthView(input:{
  });
  return{id:descriptor.id,label:descriptor.label,state,updatedAt:ageMinutes===null?null:latest!.checkedAt,
   ageMinutes,receivedRecords:stored,scannedRecords:scanned,pendingFixtureChecks:pending,
-  matchedFixtures,scannedActiveFixtures,openProviderQuotes,targetedFixtureProbeUsed,
+  matchedFixtures,scannedActiveFixtures,openProviderQuotes,targetedFixtureProbeUsed,targetedFailureCode,
   lastRunCode,lastFailureStage,upstreamAttempted,recentRuns,note};
 }
 export function sourceHealthSelfcheck(){

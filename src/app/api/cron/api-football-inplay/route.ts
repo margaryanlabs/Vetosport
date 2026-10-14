@@ -96,15 +96,26 @@ export async function GET(request:Request){
   });
   const providerRows=[...fetched.rows];
   let targetedProviderRows=0;
+  let targetedFailureCode:string|null=null;
   if(!limited&&probe.fixtureId!==null){
+   // An optional targeted lookup must never discard already retrieved global
+   // odds when a fixture is unavailable under the provider's subscription.
    targetedCalled=true;
    targetedBucket=probe.bucket;
-   const exact=await getApiFootballInPlay({fixtureId:probe.fixtureId});
-   targetedProviderRows=exact.rows.length;
-   // A response to ?fixture=X must never authorize quotes for another match.
-   providerRows.push(...exact.rows.filter(row=>row.fixture?.id===probe.fixtureId));
-   quotaRemaining=exact.quotaRemaining;
-   limited=quotaRemaining!==null&&quotaRemaining<=reserve;
+   try{
+    const exact=await getApiFootballInPlay({fixtureId:probe.fixtureId});
+    targetedProviderRows=exact.rows.length;
+    // Even a bad targeted response must not add a different fixture.
+    providerRows.push(...exact.rows.filter(row=>row.fixture?.id===probe.fixtureId));
+    quotaRemaining=exact.quotaRemaining;
+    limited=quotaRemaining!==null&&quotaRemaining<=reserve;
+   }catch(error){
+    const value=error instanceof Error?error.message:"";
+    const known=new Set(["UPSTREAM_SUBSCRIPTION","UPSTREAM_DAILY_QUOTA",
+      "UPSTREAM_MINUTE_QUOTA","UPSTREAM_AUTH","UPSTREAM_INVALID_PARAMETERS",
+      "UPSTREAM_UNCLASSIFIED","API_FOOTBALL_LIVE_ODDS_BAD_BODY"]);
+    targetedFailureCode=known.has(value)?value:"TARGETED_QUERY_UNAVAILABLE";
+   }
   }
   failedStage="PERSIST_MARKET_QUOTES";
   let mapped=0,unmatched=0,quotesWritten=0,journalRows=0,failures=0,suspended=0;
@@ -167,6 +178,7 @@ export async function GET(request:Request){
      "Sparse 2-hour in-play snapshots, exact provider fixture match only; prices never claimed executable.",
    metadata:{providerRows:providerRows.length,globalProviderRows:fetched.rows.length,
      targetedProviderRows,targetedCalled,targetedBucket,targetedProbeReason:probe.reason,
+     ...(targetedFailureCode?{targetedFailureCode}:{}),
      mapped,unmatched,skippedStale,quotesWritten,
      unsuspendedWritten,suspendedWritten,journalRows,failures,
      suspended,lowQuota:limited,requestedPage:1,totalPages:fetched.pagesTotal,
@@ -179,6 +191,7 @@ export async function GET(request:Request){
    source:"api-football-live-odds",mode:"SPARSE_RESEARCH_SNAPSHOTS",
    providerRows:providerRows.length,globalProviderRows:fetched.rows.length,
    targetedProviderRows,targetedCalled,targetedProbeReason:probe.reason,
+   ...(targetedFailureCode?{targetedFailureCode}:{}),
    pagesTotal:fetched.pagesTotal,pagesFetched:1,
    mappedFixtures:mapped,unmatched,skippedStale,quotesWritten,
    unsuspendedWritten,suspendedWritten,journalRows,failures,suspended,

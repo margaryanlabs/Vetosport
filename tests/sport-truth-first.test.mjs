@@ -322,3 +322,18 @@ test("One exact in-play fixture lookup can recover missing global odds with a ha
  assert.match(selfcheck,/targetedInplayProbeSelfcheck/);
  assert.match(health,/targetedFixtureProbeUsed/);
 });
+
+test("Optional targeted odds outage cannot discard valid primary market rows",()=>{
+ const route=read("src/app/api/cron/api-football-inplay/route.ts");
+ const health=read("src/lib/research/source-health.ts");
+ const discovery=read("src/app/research/discovery/page.tsx");
+ assert.match(route,/const providerRows=\[\.\.\.fetched\.rows\]/);
+ assert.match(route,/try\{\s*const exact=await getApiFootballInPlay\(\{fixtureId:probe\.fixtureId\}\)/);
+ assert.match(route,/catch\(error\)\{/);
+ assert.match(route,/targetedFailureCode=known\.has\(value\)/);
+ assert.match(route,/providerRows\.push\(\.\.\.exact\.rows\.filter/);
+ assert.match(route,/for\(const row of rankedRows\.slice/);
+ assert.match(health,/targetedSafeCodes/);
+ assert.match(health,/targetedFailureCode/);
+ assert.match(discovery,/provider\.targetedFailureCode/);
+});
