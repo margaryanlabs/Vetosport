@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getPersistence } from "@/lib/persistence/factory";
 import { runFootballShadowPrediction } from "@/lib/live/shadow-football";
+import {selectFeedCandidates} from "@/lib/live/feed-priority";
+import {isSelfcheckEvent} from "@/lib/live/persisted-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -12,19 +14,23 @@ export async function GET(request: Request) {
 
   const persistence = getPersistence();
   const now = Date.now();
-  const events = await persistence.listRecentEvents({
-    from: new Date(now - 12 * 60 * 60 * 1000).toISOString(),
-    to: new Date(now + 6 * 60 * 60 * 1000).toISOString(),
-    statuses: ["live"],
-    limit: 30,
-  });
-
-  const football = events.filter(
-    (event) =>
-      event.event.sport === "football" &&
-      event.canonicalKey !== "veto-sport-storage-selfcheck" &&
-      event.event.competition !== "VETO Storage Selfcheck",
-  );
+  // Do not repeatedly run the model on 12-hour-old games mislabeled LIVE
+  // because the free API plan cannot retrieve an independent FT result.
+  const HOUR=3600000;
+  const windows=[[-4,-2],[-2,0.1]] as const;
+  const batches=await Promise.all(windows.map(([start,end])=>
+    persistence.listRecentEvents({
+      from:new Date(now+start*HOUR).toISOString(),
+      to:new Date(now+end*HOUR).toISOString(),
+      statuses:["live"],limit:100,
+    })
+  ));
+  const football=selectFeedCandidates(batches.flat().filter(event=>
+    event.event.sport==="football"&&!isSelfcheckEvent(event)&&
+    Date.parse(event.event.startsAt)<=now&&
+    now-Date.parse(event.event.startsAt)<=4*HOUR
+  ),now,8);
+  const scanMayBeCapped=batches.some(rows=>rows.length===100);
 
   const results = [];
   for (const event of football) {
@@ -48,6 +54,9 @@ export async function GET(request: Request) {
     generatedAt: new Date().toISOString(),
     mode: "SHADOW",
     footballEventsSeen: football.length,
+    selectedCandidateLimit:8,
+    scanMayBeCapped,
+    noOldUnverifiedLiveMatches:true,
     predictionsPersisted: results.reduce(
       (sum, row) =>
         sum +

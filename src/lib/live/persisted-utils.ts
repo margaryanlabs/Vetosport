@@ -6,6 +6,8 @@ import type {
 } from "@/lib/persistence/contracts";
 import type { LiveEventSummary, LivePrimarySignal } from "@/lib/live/types";
 import { evaluateLiveDecisionReadiness } from "@/lib/live/decision-readiness";
+import {temporalDataSafety} from "@/lib/live/temporal-data-safety";
+import {getObservedFreshness} from "@/lib/live/freshness";
 
 export const isSelfcheckEvent = (event: PersistedEvent) =>
   event.canonicalKey === "veto-sport-storage-selfcheck" ||
@@ -112,6 +114,19 @@ export const buildPersistedSummary = (input: {
         : input.event.event.status.toUpperCase();
 
   const decisionReadiness = evaluateLiveDecisionReadiness(input);
+  const temporal=temporalDataSafety({
+    event:input.event,state:input.state,quotes:eventQuotes,
+  });
+  const now=Date.now();
+  const observed=getObservedFreshness({source:"persisted",
+    status:input.event.event.status,startsAt:input.event.event.startsAt,lastUpdatedAt},now);
+  const decisionAge=input.decision?now-Date.parse(input.decision.capturedAt):NaN;
+  const currentDecision=Boolean(input.decision)&&
+    Number.isFinite(decisionAge)&&decisionAge>=0&&decisionAge<=120000&&
+    temporal.liveExecutionInputsReady&&
+    temporal.eligibleLiveQuotes.some(q=>q.marketKey===input.decision?.marketKey&&
+      q.selectionKey===input.decision?.selectionKey);
+
 
   return {
     id: input.event.id,
@@ -129,18 +144,16 @@ export const buildPersistedSummary = (input: {
     awayName: input.event.event.away?.name ?? "Away",
     homeScore: printable(score?.home),
     awayScore: printable(score?.away),
-    pulse:
-      input.event.event.status === "live"
-        ? age <= 60
-          ? "hot"
-          : "stable"
-        : "quiet",
+    pulse: observed.freshLive&&age<=60?"hot":
+      observed.freshLive||observed.delayedLive?"stable":"quiet",
     markets: new Set(eventQuotes.map((quote) => quote.marketKey)).size,
     repriced: 0,
-    intelligenceReady: Boolean(input.decision),
+    // A historical immutable decision is available in the event room,
+    // but it cannot be surfaced as a current recommendation.
+    intelligenceReady: currentDecision,
     shadowPredictionCount: input.shadowPredictionCount ?? 0,
     decisionReadiness,
     lastUpdatedAt,
-    primarySignal: signalFromDecision(input.decision, eventQuotes),
+    primarySignal: currentDecision?signalFromDecision(input.decision, eventQuotes):undefined,
   };
 };

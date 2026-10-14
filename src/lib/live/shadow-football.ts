@@ -4,6 +4,7 @@ import type {
   PersistedMarketQuoteRecord,
 } from "@/lib/persistence/contracts";
 import { getPersistence } from "@/lib/persistence/factory";
+import {temporalDataSafety} from "@/lib/live/temporal-data-safety";
 import {
   evaluateLiveDecisionReadiness,
   extractFootballDecisionInput,
@@ -239,10 +240,16 @@ export const runFootballShadowPrediction = async (
     };
   }
 
+  // Never let a single fresh quote make stale historical prices look like
+  // contemporaneous model evidence in a newly written shadow forecast.
+  const evidence=temporalDataSafety({event,state,quotes});
+  if(!evidence.shadowObservationReady){
+    return{ok:true,skipped:true,eventId,reason:"No recent time-aligned shadow evidence."};
+  }
   const plan = buildFootballShadowPredictionPlan({
     event,
     state,
-    quotes,
+    quotes:evidence.eligibleShadowQuotes,
   });
 
   if (plan.predictions.length === 0) {

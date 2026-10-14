@@ -1,3 +1,4 @@
+import {temporalDataSafety} from "@/lib/live/temporal-data-safety";
 import type {
   DecisionHistoryRecord,
   PersistedEvent,
@@ -214,13 +215,11 @@ export const evaluateLiveDecisionReadiness = (input: {
 }): LiveDecisionReadiness => {
   const model = modelForSport(input.event.event.sport);
   const authorized = isProductionAuthorized(model?.version);
-  const eventQuotes = input.quotes.filter(
-    (quote) =>
-      quote.eventId === input.event.id &&
-      !quote.suspended &&
-      Number.isFinite(quote.decimalOdds) &&
-      quote.decimalOdds > 1,
-  );
+  // Separate historical quote presence from temporally usable shadow input.
+  // A persisted old price cannot make live inference or autoDecision ready.
+  const temporal=temporalDataSafety(input);
+  const eventQuotes=temporal.eligibleShadowQuotes;
+  const liveQuotes=temporal.eligibleLiveQuotes;
 
   if (input.decision) {
     return {
@@ -253,11 +252,27 @@ export const evaluateLiveDecisionReadiness = (input: {
     ),
     requirement(
       "market-quotes",
-      "Market quotes",
+      "Market quotes (shadow)",
       eventQuotes.length > 0,
       eventQuotes.length > 0
-        ? `${eventQuotes.length} usable quote rows are available.`
-        : "No active decimal-odds rows are available yet.",
+        ? `${eventQuotes.length} source-timestamped and aligned research quote rows are available.`
+        : "No active decimal-odds rows align with recent observed game state.",
+    ),
+    requirement(
+      "game-state-freshness",
+      "Recent game state",
+      temporal.shadowObservationReady,
+      temporal.shadowObservationReady
+        ? "Live game state and a matching quote were captured within 45 minutes; research-only."
+        : "No live game and aligned quote within 45 minutes, or the fixture is an unverified old LIVE status.",
+    ),
+    requirement(
+      "real-time-market-authority",
+      "Live execution evidence",
+      temporal.liveExecutionInputsReady,
+      temporal.liveExecutionInputsReady
+        ? "Recent bookmaker-identified quote and live score are time-aligned; execution is still unverified."
+        : "A matching, provider-timestamped known bookmaker price and score within 2 minutes is missing.",
     ),
   ];
 
@@ -360,7 +375,8 @@ export const evaluateLiveDecisionReadiness = (input: {
     scoreReady &&
     clockReady &&
     baselineReady &&
-    mappingReady;
+    mappingReady &&
+    temporal.shadowObservationReady;
 
   const requirements: LiveDecisionRequirement[] = [
     ...baseRequirements,
@@ -406,7 +422,7 @@ export const evaluateLiveDecisionReadiness = (input: {
     ),
   ];
 
-  if (!input.state || eventQuotes.length === 0) {
+  if (!input.state || eventQuotes.length === 0 || !temporal.shadowObservationReady) {
     return {
       status: "DATA_PENDING",
       modelId: model.id,
@@ -445,12 +461,12 @@ export const evaluateLiveDecisionReadiness = (input: {
     };
   }
 
-  if (!authorized) {
+  if (!authorized || !temporal.liveExecutionInputsReady || liveQuotes.length===0) {
     return {
       status: "GOVERNANCE_BLOCKED",
       modelId: model.id,
       modelVersion: model.version,
-      productionAuthorized: false,
+      productionAuthorized: authorized,
       shadowPredictionEligible,
       autoDecisionEligible: false,
       blockers: requirements.filter((item) => !item.passed).map((item) => item.detail),
@@ -464,7 +480,7 @@ export const evaluateLiveDecisionReadiness = (input: {
     modelVersion: model.version,
     productionAuthorized: true,
     shadowPredictionEligible,
-    autoDecisionEligible: true,
+    autoDecisionEligible: authorized&&temporal.liveExecutionInputsReady,
     blockers: [],
     requirements,
   };
