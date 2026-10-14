@@ -1,3 +1,4 @@
+import {historicalCoCapturedEvents,historicalCoCaptureSelfcheck,CO_CAPTURE_WINDOW_SECONDS} from "@/lib/research/historical-co-capture";
 import type {PersistedEvent,PersistedEventStateRecord,PersistedMarketQuoteRecord} from "@/lib/persistence/contracts";
 
 const seconds=(t:string|undefined,now:number):number|null=>{
@@ -33,6 +34,9 @@ export type EvidenceCoverage={
  freshEventStates:number;
  freshQuotedEvents:number;
  freshScoreAndPriceEvents:number;
+ historicalScoreAndPriceCoCapturedEvents:number;
+ historicalCoCaptureWindowSeconds:120;
+ historicalPairsAreNotLiveSignals:true;
  researchReadyForRealMoney:false;
  externalProviderCalls:0;
  sampleMayBeCapped:boolean;
@@ -73,6 +77,7 @@ export function evidenceCoverage(input:{
   }
  }
  const aligned=[...freshPrices].filter(id=>freshStates.has(id)).length;
+ const historicalCoCaptured=historicalCoCapturedEvents({events:[...events.values()],states:input.states,quotes:input.quotes,asOf:input.at});
  const count=(n:number)=>n>0?"partial" as const:"blocked" as const;
  const gates:EvidenceCheck[]=[
   {id:"live-scores",label:"Наблюдаемые матчи",
@@ -89,6 +94,10 @@ export function evidenceCoverage(input:{
     quotesAvailable.size?
       `Записаны цены для ${quotesAvailable.size} матчей, но нет одновременно свежей пары счёт + котировка.`:
       "Для этих наблюдаемых матчей нет сохранённых подходящих букмекерских цен."},
+  {id:"historical-capture",label:"Исторические пары: счёт + цена",
+   stage:count(historicalCoCaptured),detail:historicalCoCaptured?
+    `${historicalCoCaptured} реальных матчей имеют сохранённые счёт и неприостановленную котировку в пределах ${CO_CAPTURE_WINDOW_SECONDS} секунд по времени записи. Это исторические совместные снимки, а НЕ актуальные сигналы и НЕ доказательство доступности цены.`:
+    "В выбранной сохранённой выборке нет совместных исторических снимков счёта и неприостановленной цены в пределах двух минут."},
   {id:"independent-probability",label:"Независимая валидация модели",
    stage:"blocked",detail:"Пока нет доказанной вневыборочной калибровки и контроля множества проверенных гипотез."},
   {id:"execution",label:"Исполнение и чистый EV",
@@ -101,6 +110,8 @@ export function evidenceCoverage(input:{
   finishedStatusWithoutCertificate:statusOnly.size,
   eventsWithRecordedPrices:quotesAvailable.size,freshEventStates:freshStates.size,
   freshQuotedEvents:freshPrices.size,freshScoreAndPriceEvents:aligned,
+  historicalScoreAndPriceCoCapturedEvents:historicalCoCaptured,
+  historicalCoCaptureWindowSeconds:120,historicalPairsAreNotLiveSignals:true,
   researchReadyForRealMoney:false,externalProviderCalls:0,
   sampleMayBeCapped:Boolean(input.sampleMayBeCapped),
   gates,note:"Агрегированная диагностика на сохранённых данных. Даже полный набор снимков не доказывает положительный EV; новые платные запросы к спортивным API не выполняются.",
@@ -126,7 +137,10 @@ export function evidenceCoverageSelfcheck(){
   selectionLabel:"Under 4.5",decimalOdds:1.7,capturedAt:"2026-10-13T11:59:45Z",suspended:false};
  const input={events:[ev("a","live"),ev("b","finished")],states:[live("a"),live("b"),final("b")],quotes:[quote],at};
  const r=evidenceCoverage(input);
+ const historicalSelfcheck=historicalCoCaptureSelfcheck();
  const checks=[
+  {name:"Historical observation tests fail closed",passed:historicalSelfcheck.passed},
+  {name:"Co-capture is not promoted to currently fresh evidence",passed:r.historicalScoreAndPriceCoCapturedEvents===1&&r.historicalPairsAreNotLiveSignals===true},
   {name:"Distinct certified FT counted exactly once",passed:r.certifiedRegulationFinals===1},
   {name:"Fresh price plus independent live score share canonical event",passed:r.freshScoreAndPriceEvents===1},
   {name:"Final status alone does not certify outcome",passed:evidenceCoverage({...input,states:[live("a"),live("b")]}).certifiedRegulationFinals===0},

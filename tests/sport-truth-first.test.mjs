@@ -387,3 +387,28 @@ test("Mixed live football odds have identical bulk JSON keys before PostgREST in
  assert.match(errors,/STORAGE_PAYLOAD_SHAPE/);
  assert.match(check,/marketQuotePayloadSelfcheck/);
 });
+
+test("Historical co-captured score and odds never upgrade to current trading readiness",()=>{
+ const historical=read("src/lib/research/historical-co-capture.ts");
+ const coverage=read("src/lib/research/evidence-coverage.ts");
+ const page=read("src/app/research/discovery/page.tsx");
+ assert.match(historical,/CO_CAPTURE_WINDOW_SECONDS=120/);
+ assert.match(historical,/quote.suspended!==false/);
+ assert.match(historical,/row.state.status!=="live"/);
+ assert.match(historical,/row.sourceProvider!=="api-football"/);
+ assert.match(historical,/kickoff\+4\*3600000/);
+ assert.match(historical,/quote.providerLastUpdate/);
+ assert.match(historical,/historicalCoCaptureSelfcheck/);
+ assert.match(coverage,/historicalPairsAreNotLiveSignals:true/);
+ assert.match(coverage,/historicalScoreAndPriceCoCapturedEvents/);
+ assert.match(page,/ИСТОРИЧЕСКИЕ СНИМКИ СЧЁТ \+ ЦЕНА/);
+ assert.match(page,/СВЕЖИЕ СЧЁТ \+ ЦЕНА СЕЙЧАС/);
+});
+test("Data-readiness no longer crops real busy football days to three 100-event queries",()=>{
+ const route=read("src/app/api/intelligence/research/data-readiness/route.ts");
+ assert.match(route,/windowHours=4,windows=12/);
+ assert.match(route,/for\(let offset=0;offset<windows;offset\+=3\)/);
+ assert.match(route,/for\(let index=0;index<chunks.length;index\+=4\)/);
+ assert.match(route,/sampleMayBeCapped/);
+ assert.match(route,/windowHours:windows\*windowHours/);
+});
