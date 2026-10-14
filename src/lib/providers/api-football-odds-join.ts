@@ -20,7 +20,15 @@ export function buildVerifiedOddsMatchIndex(input:{
 }):OddsMatchIndex {
  const limitMs=(input.maximumStateAgeMinutes??75)*60_000;
  const now=Date.parse(input.asOf);
- const events=new Map(input.events.filter(e=>e.event.sport==="football").map(e=>[e.id,e]));
+ // The latest snapshot might still say LIVE several hours after kickoff,
+ // because free-tier provider results do not supply authoritative finals.
+ // Never spend the limited in-play odds quota joining those stale fixtures.
+ const events=new Map(input.events.filter(e=>{
+  const kickoff=Date.parse(e.event.startsAt);
+  return e.event.sport==="football"&&e.event.status==="live"&&
+   Number.isFinite(now)&&Number.isFinite(kickoff)&&
+   kickoff<=now&&now-kickoff<=4*3600000;
+ }).map(e=>[e.id,e]));
  const latest=new Map<string,PersistedEventStateRecord>();
  for(const row of input.states){
   if(row.sourceProvider!=="api-football"||!events.has(row.eventId))continue;
@@ -56,7 +64,13 @@ export function oddsMatchIndexSelfcheck(){
   {name:"Future score rejected",pass:use([game],[{...state,capturedAt:"2026-10-12T12:05:00Z"}]).map.size===0},
   {name:"Finished match rejected",pass:use([game],[{...state,state:{providerEventId:77,status:"finished"}}]).map.size===0},
   {name:"Ambiguous canonical matches rejected",pass:use([game,{...game,id:"b"}],[state,{...state,eventId:"b"}]).map.size===0},
-  {name:"No matching by team names",pass:use([game],[{...state,sourceProvider:"the-odds-api"}]).map.size===0},
+  {name:"Archived LIVE flag after six-hour kickoff cannot consume live-odds budget",
+   pass:use([{...game,event:{...game.event,startsAt:"2026-10-12T05:00:00Z"}}],[state]).map.size===0},
+  {name:"Scheduled fixture cannot be misrepresented as an active bookmaker quote",
+   pass:use([{...game,event:{...game.event,status:"scheduled"}}],[state]).map.size===0},
+  {name:"Fixture with future kickoff does not masquerade as an in-play match",
+   pass:use([{...game,event:{...game.event,startsAt:"2026-10-12T13:00:00Z"}}],[state]).map.size===0},
+    {name:"No matching by team names",pass:use([game],[{...state,sourceProvider:"the-odds-api"}]).map.size===0},
   {name:"Newest state governs current status",pass:use([game],[{...state,capturedAt:"2026-10-12T11:58:00Z",state:{providerEventId:77,status:"finished"}},state]).map.get(77)?.eventId==="a"},
  ];
  return{passed:checks.every(t=>t.pass),checks};

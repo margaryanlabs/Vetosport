@@ -125,6 +125,8 @@ export default function DiscoveryPage(){
           <footer><span>{provider.updatedAt?new Date(provider.updatedAt).toLocaleString("ru-RU"):"Нет сохранённого запуска"}</span>
             {provider.receivedRecords!==null&&<small>Записей: {provider.receivedRecords}</small>}
             {provider.pendingFixtureChecks!==null&&<small>К проверке FT: {provider.pendingFixtureChecks}</small>}
+            {provider.scannedActiveFixtures!==null&&<small>Проверено активных матчей: {provider.scannedActiveFixtures}</small>}
+            {provider.matchedFixtures!==null&&<small>Точно совпали с линией: {provider.matchedFixtures}</small>}
           </footer>
         </article>)}</div>}
     </section>

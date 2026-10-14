@@ -241,3 +241,21 @@ test("No historical quote or 12-hour-old LIVE fixture can authorize shadow/live 
  assert.match(summary,/primarySignal: currentDecision\?signalFromDecision/);
  assert.match(summary,/temporal.eligibleLiveQuotes.some/);
 });
+
+test("In-play odds only checks current exact observed fixture ids and reports real failure",()=>{
+ const cron=read("src/app/api/cron/api-football-inplay/route.ts");
+ const join=read("src/lib/providers/api-football-odds-join.ts");
+ const parser=read("src/lib/providers/api-football-inplay.ts");
+ const health=read("src/lib/research/source-health.ts");
+ assert.match(cron,/statuses:\["live"\]/);
+ assert.match(cron,/scannedActiveFixtures/);
+ assert.match(cron,/candidateMayBeCapped/);
+ assert.match(cron,/NO_OVERLAPPING_FIXTURES/);
+ assert.match(cron,/LOAD_MATCH_SNAPSHOTS/);
+ assert.match(cron,/failureCode:code/);
+ assert.match(join,/now-kickoff<=4\*3600000/);
+ assert.match(join,/e\.event\.status==="live"/);
+ assert.match(parser,/classifyFixtureProviderFailure\(parsed.errors\)/);
+ assert.match(health,/matchedFixtures/);
+ assert.match(health,/Точно совпали с линией|NO_OVERLAPPING_FIXTURES/);
+});

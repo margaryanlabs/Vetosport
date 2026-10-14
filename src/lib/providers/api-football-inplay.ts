@@ -1,5 +1,6 @@
 import type {MarketQuote} from "@/lib/domain/types";
 import {canonicalSelectionKey} from "@/lib/canonical/id";
+import {classifyFixtureProviderFailure} from "@/lib/providers/api-football-finals";
 
 export interface ApiFootballInPlayValue{value?:string|number;odd?:string|number;handicap?:string|number|null;main?:boolean|null;suspended?:boolean|null;}
 export interface ApiFootballInPlayMarket{id?:number;name?:string;values?:ApiFootballInPlayValue[];}
@@ -16,8 +17,6 @@ export interface ApiFootballInPlayResponse{
  pagesTotal:number;
 }
 const numberHeader=(v:string|null)=>v===null?null:Number.isFinite(Number(v))?Number(v):null;
-const errorsExist=(errors:unknown)=>Array.isArray(errors)?errors.length>0:
-  errors!==null&&typeof errors==="object"?Object.keys(errors).length>0:Boolean(errors);
 
 export async function getApiFootballInPlay():Promise<ApiFootballInPlayResponse>{
  const key=process.env.API_FOOTBALL_KEY;
@@ -34,7 +33,9 @@ export async function getApiFootballInPlay():Promise<ApiFootballInPlayResponse>{
  const body:unknown=await response.json();
  if(!body||typeof body!=="object"||Array.isArray(body))throw Error("API_FOOTBALL_LIVE_ODDS_BAD_BODY");
  const parsed=body as{response?:unknown;errors?:unknown;paging?:{total?:unknown}};
- if(errorsExist(parsed.errors)||!Array.isArray(parsed.response))throw Error("API_FOOTBALL_LIVE_ODDS_PROVIDER_ERROR");
+ const classified=classifyFixtureProviderFailure(parsed.errors);
+ if(classified)throw Error(classified);
+ if(!Array.isArray(parsed.response))throw Error("API_FOOTBALL_LIVE_ODDS_BAD_BODY");
  const pages=typeof parsed.paging?.total==="number"&&Number.isFinite(parsed.paging.total)?parsed.paging.total:1;
  return{fetchedAt,quotaRemaining,pagesTotal:pages,rows:parsed.response.slice(0,50) as ApiFootballInPlayRow[]};
 }
@@ -82,6 +83,17 @@ export function normalizeInPlayOdds(row:ApiFootballInPlayRow,canonicalEventId:st
  return quotes.slice(0,200);
 }
 
+export const inPlayProviderFailureSelfcheck=()=>{
+ const classify=(errors:unknown)=>classifyFixtureProviderFailure(errors);
+ const checks=[
+  {name:"Provider plan errors are not confused with an empty valid response",
+   pass:classify({plan:"provider-private-text"})==="UPSTREAM_SUBSCRIPTION"},
+  {name:"Daily free source quota exhaustion classified without raw secrets",
+   pass:classify({requests:"secret quota text"})==="UPSTREAM_DAILY_QUOTA"},
+  {name:"Empty provider errors object permits empty valid response",pass:classify({})===null},
+ ];
+ return{passed:checks.every(c=>c.pass),checks};
+};
 export function inPlayNormalizerSelfcheck(){
  const now=new Date("2026-10-12T12:00:00Z");
  const base:ApiFootballInPlayRow={fixture:{id:123,status:{elapsed:82}},status:{stopped:false,blocked:false,finished:false},update:"2026-10-12T11:59:30Z",
