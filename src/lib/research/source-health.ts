@@ -24,6 +24,8 @@ export interface SourceHealthView{
   matchedFixtures:number|null;
   scannedActiveFixtures:number|null;
   openProviderQuotes:number|null;
+  quoteWriteFailures:number|null;
+  journalWriteFailures:number|null;
   targetedFixtureProbeUsed:boolean|null;
   targetedFailureCode:string|null;
   lastRunCode:string|null;
@@ -64,6 +66,10 @@ export function toSourceHealthView(input:{
   asSafeCount(info.scannedActiveFixtures):null;
  const openProviderQuotes=descriptor.id==="api-football-live-odds"?
   asSafeCount(info.unsuspendedWritten):null;
+ const quoteWriteFailures=descriptor.id==="api-football-live-odds"?
+  asSafeCount(info.quoteWriteFailures):null;
+ const journalWriteFailures=descriptor.id==="api-football-live-odds"?
+  asSafeCount(info.journalWriteFailures):null;
  const targetedFixtureProbeUsed=descriptor.id==="api-football-live-odds"&&
   typeof info.targetedCalled==="boolean"?info.targetedCalled:null;
  // Error labels are a strict, non-sensitive allowlist. Raw provider payloads,
@@ -143,7 +149,8 @@ export function toSourceHealthView(input:{
  });
  return{id:descriptor.id,label:descriptor.label,state,updatedAt:ageMinutes===null?null:latest!.checkedAt,
   ageMinutes,receivedRecords:stored,scannedRecords:scanned,pendingFixtureChecks:pending,
-  matchedFixtures,scannedActiveFixtures,openProviderQuotes,targetedFixtureProbeUsed,targetedFailureCode,
+  matchedFixtures,scannedActiveFixtures,openProviderQuotes,quoteWriteFailures,journalWriteFailures,
+  targetedFixtureProbeUsed,targetedFailureCode,
   lastRunCode,lastFailureStage,upstreamAttempted,recentRuns,note};
 }
 export function sourceHealthSelfcheck(){
