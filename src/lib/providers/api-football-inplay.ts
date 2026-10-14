@@ -121,7 +121,9 @@ export function planTargetedInplayProbe(input:{
  return{fixtureId:ids[bucket%ids.length],bucket,reason:"TARGET_EXACT_FIXTURE"};
 }
 export function targetedInplayProbeSelfcheck(){
- const common={fixtureIds:[31,17],globalFixtureIds:[999],globalPages:3,
+ const common:{fixtureIds:number[];globalFixtureIds:number[];globalPages:number;
+  remaining:number|null;asOf:string;previousProbeBucket:number|null}={
+  fixtureIds:[31,17],globalFixtureIds:[999],globalPages:3,
   remaining:70,asOf:"2026-10-14T12:00:00Z",previousProbeBucket:null};
  const plan=(diff:Partial<typeof common>)=>planTargetedInplayProbe({...common,...diff});
  const selected=plan({});
