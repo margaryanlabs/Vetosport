@@ -357,7 +357,7 @@ export function Terminal({
                 ? "Persisted live data · source lineage preserved"
                 : demoEnabled?"TRAINING ONLY · explicitly enabled by visitor"
                   : liveSourceMode==="storage-unavailable"?"Сервис данных временно недоступен · без подмены симуляцией"
-                  : "No real observations in current window · zero generated fixtures"
+                  : "No real observations in current window · zero generated fixtures"}
             </small>
           </div>
 
