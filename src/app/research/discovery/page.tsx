@@ -121,6 +121,7 @@ export default function DiscoveryPage(){
           </div>
           <p>{provider.note}</p>
           {provider.lastRunCode&&<p className="discoverySourceFailure">Причина: {provider.lastRunCode}</p>}
+          {provider.targetedFailureCode&&<p className="discoverySourceFailure">Дополнительная проверка точного матча ограничена: {provider.targetedFailureCode}</p>}
           {provider.lastFailureStage&&<p className="discoverySourceFailure">Этап: {provider.lastFailureStage}</p>}
           {provider.recentRuns?.length>0&&<div className="discoverySourceTimeline" role="group" aria-label="Последние шесть сохранённых запусков">
             <div className="discoverySourceTimelineHead"><b>ИСТОРИЯ ЗАПУСКОВ</b><span>{provider.recentRuns.length} последних проверок</span></div>
