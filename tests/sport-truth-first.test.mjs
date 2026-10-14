@@ -406,7 +406,7 @@ test("Historical co-captured score and odds never upgrade to current trading rea
 });
 test("Data-readiness no longer crops real busy football days to three 100-event queries",()=>{
  const route=read("src/app/api/intelligence/research/data-readiness/route.ts");
- assert.match(route,/windowHours=4,windows=12/);
+ assert.match(route,/windowHours=3,windows=8/);
  assert.match(route,/for\(let offset=0;offset<windows;offset\+=3\)/);
  assert.match(route,/for\(let index=0;index<chunks.length;index\+=4\)/);
  assert.match(route,/sampleMayBeCapped/);
