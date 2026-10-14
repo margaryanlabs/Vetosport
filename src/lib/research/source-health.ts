@@ -23,6 +23,7 @@ export interface SourceHealthView{
   pendingFixtureChecks:number|null;
   matchedFixtures:number|null;
   scannedActiveFixtures:number|null;
+  openProviderQuotes:number|null;
   lastRunCode:string|null;
   lastFailureStage:string|null;
   upstreamAttempted:boolean|null;
@@ -42,7 +43,8 @@ export function toSourceHealthView(input:{
  // Successful request != usable market data. The sparse 2-hour in-play
  // sampling often reaches an empty upstream response.
  const noMarkets=descriptor.id==="api-football-live-odds"&&
-  latest?.status==="healthy"&&info.quotesWritten===0;
+  latest?.status==="healthy"&&
+  (info.unsuspendedWritten===0||(info.unsuspendedWritten===undefined&&info.quotesWritten===0));
  const noVerifiedFixtures=descriptor.id==="api-football-live-odds"&&
   info.failureCode==="NO_RECENT_VERIFIED_SCORE_FIXTURES"&&
   info.providerCalled===false;
@@ -58,6 +60,8 @@ export function toSourceHealthView(input:{
   asSafeCount(info.mapped):null;
  const scannedActiveFixtures=descriptor.id==="api-football-live-odds"?
   asSafeCount(info.scannedActiveFixtures):null;
+ const openProviderQuotes=descriptor.id==="api-football-live-odds"?
+  asSafeCount(info.unsuspendedWritten):null;
  // Error labels are a strict, non-sensitive allowlist. Raw provider payloads,
  // bridge URLs, credentials, quota headers and arbitrary messages remain private.
  const safeCodes=new Set([
@@ -68,6 +72,7 @@ export function toSourceHealthView(input:{
   "QUOTA_RESERVE","LIVE_FOOTBALL_OR_STORAGE_NOT_ENABLED",
   "NO_OVERLAPPING_FIXTURES","NO_USABLE_BOOKMAKER_QUOTES",
   "NO_LIVE_MARKETS_RETURNED","NO_RECENT_VERIFIED_SCORE_FIXTURES",
+  "ALL_MARKETS_SUSPENDED",
   "STORAGE_WRITE_FAILURE","API_FOOTBALL_LIVE_ODDS_BAD_BODY",
   "UPSTREAM_HTTP_400","UPSTREAM_HTTP_401","UPSTREAM_HTTP_403",
   "UPSTREAM_HTTP_404","UPSTREAM_HTTP_429","UPSTREAM_HTTP_500",
@@ -95,6 +100,8 @@ export function toSourceHealthView(input:{
    "Пока нет актуальных событий с точным ID и проверенным игровым снимком. Внешний API коэффициентов не вызывался; квота сохранена.":
   lastRunCode==="NO_LIVE_MARKETS_RETURNED"?
    "Источник ответил, но не предоставил ни одного in-play рынка. Нулевые коэффициенты — это не работающий рыночный поток.":
+  lastRunCode==="ALL_MARKETS_SUSPENDED"?
+   "Источник передал только приостановленные рынки. Сохранённая история не означает наличие открытых коэффициентов.":
   lastRunCode==="NO_OVERLAPPING_FIXTURES"?
    "Провайдер передал рынки, но не было точного совпадения с наблюдаемыми активными матчами. Никаких букмекерских линий не придумано.":
   lastRunCode==="NO_USABLE_BOOKMAKER_QUOTES"?
@@ -116,7 +123,8 @@ export function toSourceHealthView(input:{
   const t=Date.parse(run.checkedAt);
   if(!Number.isFinite(t)||t>now||t<=0)return[];
   const m=run.metadata??{};
-  const recorded=asSafeCount(m.finishedStored??m.stored??m.quotesWritten);
+  const recorded=asSafeCount(descriptor.id==="api-football-live-odds"&&m.unsuspendedWritten!==undefined?
+   m.unsuspendedWritten:(m.finishedStored??m.stored??m.quotesWritten));
   const outcome:SafeSourceRun["outcome"]=m.failureCode==="NO_RECENT_VERIFIED_SCORE_FIXTURES"&&m.providerCalled===false?
     "waiting":run.status!=="healthy"?"degraded":
     descriptor.id==="api-football-live-odds"&&recorded===0?"empty":
@@ -125,7 +133,7 @@ export function toSourceHealthView(input:{
  });
  return{id:descriptor.id,label:descriptor.label,state,updatedAt:ageMinutes===null?null:latest!.checkedAt,
   ageMinutes,receivedRecords:stored,scannedRecords:scanned,pendingFixtureChecks:pending,
-  matchedFixtures,scannedActiveFixtures,lastRunCode,lastFailureStage,upstreamAttempted,recentRuns,note};
+  matchedFixtures,scannedActiveFixtures,openProviderQuotes,lastRunCode,lastFailureStage,upstreamAttempted,recentRuns,note};
 }
 export function sourceHealthSelfcheck(){
  const at="2026-10-13T15:00:00Z";
@@ -182,6 +190,14 @@ export function sourceHealthSelfcheck(){
       metadata:{quotesWritten:i,rawPrivateHeaders:"TOKEN_PRIVATE"}}));
     const v=toSourceHealthView({descriptor:sourceDescriptors[2],latest:rows[0],history:rows,now:at});
     return v.recentRuns.length===6&&!JSON.stringify(v).includes("TOKEN_PRIVATE");
+   })()},
+  {name:"Suspended market prices cannot be advertised as available",passed:(()=>{
+    const row={...sample,providerId:"api-football-live-odds",
+      metadata:{quotesWritten:8,unsuspendedWritten:0,suspendedWritten:8,
+        failureCode:"ALL_MARKETS_SUSPENDED"}};
+    const v=toSourceHealthView({descriptor:sourceDescriptors[2],latest:row,now:at});
+    return v.state==="empty"&&v.openProviderQuotes===0&&
+      v.lastRunCode==="ALL_MARKETS_SUSPENDED"&&v.recentRuns[0].outcome==="empty";
    })()},
   {name:"Server diagnostics and provider quota never leaked",passed:!json.includes("TOP_SECRET")&&!json.includes("quotaRemaining")&&!json.includes("SHOULD_NOT_EXPOSE")&&!json.includes("private service diagnostics")},
  ];
