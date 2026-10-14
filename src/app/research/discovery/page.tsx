@@ -146,6 +146,8 @@ export default function DiscoveryPage(){
             {provider.openProviderQuotes!==null&&<small>Неприостановленные цены: {provider.openProviderQuotes} · букмекер не подтверждён</small>}
             {provider.quoteWriteFailures!==null&&provider.quoteWriteFailures>0&&<small>Ошибок записи котировок: {provider.quoteWriteFailures}</small>}
             {provider.journalWriteFailures!==null&&provider.journalWriteFailures>0&&<small>Ошибок журнала доказательств: {provider.journalWriteFailures}</small>}
+            {provider.quoteWriteErrorClass&&<small>Причина записи котировок: {provider.quoteWriteErrorClass}</small>}
+            {provider.journalWriteErrorClass&&<small>Причина журнала: {provider.journalWriteErrorClass}</small>}
           </footer>
         </article>)}</div>}
     </section>
