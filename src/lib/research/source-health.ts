@@ -26,6 +26,8 @@ export interface SourceHealthView{
   openProviderQuotes:number|null;
   quoteWriteFailures:number|null;
   journalWriteFailures:number|null;
+  quoteWriteErrorClass:string|null;
+  journalWriteErrorClass:string|null;
   targetedFixtureProbeUsed:boolean|null;
   targetedFailureCode:string|null;
   lastRunCode:string|null;
@@ -70,6 +72,15 @@ export function toSourceHealthView(input:{
   asSafeCount(info.quoteWriteFailures):null;
  const journalWriteFailures=descriptor.id==="api-football-live-odds"?
   asSafeCount(info.journalWriteFailures):null;
+ const knownStorageClasses=new Set(["STORAGE_AUTH","STORAGE_SCHEMA","STORAGE_CONFLICT",
+  "STORAGE_FOREIGN_KEY","STORAGE_CONSTRAINT","STORAGE_TIMEOUT",
+  "STORAGE_UNAVAILABLE","STORAGE_UNKNOWN"]);
+ const storageClass=(value:unknown):string|null=>
+   typeof value==="string"&&knownStorageClasses.has(value)?value:null;
+ const quoteWriteErrorClass=descriptor.id==="api-football-live-odds"?
+  storageClass(info.quoteWriteErrorClass):null;
+ const journalWriteErrorClass=descriptor.id==="api-football-live-odds"?
+  storageClass(info.journalWriteErrorClass):null;
  const targetedFixtureProbeUsed=descriptor.id==="api-football-live-odds"&&
   typeof info.targetedCalled==="boolean"?info.targetedCalled:null;
  // Error labels are a strict, non-sensitive allowlist. Raw provider payloads,
@@ -150,6 +161,7 @@ export function toSourceHealthView(input:{
  return{id:descriptor.id,label:descriptor.label,state,updatedAt:ageMinutes===null?null:latest!.checkedAt,
   ageMinutes,receivedRecords:stored,scannedRecords:scanned,pendingFixtureChecks:pending,
   matchedFixtures,scannedActiveFixtures,openProviderQuotes,quoteWriteFailures,journalWriteFailures,
+  quoteWriteErrorClass,journalWriteErrorClass,
   targetedFixtureProbeUsed,targetedFailureCode,
   lastRunCode,lastFailureStage,upstreamAttempted,recentRuns,note};
 }
