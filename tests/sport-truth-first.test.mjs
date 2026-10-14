@@ -273,3 +273,10 @@ test("Public live API fails closed without returning local demo fixtures",()=>{
  assert.match(terminal,/NO LIVE DATA/);
  assert.doesNotMatch(terminal,/DEMO EVENTS|Demo fallback/);
 });
+
+test("A failing sports API response immediately clears the previous live client list",()=>{
+ const code=read("src/components/Terminal.tsx");
+ assert.match(code,/if\(!payload\|\|!Array\.isArray\(payload\.events\)\)/);
+ assert.match(code,/setLoadedEvents\(\[\]\);\s*setLiveSourceMode\("storage-unavailable"\);/);
+ assert.match(code,/NO LIVE DATA/);
+});
