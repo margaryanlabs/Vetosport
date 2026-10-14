@@ -14,10 +14,12 @@ export async function GET(){
  try{
   const store=getPersistence();
   const rows=await Promise.all(sourceDescriptors.map(async descriptor=>{
-   const health=await store.listRecentProviderHealth({providerId:descriptor.id,limit:1});
-   return toSourceHealthView({descriptor,latest:health[0]??null,now:at});
+   // Existing server-side health table only; bounded to six past polls per source.
+   // Public response strips raw payloads, quota, messages, secrets and IDs.
+   const history=await store.listRecentProviderHealth({providerId:descriptor.id,limit:6});
+   return toSourceHealthView({descriptor,latest:history[0]??null,history,now:at});
   }));
-  return NextResponse.json({model:"veto.source-health.public-v1",generatedAt:at,
+  return NextResponse.json({model:"veto.source-health.public-v2",generatedAt:at,
    source:"PERSISTED_ONLY",automaticBettingEnabled:false,externalProviderCalls:0,providers:rows},
    {headers});
  }catch{

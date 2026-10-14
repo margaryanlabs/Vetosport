@@ -280,3 +280,21 @@ test("A failing sports API response immediately clears the previous live client 
  assert.match(code,/setLoadedEvents\(\[\]\);\s*setLiveSourceMode\("storage-unavailable"\);/);
  assert.match(code,/NO LIVE DATA/);
 });
+
+test("An empty in-play odds response never advertises usable real markets",()=>{
+ const chron=read("src/app/api/cron/api-football-inplay/route.ts");
+ const health=read("src/lib/research/source-health.ts");
+ const sourceApi=read("src/app/api/intelligence/research/source-health/route.ts");
+ const page=read("src/app/research/discovery/page.tsx");
+ assert.match(chron,/NO_LIVE_MARKETS_RETURNED/);
+ assert.match(chron,/ALL_MARKETS_SUSPENDED/);
+ assert.match(chron,/unsuspendedWritten/);
+ assert.match(chron,/NO_RECENT_VERIFIED_SCORE_FIXTURES/);
+ assert.match(chron,/providerCalled:false/);
+ assert.match(health,/ProviderReadiness="active"\|"empty"\|"waiting"/);
+ assert.match(health,/noMarkets/);
+ assert.match(health,/recentRuns:SafeSourceRun\[\]/);
+ assert.match(sourceApi,/listRecentProviderHealth\(\{providerId:descriptor.id,limit:6\}\)/);
+ assert.match(page,/НЕТ КОТИРОВОК/);
+ assert.match(page,/discoverySourceTimeline/);
+});

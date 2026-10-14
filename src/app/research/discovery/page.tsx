@@ -110,23 +110,38 @@ export default function DiscoveryPage(){
     <section className="discoveryProviderPanel" aria-labelledby="discovery-provider-title">
       <div className="discoveryProviderIntro"><div><span>03 / SOURCE OBSERVABILITY</span>
         <h2 id="discovery-provider-title">Откуда поступают данные?</h2>
-        <p>Последние подтверждённые запуски источников. Статус «работает» означает успешную техническую проверку, а не наличие актуального коэффициента или проверенной стратегии.</p>
+        <p>Прозрачная история последних запусков: отличаем реальные цены, пустой ответ, ожидание матча и ограничения. Успешный запрос не означает доступный коэффициент или доказанную стратегию.</p>
       </div><a href="/research/watchlist">Смотреть реальные матчи ↗</a></div>
       {sourceHealthFailed?<p className="discoveryProviderMissing">История источников пока недоступна. Мы не выдаём отсутствие данных за успешную работу.</p>:
        !sourceHealth?<p className="discoveryProviderMissing">Проверяем реальные записи о выполнении загрузки…</p>:
        <div className="discoveryProviderGrid">{sourceHealth.map(provider=><article key={provider.id}>
           <div className="discoveryProviderCardHead"><span className={"discoveryProviderDot "+provider.state}/>
             <strong>{provider.label}</strong>
-            <b>{provider.state==="active"?"РАБОТАЕТ":provider.state==="degraded"?"ОГРАНИЧЕНИЯ":provider.state==="stale"?"УСТАРЕЛО":"НЕИЗВЕСТНО"}</b>
+            <b>{provider.state==="active"?"РАБОТАЕТ":provider.state==="degraded"?"ОГРАНИЧЕНИЯ":provider.state==="stale"?"УСТАРЕЛО":provider.state==="empty"?"НЕТ КОТИРОВОК":provider.state==="waiting"?"ОЖИДАЕМ МАТЧ":"НЕИЗВЕСТНО"}</b>
           </div>
           <p>{provider.note}</p>
           {provider.lastRunCode&&<p className="discoverySourceFailure">Причина: {provider.lastRunCode}</p>}
           {provider.lastFailureStage&&<p className="discoverySourceFailure">Этап: {provider.lastFailureStage}</p>}
+          {provider.recentRuns?.length>0&&<div className="discoverySourceTimeline" role="group" aria-label="Последние шесть сохранённых запусков">
+            <div className="discoverySourceTimelineHead"><b>ИСТОРИЯ ЗАПУСКОВ</b><span>{provider.recentRuns.length} последних проверок</span></div>
+            <div className="discoverySourceTimelineBars">{provider.recentRuns.map((run,i)=>
+              <div key={run.checkedAt+"-"+i}
+                className={"discoverySourceRun "+run.outcome}
+                title={new Date(run.checkedAt).toLocaleString("ru-RU")+" · "+
+                  (run.outcome==="recorded"?"записи сохранены":run.outcome==="empty"?"нулевые активные рынки":
+                   run.outcome==="waiting"?"запрос не выполнялся":run.outcome==="degraded"?"ошибка или ограничение":"исход неизвестен")}
+                aria-label={"Запуск "+(i+1)+": "+run.outcome+(run.recorded!==null?", записано "+run.recorded:"")}>
+                <span/>{run.recorded!==null&&<small>{run.recorded}</small>}
+              </div>
+            )}</div>
+            <p>Нули — не доказательство доступных котировок. Источник может работать технически, но не предоставлять рынки.</p>
+          </div>}
           <footer><span>{provider.updatedAt?new Date(provider.updatedAt).toLocaleString("ru-RU"):"Нет сохранённого запуска"}</span>
             {provider.receivedRecords!==null&&<small>Записей: {provider.receivedRecords}</small>}
             {provider.pendingFixtureChecks!==null&&<small>К проверке FT: {provider.pendingFixtureChecks}</small>}
             {provider.scannedActiveFixtures!==null&&<small>Проверено активных матчей: {provider.scannedActiveFixtures}</small>}
             {provider.matchedFixtures!==null&&<small>Точно совпали с линией: {provider.matchedFixtures}</small>}
+            {provider.openProviderQuotes!==null&&<small>Неприостановленные цены: {provider.openProviderQuotes} · букмекер не подтверждён</small>}
           </footer>
         </article>)}</div>}
     </section>
