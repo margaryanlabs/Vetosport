@@ -64,7 +64,7 @@ export async function GET(request:Request){
     metadata:{failureCode:"NO_RECENT_VERIFIED_SCORE_FIXTURES",
       providerCalled:false,scannedActiveFixtures:football.length,
       matchedSourceIdCount:0,candidateMayBeCapped,
-      estimatedCallsPerDay:12},
+      estimatedCallsPerDay:18},
    });
    return NextResponse.json({ok:true,skipped:true,reason:"NO_RECENT_VERIFIED_SCORE_FIXTURES",
      verifiedMatches:0,providerCalled:false,freeQuotaSaved:true,
@@ -115,7 +115,12 @@ export async function GET(request:Request){
    const activeIds=matchIds.map(id=>verified.map.get(id)?.eventId).filter((id):id is string=>typeof id==="string");
    const stored=activeIds.length?await persistence.listRecentQuotesForEvents({eventIds:activeIds,limit:1800}):[];
    const seen=new Set(stored.map(q=>[q.eventId,q.provider,q.marketKey,q.selectionKey,q.capturedAt].join("|")));
-   for(const row of providerRows.slice(0,41)){
+   // Process exact observed IDs first: the targeted row could otherwise be
+   // beyond the first 40 global rows and never reach persistence.
+   const rankedRows=[...providerRows].sort((a,b)=>
+     Number(verified.map.has(b.fixture?.id??-1))-
+     Number(verified.map.has(a.fixture?.id??-1)));
+   for(const row of rankedRows.slice(0,41)){
     const id=row.fixture?.id;
     if(typeof id!=="number")continue;
     const linked=verified.map.get(id);
