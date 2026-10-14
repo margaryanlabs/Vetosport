@@ -55,6 +55,15 @@ export async function GET(request:Request){
   }
   const verified=buildVerifiedOddsMatchIndex({events:football,states,asOf});
   if(verified.map.size===0){
+   await persistence.appendProviderHealth({
+    providerId:"api-football-live-odds",
+    status:"degraded",checkedAt:asOf,
+    message:"No fresh exact-fixture and score intersection. In-play upstream not called.",
+    metadata:{failureCode:"NO_RECENT_VERIFIED_SCORE_FIXTURES",
+      providerCalled:false,scannedActiveFixtures:football.length,
+      matchedSourceIdCount:0,candidateMayBeCapped,
+      estimatedCallsPerDay:12},
+   });
    return NextResponse.json({ok:true,skipped:true,reason:"NO_RECENT_VERIFIED_SCORE_FIXTURES",
      verifiedMatches:0,providerCalled:false,freeQuotaSaved:true,
      scannedActiveFixtures:football.length,candidateMayBeCapped},
@@ -67,6 +76,7 @@ export async function GET(request:Request){
   const reserve=20;
   const limited=fetched.quotaRemaining!==null&&fetched.quotaRemaining<=reserve;
   let mapped=0,unmatched=0,quotesWritten=0,journalRows=0,failures=0,suspended=0;
+  let unsuspendedWritten=0,suspendedWritten=0;
   let skippedStale=0;
   if(!limited&&fetched.rows.length){
    const matchIds=[...new Set(fetched.rows.map(r=>r.fixture?.id).filter((id):id is number=>typeof id==="number"))];
@@ -89,7 +99,12 @@ export async function GET(request:Request){
     }).slice(0,65);
     if(!filtered.length)continue;
     try {
-     quotesWritten+=await persistence.appendQuotes(linked.eventId,filtered);
+     const persisted=await persistence.appendQuotes(linked.eventId,filtered);
+     quotesWritten+=persisted;
+     if(persisted>0){
+      unsuspendedWritten+=filtered.filter(q=>q.suspended!==true).length;
+      suspendedWritten+=filtered.filter(q=>q.suspended===true).length;
+     }
      journalRows+=await persistence.appendTruthJournal(journalizeMarketQuotes({
       canonicalEventId:linked.eventId,sourceProvider:"api-football-live-odds",
       gatewayReceivedAt:fetched.fetchedAt,quotes:filtered,
@@ -98,17 +113,23 @@ export async function GET(request:Request){
    }
   }
   const reasonCode=limited?"QUOTA_RESERVE":failures?"STORAGE_WRITE_FAILURE":
+    fetched.rows.length===0?"NO_LIVE_MARKETS_RETURNED":
     fetched.rows.length>0&&mapped===0?"NO_OVERLAPPING_FIXTURES":
-    mapped>0&&quotesWritten===0?"NO_USABLE_BOOKMAKER_QUOTES":null;
+    mapped>0&&quotesWritten===0?"NO_USABLE_BOOKMAKER_QUOTES":
+    quotesWritten>0&&unsuspendedWritten===0?"ALL_MARKETS_SUSPENDED":null;
   failedStage="WRITE_PROVIDER_HEALTH";
   await persistence.appendProviderHealth({
    providerId:"api-football-live-odds",
-   status:reasonCode?"degraded":"healthy",
+   // Empty live markets and suspended quotes are valid upstream responses,
+   // but not proof that usable odds data was delivered.
+   status:reasonCode==="NO_LIVE_MARKETS_RETURNED"||reasonCode==="ALL_MARKETS_SUSPENDED"?
+     "healthy":reasonCode?"degraded":"healthy",
    checkedAt:fetched.fetchedAt,quotaRemaining:fetched.quotaRemaining??undefined,
    message:limited?"FREE quota reserve reached; no quote rows written":failures?
      "Some exact-matched odds failed storage":
      "Sparse 2-hour in-play snapshots, exact provider fixture match only; prices never claimed executable.",
-   metadata:{providerRows:fetched.rows.length,mapped,unmatched,skippedStale,quotesWritten,journalRows,failures,
+   metadata:{providerRows:fetched.rows.length,mapped,unmatched,skippedStale,quotesWritten,
+     unsuspendedWritten,suspendedWritten,journalRows,failures,
      suspended,lowQuota:limited,requestedPage:1,totalPages:fetched.pagesTotal,
      matchedSourceIdCount:verified.map.size,ambiguousCount:verified.ambiguous.length,
      bookmakerIdentityProvided:false,estimatedCallsPerDay:12,
@@ -118,7 +139,8 @@ export async function GET(request:Request){
   return NextResponse.json({ok:failures===0&&!limited,
    source:"api-football-live-odds",mode:"SPARSE_RESEARCH_SNAPSHOTS",
    providerRows:fetched.rows.length,pagesTotal:fetched.pagesTotal,pagesFetched:1,
-   mappedFixtures:mapped,unmatched,skippedStale,quotesWritten,journalRows,failures,suspended,
+   mappedFixtures:mapped,unmatched,skippedStale,quotesWritten,
+   unsuspendedWritten,suspendedWritten,journalRows,failures,suspended,
    exactMatchIndex:verified.map.size,ambiguous:verified.ambiguous.length,
    scannedActiveFixtures:football.length,candidateMayBeCapped,
    ...(reasonCode?{reasonCode}:{}),
