@@ -1,5 +1,5 @@
 import {NextResponse} from "next/server";
-import {getApiFootballInPlay,normalizeInPlayOdds} from "@/lib/providers/api-football-inplay";
+import {getApiFootballInPlay,normalizeInPlayOdds,planTargetedInplayProbe} from "@/lib/providers/api-football-inplay";
 import {buildVerifiedOddsMatchIndex} from "@/lib/providers/api-football-odds-join";
 import {getPersistence,persistenceConfiguration} from "@/lib/persistence/factory";
 import {journalizeMarketQuotes} from "@/lib/data-plane/journalize";
@@ -23,6 +23,8 @@ export async function GET(request:Request){
  const persistence=getPersistence();
  let failedStage="LIST_ACTIVE_EVENTS";
  let providerCalled=false;
+ let targetedCalled=false;
+ let targetedBucket:number|null=null;
  try {
   const before=new Date(),asOf=before.toISOString();
   const HOUR=3600000;
@@ -62,7 +64,7 @@ export async function GET(request:Request){
     metadata:{failureCode:"NO_RECENT_VERIFIED_SCORE_FIXTURES",
       providerCalled:false,scannedActiveFixtures:football.length,
       matchedSourceIdCount:0,candidateMayBeCapped,
-      estimatedCallsPerDay:12},
+      estimatedCallsPerDay:18},
    });
    return NextResponse.json({ok:true,skipped:true,reason:"NO_RECENT_VERIFIED_SCORE_FIXTURES",
      verifiedMatches:0,providerCalled:false,freeQuotaSaved:true,
@@ -72,18 +74,53 @@ export async function GET(request:Request){
   failedStage="FETCH_INPLAY_ODDS";
   providerCalled=true;
   const fetched=await getApiFootballInPlay();
-  failedStage="PERSIST_MARKET_QUOTES";
+  // No fuzzy matching: fallback to an exact source fixture only if the free
+  // upstream global listing omitted every observed fixture and we can prove
+  // there is enough quota headroom. Maximum six targeted calls per UTC day.
   const reserve=20;
-  const limited=fetched.quotaRemaining!==null&&fetched.quotaRemaining<=reserve;
+  let quotaRemaining=fetched.quotaRemaining;
+  let limited=quotaRemaining!==null&&quotaRemaining<=reserve;
+  const globalIds=fetched.rows.map(row=>row.fixture?.id)
+    .filter((id):id is number=>typeof id==="number"&&Number.isSafeInteger(id));
+  const history=await persistence.listRecentProviderHealth({
+    providerId:"api-football-live-odds",limit:6,
+  });
+  const previousProbeBucket=history.find(sample=>
+    sample.metadata?.targetedCalled===true&&
+    typeof sample.metadata.targetedBucket==="number"
+  )?.metadata?.targetedBucket;
+  const probe=planTargetedInplayProbe({
+    fixtureIds:[...verified.map.keys()],globalFixtureIds:globalIds,
+    globalPages:fetched.pagesTotal,remaining:quotaRemaining,asOf,
+    previousProbeBucket:typeof previousProbeBucket==="number"?previousProbeBucket:null,
+  });
+  const providerRows=[...fetched.rows];
+  let targetedProviderRows=0;
+  if(!limited&&probe.fixtureId!==null){
+   targetedCalled=true;
+   targetedBucket=probe.bucket;
+   const exact=await getApiFootballInPlay({fixtureId:probe.fixtureId});
+   targetedProviderRows=exact.rows.length;
+   // A response to ?fixture=X must never authorize quotes for another match.
+   providerRows.push(...exact.rows.filter(row=>row.fixture?.id===probe.fixtureId));
+   quotaRemaining=exact.quotaRemaining;
+   limited=quotaRemaining!==null&&quotaRemaining<=reserve;
+  }
+  failedStage="PERSIST_MARKET_QUOTES";
   let mapped=0,unmatched=0,quotesWritten=0,journalRows=0,failures=0,suspended=0;
   let unsuspendedWritten=0,suspendedWritten=0;
   let skippedStale=0;
-  if(!limited&&fetched.rows.length){
-   const matchIds=[...new Set(fetched.rows.map(r=>r.fixture?.id).filter((id):id is number=>typeof id==="number"))];
+  if(!limited&&providerRows.length){
+   const matchIds=[...new Set(providerRows.map(r=>r.fixture?.id).filter((id):id is number=>typeof id==="number"))];
    const activeIds=matchIds.map(id=>verified.map.get(id)?.eventId).filter((id):id is string=>typeof id==="string");
    const stored=activeIds.length?await persistence.listRecentQuotesForEvents({eventIds:activeIds,limit:1800}):[];
    const seen=new Set(stored.map(q=>[q.eventId,q.provider,q.marketKey,q.selectionKey,q.capturedAt].join("|")));
-   for(const row of fetched.rows.slice(0,40)){
+   // Process exact observed IDs first: the targeted row could otherwise be
+   // beyond the first 40 global rows and never reach persistence.
+   const rankedRows=[...providerRows].sort((a,b)=>
+     Number(verified.map.has(b.fixture?.id??-1))-
+     Number(verified.map.has(a.fixture?.id??-1)));
+   for(const row of rankedRows.slice(0,41)){
     const id=row.fixture?.id;
     if(typeof id!=="number")continue;
     const linked=verified.map.get(id);
@@ -113,8 +150,8 @@ export async function GET(request:Request){
    }
   }
   const reasonCode=limited?"QUOTA_RESERVE":failures?"STORAGE_WRITE_FAILURE":
-    fetched.rows.length===0?"NO_LIVE_MARKETS_RETURNED":
-    fetched.rows.length>0&&mapped===0?"NO_OVERLAPPING_FIXTURES":
+    providerRows.length===0?"NO_LIVE_MARKETS_RETURNED":
+    providerRows.length>0&&mapped===0?"NO_OVERLAPPING_FIXTURES":
     mapped>0&&quotesWritten===0?"NO_USABLE_BOOKMAKER_QUOTES":
     quotesWritten>0&&unsuspendedWritten===0?"ALL_MARKETS_SUSPENDED":null;
   failedStage="WRITE_PROVIDER_HEALTH";
@@ -124,27 +161,31 @@ export async function GET(request:Request){
    // but not proof that usable odds data was delivered.
    status:reasonCode==="NO_LIVE_MARKETS_RETURNED"||reasonCode==="ALL_MARKETS_SUSPENDED"?
      "healthy":reasonCode?"degraded":"healthy",
-   checkedAt:fetched.fetchedAt,quotaRemaining:fetched.quotaRemaining??undefined,
+   checkedAt:fetched.fetchedAt,quotaRemaining:quotaRemaining??undefined,
    message:limited?"FREE quota reserve reached; no quote rows written":failures?
      "Some exact-matched odds failed storage":
      "Sparse 2-hour in-play snapshots, exact provider fixture match only; prices never claimed executable.",
-   metadata:{providerRows:fetched.rows.length,mapped,unmatched,skippedStale,quotesWritten,
+   metadata:{providerRows:providerRows.length,globalProviderRows:fetched.rows.length,
+     targetedProviderRows,targetedCalled,targetedBucket,targetedProbeReason:probe.reason,
+     mapped,unmatched,skippedStale,quotesWritten,
      unsuspendedWritten,suspendedWritten,journalRows,failures,
      suspended,lowQuota:limited,requestedPage:1,totalPages:fetched.pagesTotal,
      matchedSourceIdCount:verified.map.size,ambiguousCount:verified.ambiguous.length,
-     bookmakerIdentityProvided:false,estimatedCallsPerDay:12,
+     bookmakerIdentityProvided:false,estimatedCallsPerDay:18,
      ...(reasonCode?{failureCode:reasonCode}:{}),candidateMayBeCapped,
      scannedActiveFixtures:football.length,providerCalled:true},
   });
   return NextResponse.json({ok:failures===0&&!limited,
    source:"api-football-live-odds",mode:"SPARSE_RESEARCH_SNAPSHOTS",
-   providerRows:fetched.rows.length,pagesTotal:fetched.pagesTotal,pagesFetched:1,
+   providerRows:providerRows.length,globalProviderRows:fetched.rows.length,
+   targetedProviderRows,targetedCalled,targetedProbeReason:probe.reason,
+   pagesTotal:fetched.pagesTotal,pagesFetched:1,
    mappedFixtures:mapped,unmatched,skippedStale,quotesWritten,
    unsuspendedWritten,suspendedWritten,journalRows,failures,suspended,
    exactMatchIndex:verified.map.size,ambiguous:verified.ambiguous.length,
    scannedActiveFixtures:football.length,candidateMayBeCapped,
    ...(reasonCode?{reasonCode}:{}),
-   quotaRemaining:fetched.quotaRemaining,quotaReserve:reserve,
+   quotaRemaining,quotaReserve:reserve,
    bookmakerIdentitiesVerified:false,livePricesNotGuaranteed:true,
    capturedAt:fetched.fetchedAt,
   },{status:failures?502:200,headers:{"Cache-Control":"no-store"}});
@@ -159,7 +200,8 @@ export async function GET(request:Request){
     providerId:"api-football-live-odds",status:"degraded",
     checkedAt:new Date().toISOString(),
     message:"In-play source or persistence failed. See sanitized failure code.",
-    metadata:{failureCode:code,failedStage,providerCalled,estimatedCallsPerDay:12},
+    metadata:{failureCode:code,failedStage,providerCalled,
+     targetedCalled,targetedBucket,estimatedCallsPerDay:18},
    });
   }catch{/* Do not reveal bridge or provider exceptions. */}
   return NextResponse.json({ok:false,error:code,failedStage,providerCalled,

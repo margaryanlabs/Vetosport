@@ -298,3 +298,27 @@ test("An empty in-play odds response never advertises usable real markets",()=>{
  assert.match(page,/НЕТ КОТИРОВОК/);
  assert.match(page,/discoverySourceTimeline/);
 });
+
+test("One exact in-play fixture lookup can recover missing global odds with a hard free quota guard",()=>{
+ const client=read("src/lib/providers/api-football-inplay.ts");
+ const cron=read("src/app/api/cron/api-football-inplay/route.ts");
+ const route=read("src/app/api/providers/route.ts");
+ const selfcheck=read("src/app/api/intelligence/providers/inplay-odds/selfcheck/route.ts");
+ const health=read("src/lib/research/source-health.ts");
+ assert.match(client,/function planTargetedInplayProbe/);
+ assert.match(client,/url.searchParams.set\("fixture",String\(input.fixtureId\)\)/);
+ assert.match(client,/input.remaining<=22/);
+ assert.match(client,/utcHour%4!==0/);
+ assert.match(client,/previousProbeBucket===bucket/);
+ assert.match(client,/globalIds.has\(id\)/);
+ assert.match(cron,/previousProbeBucket/);
+ assert.match(cron,/targetedCalled=true/);
+ assert.match(cron,/getApiFootballInPlay\(\{fixtureId:probe.fixtureId\}\)/);
+ assert.match(cron,/providerRows.push\(\.\.\.exact.rows.filter/);
+ assert.match(cron,/rankedRows/);
+ assert.match(cron,/verified.map.has\(a.fixture\?\.id\?\?-1\)/);
+ assert.match(cron,/estimatedCallsPerDay:18/);
+ assert.match(route,/targetedExtraCallsPerDayCap:6/);
+ assert.match(selfcheck,/targetedInplayProbeSelfcheck/);
+ assert.match(health,/targetedFixtureProbeUsed/);
+});

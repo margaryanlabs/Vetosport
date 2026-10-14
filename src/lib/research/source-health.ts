@@ -24,6 +24,7 @@ export interface SourceHealthView{
   matchedFixtures:number|null;
   scannedActiveFixtures:number|null;
   openProviderQuotes:number|null;
+  targetedFixtureProbeUsed:boolean|null;
   lastRunCode:string|null;
   lastFailureStage:string|null;
   upstreamAttempted:boolean|null;
@@ -62,6 +63,8 @@ export function toSourceHealthView(input:{
   asSafeCount(info.scannedActiveFixtures):null;
  const openProviderQuotes=descriptor.id==="api-football-live-odds"?
   asSafeCount(info.unsuspendedWritten):null;
+ const targetedFixtureProbeUsed=descriptor.id==="api-football-live-odds"&&
+  typeof info.targetedCalled==="boolean"?info.targetedCalled:null;
  // Error labels are a strict, non-sensitive allowlist. Raw provider payloads,
  // bridge URLs, credentials, quota headers and arbitrary messages remain private.
  const safeCodes=new Set([
@@ -133,7 +136,8 @@ export function toSourceHealthView(input:{
  });
  return{id:descriptor.id,label:descriptor.label,state,updatedAt:ageMinutes===null?null:latest!.checkedAt,
   ageMinutes,receivedRecords:stored,scannedRecords:scanned,pendingFixtureChecks:pending,
-  matchedFixtures,scannedActiveFixtures,openProviderQuotes,lastRunCode,lastFailureStage,upstreamAttempted,recentRuns,note};
+  matchedFixtures,scannedActiveFixtures,openProviderQuotes,targetedFixtureProbeUsed,
+  lastRunCode,lastFailureStage,upstreamAttempted,recentRuns,note};
 }
 export function sourceHealthSelfcheck(){
  const at="2026-10-13T15:00:00Z";

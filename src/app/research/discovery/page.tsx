@@ -141,6 +141,7 @@ export default function DiscoveryPage(){
             {provider.pendingFixtureChecks!==null&&<small>К проверке FT: {provider.pendingFixtureChecks}</small>}
             {provider.scannedActiveFixtures!==null&&<small>Проверено активных матчей: {provider.scannedActiveFixtures}</small>}
             {provider.matchedFixtures!==null&&<small>Точно совпали с линией: {provider.matchedFixtures}</small>}
+            {provider.targetedFixtureProbeUsed===true&&<small>Поиск по точному ID матча: выполнен · без гарантии наличия рынков</small>}
             {provider.openProviderQuotes!==null&&<small>Неприостановленные цены: {provider.openProviderQuotes} · букмекер не подтверждён</small>}
           </footer>
         </article>)}</div>}

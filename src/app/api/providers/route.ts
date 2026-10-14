@@ -71,8 +71,9 @@ export function GET() {
         role:"source-labelled live odds snapshots for exact API-Football fixture IDs; bookmaker identity not in source",
         configured:apiFootballConfigured,enabled:apiFootballInPlayEnabled,
         ingestionReady:apiFootballInPlayReady,cronEndpoint:"/api/cron/api-football-inplay",
-        estimatedCallsPerDay:12,nominalFootballDailyCalls:60,quotaReserve:20,
-        sourceCanIdentifyBookmaker:false,maximumPageRequestsPerRun:1,
+        estimatedCallsPerDay:18,nominalFootballDailyCalls:66,quotaReserve:20,
+        targetedExtraCallsPerDayCap:6,targetedProbeCadenceHours:4,
+        sourceCanIdentifyBookmaker:false,maximumPageRequestsPerRun:2,
       },
       sportmonks: {
         role: "football events, live state and final score",
