@@ -25,7 +25,7 @@ export type StrategyValidationReport={
  duplicateRejected:number;excluded:{unsettled:number;manual:number;missingProof:number;invalidTiming:number;duplicate:number};
  cohorts:StrategyCohort[];overall:StrategyCohort|null;
  prospectiveValidated:false;executablePricesVerified:false;validatedEdgeCount:0;
- maximumLocalEntries:150;
+ maximumLocalEntries:1000;
 };
 const result=(e:PaperEntry):0|1=>e.status==="PROVIDER_WIN"?1:0;
 const average=(xs:number[])=>xs.length?xs.reduce((a,b)=>a+b,0)/xs.length:null;
@@ -134,7 +134,7 @@ export function validatePaperStrategies(records:PaperEntry[]):StrategyValidation
  return{status:overall?.status??"EMPTY",totalRecords:records.length,
   eligibleRecords:unique.length,duplicateRejected:excluded.duplicate,excluded,
   cohorts,overall,prospectiveValidated:false,executablePricesVerified:false,
-  validatedEdgeCount:0,maximumLocalEntries:150};
+  validatedEdgeCount:0,maximumLocalEntries:1000};
 }
 export function strategyValidationSelfcheck(){
  const sample=(n:number,version="m1",status:"PROVIDER_WIN"|"PROVIDER_LOSS"="PROVIDER_WIN"):PaperEntry=>({
