@@ -438,3 +438,21 @@ test("Capture-lag endpoint actually reports the additional deterministic checks"
  assert.match(route,/\.\.\.result,passed,checks/);
  assert.match(route,/status:passed\?200:503/);
 });
+
+test("VETO Sport historical odds analysis cannot use a score recorded after the quoted price",()=>{
+ const chronology=read("src/lib/research/historical-co-capture.ts");
+ const coverage=read("src/lib/research/evidence-coverage.ts");
+ const ui=read("src/app/research/discovery/page.tsx");
+ assert.match(chronology,/historicalTimingEvidence/);
+ assert.match(chronology,/causallyAlignedWithin2m/);
+ assert.match(chronology,/lookaheadOnlyWithin2m/);
+ assert.match(chronology,/values\[lo\]<=at\)causal\.add/);
+ assert.match(chronology,/sourceClockIndependent:false/);
+ assert.match(chronology,/executablePriceVerified:false/);
+ assert.match(coverage,/historicalLookaheadOnlyEvents:chronology\.lookaheadOnlyWithin2m/);
+ assert.match(coverage,/historicalCausallyAlignedEvents:chronology\.causallyAlignedWithin2m/);
+ assert.match(coverage,/id:"causal-ordering"/);
+ assert.match(ui,/ОПАСНЫЙ ЗАГЛЯД В БУДУЩЕЕ/);
+ assert.match(ui,/ХРОНОЛОГИЧЕСКИ ДОПУСТИМЫЕ/);
+ assert.match(ui,/CAUSAL ORDER/);
+});
