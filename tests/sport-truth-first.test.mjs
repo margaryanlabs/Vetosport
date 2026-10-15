@@ -435,3 +435,24 @@ test("Paper FT read API verifies stored source evidence and does not poll paid p
  assert.match(lab,/checkCertifiedFinals/);
  assert.match(lab,/не является сигналом к ставке/);
 });
+
+
+test("Strategy validation never presents repeated, post-event or hand-settled tickets as validated edge",()=>{
+ const engine=read("src/lib/paper/strategy-validation.ts");
+ const ui=read("src/components/StrategyValidationPanel.tsx");
+ const journal=read("src/components/PaperResearchTicket.tsx");
+ const selfcheck=read("src/app/api/intelligence/paper-journal/selfcheck/route.ts");
+ assert.match(engine,/validatePaperStrategies/);
+ assert.match(engine,/recorded-quote>120_000/);
+ assert.match(engine,/recorded-model>300_000/);
+ assert.match(engine,/excluded.duplicate/);
+ assert.match(engine,/prospectiveValidated:false/);
+ assert.match(engine,/validatedEdgeCount:0/);
+ assert.match(engine,/strategyValidationSelfcheck/);
+ assert.match(ui,/EDGE НЕ ДОКАЗАН/);
+ assert.match(ui,/CALIBRATION \/ 5 BINS/);
+ assert.match(ui,/Доказательная граница/);
+ assert.match(journal,/StrategyValidationPanel entries=\{entries\}/);
+ assert.match(journal,/verificationCursorRef.current/);
+ assert.match(selfcheck,/strategies.passed/);
+});
