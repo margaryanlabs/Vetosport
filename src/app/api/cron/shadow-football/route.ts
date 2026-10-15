@@ -56,6 +56,19 @@ export async function GET(request: Request) {
   const dailyPaper=await runDailyPaperTick({
     observedEvents:football,asOf:new Date().toISOString(),capture:true,
   }).catch(()=>({ok:false,skipped:"DAILY_PAPER_TICK_UNAVAILABLE",realBetsPlaced:0}));
+  // Hourly heartbeat distinguishes "no eligible research" from a cron that
+  // never ran. A failed optional health write must not break live prediction.
+  if(new Date().getUTCMinutes()<5){
+    await persistence.appendProviderHealth({
+      providerId:"veto-paper-forward",
+      status:dailyPaper.ok?"healthy":"degraded",
+      checkedAt:new Date().toISOString(),
+      message:dailyPaper.ok?"Forward paper observer executed":"Paper observer unavailable or schema not ready",
+      metadata:{researchOnly:true,realBetsPlaced:0,externalProviderCalls:0,
+        selected:"recorded" in dailyPaper?dailyPaper.recorded:0,
+        reason:"skipped" in dailyPaper?dailyPaper.skipped:null},
+    }).catch(()=>undefined);
+  }
 
   return NextResponse.json({
     paperResearch:dailyPaper,
