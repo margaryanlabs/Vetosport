@@ -22,7 +22,7 @@ export interface PaperEntry {
 }
 export const PAPER_STORAGE_KEY="veto-sport-paper-research-v1";
 export const PAPER_BANK_KEY="veto-sport-paper-bank-v1";
-export const MAX_ENTRIES=150;
+export const MAX_ENTRIES=1000;
 export const PAPER_RISK_FRACTION=.02;
 export function parsePaperEntries(value:unknown):PaperEntry[]{
  if(!Array.isArray(value))return[];
@@ -174,6 +174,7 @@ export function paperJournalSelfcheck(){
   {name:"Invalid records discarded, older records kept",pass:parsePaperEntries([{},base,win]).length===2},
   {name:"Formula injection disabled in export",pass:paperCsv([{...base,match:"=SUM(A1:A2)"}]).includes("'=SUM(A1:A2)")},
   {name:"No entries means no made-up results",pass:paperJournalStats([],1000).roi===0&&paperJournalStats([],1000).settled===0},
+  {name:"Journal supports a thousand local records without arbitrary smaller truncation",pass:MAX_ENTRIES===1000&&parsePaperEntries(Array.from({length:1001},(_,i)=>({...base,id:String(i)}))).length===1000},
  ];
  return{passed:tests.every(x=>x.pass),tests};
 }
