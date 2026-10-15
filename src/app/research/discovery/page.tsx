@@ -66,6 +66,7 @@ export default function DiscoveryPage(){
         <div className="discoveryHeroActions">
           <button type="button" onClick={()=>{setLoading(true);setCycle(v=>v+1);}} disabled={loading}>{loading?"Анализируем…":"Пересчитать исследование ↻"}</button>
           <a href="/research/watchlist">Открыть реальный радар ↗</a>
+          <a href="/research/paper-lab">Daily Paper Lab · $200 ↗</a>
           <a href="/research/results">Независимые результаты ↗</a>
         </div>
       </div>
