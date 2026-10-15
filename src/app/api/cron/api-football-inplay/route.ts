@@ -5,6 +5,7 @@ import {getPersistence,persistenceConfiguration} from "@/lib/persistence/factory
 import {journalizeMarketQuotes} from "@/lib/data-plane/journalize";
 import {isSelfcheckEvent} from "@/lib/live/persisted-utils";
 import {classifyStorageFailure} from "@/lib/persistence/failure-codes";
+import {describeInplayScoreAge} from "@/lib/providers/inplay-score-cadence";
 
 export const dynamic="force-dynamic";
 /**
@@ -57,6 +58,7 @@ export async function GET(request:Request){
     states.push(...batch);
   }
   const verified=buildVerifiedOddsMatchIndex({events:football,states,asOf});
+  const scoreCaptureAge=describeInplayScoreAge(verified.map.values());
   if(verified.map.size===0){
    await persistence.appendProviderHealth({
     providerId:"api-football-live-odds",
@@ -65,6 +67,7 @@ export async function GET(request:Request){
     metadata:{failureCode:"NO_RECENT_VERIFIED_SCORE_FIXTURES",
       providerCalled:false,scannedActiveFixtures:football.length,
       matchedSourceIdCount:0,candidateMayBeCapped,
+      ...scoreCaptureAge,
       estimatedCallsPerDay:18},
    });
    return NextResponse.json({ok:true,skipped:true,reason:"NO_RECENT_VERIFIED_SCORE_FIXTURES",
@@ -202,6 +205,7 @@ export async function GET(request:Request){
      quoteWriteErrorClass,journalWriteErrorClass,
      suspended,lowQuota:limited,requestedPage:1,totalPages:fetched.pagesTotal,
      matchedSourceIdCount:verified.map.size,ambiguousCount:verified.ambiguous.length,
+     ...scoreCaptureAge,
      bookmakerIdentityProvided:false,estimatedCallsPerDay:18,
      ...(reasonCode?{failureCode:reasonCode}:{}),candidateMayBeCapped,
      scannedActiveFixtures:football.length,providerCalled:true},
@@ -217,6 +221,7 @@ export async function GET(request:Request){
    quoteWriteFailures,journalWriteFailures,
    quoteWriteErrorClass,journalWriteErrorClass,
    exactMatchIndex:verified.map.size,ambiguous:verified.ambiguous.length,
+   scoreCaptureAge,
    scannedActiveFixtures:football.length,candidateMayBeCapped,
    ...(reasonCode?{reasonCode}:{}),
    quotaRemaining,quotaReserve:reserve,

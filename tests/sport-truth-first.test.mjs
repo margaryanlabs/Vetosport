@@ -456,3 +456,22 @@ test("VETO Sport historical odds analysis cannot use a score recorded after the 
  assert.match(ui,/ХРОНОЛОГИЧЕСКИ ДОПУСТИМЫЕ/);
  assert.match(ui,/CAUSAL ORDER/);
 });
+
+test("In-play market cron is scheduled after live-score ingestion with no extra API requests",()=>{
+ const config=JSON.parse(read("vercel.json"));
+ const find=(path)=>config.crons.find(c=>c.path===path)?.schedule;
+ assert.equal(find("/api/cron/api-football-live"),"*/30 * * * *");
+ assert.equal(find("/api/cron/api-football-inplay"),"1 */2 * * *");
+ assert.equal(config.crons.filter(c=>c.path==="/api/cron/api-football-inplay").length,1);
+ const clock=read("src/lib/providers/inplay-score-cadence.ts");
+ const cron=read("src/app/api/cron/api-football-inplay/route.ts");
+ const ui=read("src/app/research/discovery/page.tsx");
+ const report=read("src/lib/research/source-health.ts");
+ assert.match(clock,/cronOrderingSelfcheck/);
+ assert.match(clock,/scoreSnapshotsWithin2m/);
+ assert.match(clock,/executableQuoteCertified:false/);
+ assert.match(cron,/describeInplayScoreAge\(verified.map.values\(\)\)/);
+ assert.match(cron,/\.\.\.scoreCaptureAge/);
+ assert.match(ui,/provider.nearCaptureScoreFixtures/);
+ assert.match(report,/asSafeCount\(info.scoreSnapshotsWithin2m\)/);
+});
