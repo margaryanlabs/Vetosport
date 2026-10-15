@@ -108,7 +108,7 @@ export function paperJournalSelfcheck(){
   {name:"Manual loss loses stake",pass:paperProfit(loss)===-10},
   {name:"Void returns stake",pass:paperProfit(voided)===0},
   {name:"Unverified manually-entered outcomes labeled",pass:stats.manualOnly===true},
-  {name:"Subjective EV calculated without claiming model prediction",pass:paperExpectedValue(10,2,0.6)===2&&paperExpectedValue(10,2,2)===null},
+  {name:"Subjective EV calculated without claiming model prediction",pass:Math.abs((paperExpectedValue(10,2,0.6)??0)-2)<1e-9&&paperExpectedValue(10,2,2)===null},
   {name:"Hypothesis and subjective probability retained",pass:parsePaperEntries([{...base,hypothesis:"Late goal",estimatedProbability:0.55}]).length===1},
   {name:"Out-of-range probability rejected",pass:parsePaperEntries([{...base,estimatedProbability:1.25}]).length===0},
   {name:"Bankroll ROI separated from yield",pass:stats.bankrollReturnPct===-0.5&&stats.hitRate===50},
