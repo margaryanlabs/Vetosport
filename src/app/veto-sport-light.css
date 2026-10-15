@@ -603,3 +603,8 @@ html[data-veto-sport-appearance="light"] .paperLedger .paperFinalVerification st
 html[data-veto-sport-appearance="light"] .paperLedger .paperFinalVerification p,
 html[data-veto-sport-appearance="light"] .paperLedger .paperFinalVerification small{color:#506072!important}
 html[data-veto-sport-appearance="light"] .paperLedger .paperFinalVerification>button{background:#202b3c!important;color:#fff!important;border-color:#202b3c!important}
+
+
+html[data-veto-sport-appearance="light"] .paperLedger :is(.paperModelScore,.paperModelSnapshot){background:#fff!important;border-color:rgba(28,45,61,.16)!important}
+html[data-veto-sport-appearance="light"] .paperLedger :is(.paperModelScore strong,.paperModelSnapshot strong){color:#1e2b39!important}
+html[data-veto-sport-appearance="light"] .paperLedger :is(.paperModelScore span,.paperModelSnapshot span,.paperModelScore small,.paperModelScore p,.paperModelSnapshot small){color:#536173!important}
