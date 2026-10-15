@@ -29,11 +29,18 @@ export async function runDailyPaperTick(input:{
   [existing,settled]=await Promise.all([
    store.listPaperDailyPicks(900),store.listPaperDailySettlements(900)]);
  }catch{return {...report,ok:false,skipped:"PAPER_STORAGE_NOT_READY"};}
+ // Refuse to trade or publish precise wealth maths once the bounded history
+ // risks dropping old losses, wins or open exposures.
+ if(existing.length>=900||settled.length>=900)
+  return {...report,ok:false,skipped:"LEDGER_HISTORY_WINDOW_EXHAUSTED"};
  const settledIds=new Set(settled.map(x=>x.pickId));
  const open=existing.filter(x=>x.protocol===DAILY_PROTOCOL&&!settledIds.has(x.id));
  // Reconcile at most 8 unresolved fixtures per five-minute tick, oldest first;
  // over successive existing cron runs every pending fixture gets considered.
- const outstanding=open.sort((a,b)=>Date.parse(a.pickedAt)-Date.parse(b.pickedAt)).slice(0,8);
+ const sortedOpen=open.sort((a,b)=>Date.parse(a.pickedAt)-Date.parse(b.pickedAt));
+ const scanOffset=sortedOpen.length?Math.floor(Date.parse(input.asOf)/(5*60_000))%sortedOpen.length:0;
+ const outstanding=Array.from({length:Math.min(2,sortedOpen.length)},
+  (_,i)=>sortedOpen[(scanOffset+i)%sortedOpen.length]);
  for(const pick of outstanding){
   try{
    const event=await store.getEventById(pick.eventId);
@@ -53,8 +60,12 @@ export async function runDailyPaperTick(input:{
  const remaining=MAX_PAPER_PICKS_PER_DAY-today.length;
  if(remaining<=0)return {...report,limitHit:true,skipped:"THREE_DAILY_PAPER_PICKS_ALREADY_RECORDED"};
  const already=new Set(existing.map(x=>x.eventId));
- const events=input.observedEvents.filter(e=>e.event.sport==="football"&&
-   e.event.status==="live"&&!already.has(e.id)).slice(0,8);
+ const candidates=input.observedEvents.filter(e=>e.event.sport==="football"&&
+   e.event.status==="live"&&!already.has(e.id));
+ // Round robin to cover eligible events across repeated 5-minute cron runs.
+ const offset=candidates.length?Math.floor(Date.parse(input.asOf)/(5*60_000))%candidates.length:0;
+ const events=Array.from({length:Math.min(3,candidates.length)},
+  (_,i)=>candidates[(offset+i)%candidates.length]);
  report.scanned=events.length;
  if(!events.length)return {...report,skipped:"NO_NEW_LIVE_FIXTURE"};
  // Missing/partial source rows must not be counted as filled matches. Read
