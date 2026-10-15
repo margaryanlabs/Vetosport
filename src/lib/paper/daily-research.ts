@@ -110,18 +110,23 @@ export function proposeForwardPaper(input:{
    ageValid(x.capturedAt,now)&&ms(x.capturedAt)<=ms(q.capturedAt)&&
    ms(x.capturedAt)>=ms(state.capturedAt)-60_000&&modelVersion(x)!==null)
    .sort((a,b)=>ms(b.capturedAt)-ms(a.capturedAt))[0];
-  if(!p)continue;
-  const ev=p.fairProbability*q.decimalOdds-1;
-  // 5% expected paper yield is a fixed hypothesis-screening threshold,
-  // not a statistically validated edge.
-  if(ev<.05)continue;
+  // A scientifically useful CONTROL COHORT can still be observed on days
+  // when the shadow pipeline produced no model prediction. Its probability
+  // is exactly 1/quote, NOT an independent VETO forecast or positive edge.
+  const control=!p;
+  const probability=p?.fairProbability??1/q.decimalOdds;
+  const ev=probability*q.decimalOdds-1;
+  // +5% is a fixed screening hypothesis for uncalibrated VETO model rows.
+  // Control rows have EV=0 mechanically, and never claim a winning signal.
+  if(!control&&ev<.05)continue;
   const row:PaperProposal={protocol:DAILY_PROTOCOL,eventId:event.id,eventStartsAt:event.event.startsAt,
    dayUTC:paperDay(input.asOf),match:`${event.event.home.name} — ${event.event.away.name}`,
    competition:event.event.competition,contract,marketKey:q.marketKey,selectionKey:q.selectionKey,
-   odds:q.decimalOdds,stake:DAILY_PAPER_STAKE,modelProbability:p.fairProbability,
-   modelVersion:modelVersion(p)!,quoteProvider:q.provider,bookmaker:q.bookmaker,
+   odds:q.decimalOdds,stake:DAILY_PAPER_STAKE,modelProbability:probability,
+   modelVersion:control?"QUOTE_IMPLIED_CONTROL_V1":modelVersion(p!)!,
+   quoteProvider:q.provider,bookmaker:q.bookmaker,
    quoteAt:q.capturedAt,providerUpdatedAt:q.providerLastUpdate!,stateAt:state.capturedAt,
-   modelAt:p.capturedAt,pickedAt:input.asOf};
+   modelAt:p?.capturedAt??state.capturedAt,pickedAt:input.asOf};
   // Pick the earliest quoted eligible price, stable tie breakers;
   // never choose the best eventual result in retrospect.
   if(!best)best=row;
@@ -209,7 +214,10 @@ export function dailyPaperSelfcheck(){
   {name:"Before FT, exposure is locked but earnings are absent",pass:accountFromPaper([pick],[]).balance===200&&accountFromPaper([pick],[]).available===196},
   {name:"Unknown suspension rejected",pass:proposeForwardPaper({...args,quotes:[{...quote,suspended:undefined}]})===null},
   {name:"Stale provider quote rejected",pass:proposeForwardPaper({...args,quotes:[{...quote,providerLastUpdate:"2026-10-15T12:00:00Z"}]})===null},
-  {name:"Missing model rejected",pass:proposeForwardPaper({...args,predictions:[]})===null},
+  {name:"No-model control remains available but is correctly marked as price-derived",pass:(()=>{
+    const x=proposeForwardPaper({...args,predictions:[]});
+    return x?.modelVersion==="QUOTE_IMPLIED_CONTROL_V1"&&x.modelProbability===.5;
+   })()},
   {name:"Finished match cannot generate a new paper selection",pass:proposeForwardPaper({...args,event:{...event,event:{...event.event,status:"finished"}}})===null},
   {name:"Unverified generic final cannot auto-settle",pass:confirmForwardPaper(pick,
    {...event,event:{...event.event,status:"finished"}},[state],"2026-10-15T15:00:00Z")===null},
