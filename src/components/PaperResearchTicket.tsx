@@ -5,6 +5,7 @@ import {MAX_ENTRIES,PAPER_BANK_KEY,PAPER_STORAGE_KEY,parsePaperEntries,
  paperCsv,paperJournalStats,paperProfit,paperExpectedValue,type PaperEntry,type PaperStatus} from "@/lib/paper/paper-ledger";
 import {paperContractFromQuote,reconcilePaperEntry,type CertifiedPaperFinal} from "@/lib/paper/paper-verification";
 import {StrategyValidationPanel} from "@/components/StrategyValidationPanel";
+import {validatePaperStrategies} from "@/lib/paper/strategy-validation";
 
 const outcomeNames:{[K in Exclude<PaperStatus,"UNSETTLED">]:string}={
  MANUAL_WIN:"Победа — введено вручную",
@@ -64,6 +65,7 @@ export function PaperResearchTicket({event,quotes,modelPredictions=[]}:{event:Li
   setLoaded(true);
  },[]);
  const stats=useMemo(()=>paperJournalStats(entries,bankroll),[entries,bankroll]);
+ const strategyReport=useMemo(()=>validatePaperStrategies(entries),[entries]);
  const deduped=useMemo(()=>{
   const map=new Map<string,LiveQuotePreview>();
   for(const q of quotes){
@@ -248,10 +250,10 @@ export function PaperResearchTicket({event,quotes,modelPredictions=[]}:{event:Li
   </div>
   <div className="paperModelScore" aria-label="Research-only calibration score">
     <div><span>MODEL CALIBRATION · VERIFIED-ONLY SAMPLE</span>
-      <strong>{stats.modelBrier===null?"—":stats.modelBrier.toFixed(4)}</strong>
-      <small>Brier Score · {stats.modelSnapshotSamples} подтверждённых исходов с сохранённой вероятностью модели</small>
+      <strong>{strategyReport.overall?.brier===null||strategyReport.overall?.brier===undefined?"—":strategyReport.overall.brier.toFixed(4)}</strong>
+      <small>Brier Score · {strategyReport.overall?.count??0} уникальных событий с полной доказательной цепочкой</small>
     </div>
-    <p>Меньше — лучше, но одна выборка не доказывает предсказательную силу. Считаются только совпавшие по рынку и времени реальные snapshot модели и FT результаты; ручные исходы исключены.</p>
+    <p>Меньше — лучше. Дубликаты и устаревшие цены исключены. <a href="#veto-paper-validation">Подробный отчёт ↓</a>. Ретроспективная статистика не доказывает прибыльную стратегию.</p>
   </div>
   <div className="paperEquityWrap">
    <header><span>PAPER P&amp;L / MIXED EVIDENCE</span><strong>История виртуального капитала</strong><small>{stats.wins} побед · {stats.losses} поражений · {stats.voids} возвратов</small></header>
