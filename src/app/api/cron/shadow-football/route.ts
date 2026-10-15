@@ -3,6 +3,7 @@ import { getPersistence } from "@/lib/persistence/factory";
 import { runFootballShadowPrediction } from "@/lib/live/shadow-football";
 import {selectFeedCandidates} from "@/lib/live/feed-priority";
 import {isSelfcheckEvent} from "@/lib/live/persisted-utils";
+import {runDailyPaperTick} from "@/lib/paper/daily-runner";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +50,15 @@ export async function GET(request: Request) {
     }
   }
 
+  // Piggyback on the existing 5-minute authorized research cron.
+  // This is independent of whether the single shadow model produced signals.
+  // Missing migration, FT or prices never creates fictional paper picks.
+  const dailyPaper=await runDailyPaperTick({
+    observedEvents:football,asOf:new Date().toISOString(),capture:true,
+  }).catch(()=>({ok:false,skipped:"DAILY_PAPER_TICK_UNAVAILABLE",realBetsPlaced:0}));
+
   return NextResponse.json({
+    paperResearch:dailyPaper,
     ok: results.every((row) => row.ok !== false),
     generatedAt: new Date().toISOString(),
     mode: "SHADOW",
