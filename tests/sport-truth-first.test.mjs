@@ -431,3 +431,10 @@ test("Historical evidence timing bars distinguish real observability from execut
  assert.match(page,/value>0/);
  assert.match(self,/captureLagSpectrumSelfcheck/);
 });
+
+test("Capture-lag endpoint actually reports the additional deterministic checks",()=>{
+ const route=read("src/app/api/intelligence/research/data-readiness/selfcheck/route.ts");
+ assert.match(route,/const checks=\[\.\.\.result\.checks,\.\.\.lag\.checks\]/);
+ assert.match(route,/\.\.\.result,passed,checks/);
+ assert.match(route,/status:passed\?200:503/);
+});

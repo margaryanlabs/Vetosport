@@ -7,6 +7,6 @@ export function GET(){
  const lag=captureLagSpectrumSelfcheck();
  const checks=[...result.checks,...lag.checks];
  const passed=result.passed&&lag.passed;
- return NextResponse.json({model:"veto.evidence-coverage.selfcheck.v1",...result},
+ return NextResponse.json({model:"veto.evidence-coverage.selfcheck.v2",...result,passed,checks},
   {status:passed?200:503,headers:{"Cache-Control":"no-store"}});
 }
