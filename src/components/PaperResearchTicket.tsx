@@ -53,6 +53,7 @@ export function PaperResearchTicket({event,quotes,modelPredictions=[]}:{event:Li
  const entriesRef=useRef<PaperEntry[]>([]);
  const autoCheckedRef=useRef(false);
  const inFlightRef=useRef(false);
+ const verificationCursorRef=useRef(0);
  entriesRef.current=entries;
  useEffect(()=>{
   try{
@@ -140,7 +141,10 @@ export function PaperResearchTicket({event,quotes,modelPredictions=[]}:{event:Li
   if(!loaded||inFlightRef.current)return;
   const pending=entriesRef.current.filter(e=>e.status==="UNSETTLED"&&
    e.source==="SOURCE_SNAPSHOT"&&e.marketContract&&e.quoteCapturedAt);
-  const eventIds=[...new Set(pending.map(e=>e.eventId))].slice(0,8);
+  const pendingIds=[...new Set(pending.map(e=>e.eventId))];
+  const start=verificationCursorRef.current%Math.max(1,pendingIds.length);
+  const eventIds=Array.from({length:Math.min(8,pendingIds.length)},
+   (_,i)=>pendingIds[(start+i)%pendingIds.length]);
   if(!eventIds.length){setVerificationNote("Нет незавершённых записей с однозначным рынком и снимком реальной цены.");return;}
   inFlightRef.current=true;
   setVerifying(true);
@@ -150,6 +154,8 @@ export function PaperResearchTicket({event,quotes,modelPredictions=[]}:{event:Li
     method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({eventIds}),cache:"no-store"});
    if(!response.ok)throw Error("PROVIDER_FT_NOT_AVAILABLE");
+   // Rotate to the next bounded set even when no fixture has certified FT yet.
+   verificationCursorRef.current=start+eventIds.length;
    const data:unknown=await response.json();
    const finals=(data&&typeof data==="object"&&"finals" in data)?
     (data as {finals?:unknown}).finals:null;
@@ -171,8 +177,8 @@ export function PaperResearchTicket({event,quotes,modelPredictions=[]}:{event:Li
    });
    if(updated)save(next,`Сверено ${updated} виртуальных исходов. Это не доказательство доступной ставки или прибыльности модели.`);
    setVerificationNote(updated?
-    `Подтверждено по FT провайдера: ${updated}. Остальные исходы требуют данных или ручной проверки.`:
-    "Новых однозначно подтверждённых FT нет. Никаких результатов не подставлено.");
+    `Проверено ${eventIds.length} из ${pendingIds.length} событий; подтверждено FT: ${updated}. Повтори проверку для следующей группы.`:
+    `Проверено ${eventIds.length} из ${pendingIds.length} событий. Новых FT нет; повторная проверка перейдёт к следующей группе. Результаты не подставлены.`);
   }catch{
    setVerificationNote("Источник финальных результатов временно недоступен. Записи остаются без изменений.");
   }finally{inFlightRef.current=false;setVerifying(false);}
