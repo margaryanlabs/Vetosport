@@ -9,6 +9,8 @@ export interface PaperEntry {
  recordedAt:string;source:PaperSource;quoteCapturedAt?:string;
  /** User-entered research context. Never claimed to be verified by VETO. */
  hypothesis?:string;estimatedProbability?:number;
+ /** Optional user-authored cohort label, never a preregistered strategy rulebook. */
+ strategyTag?:string;
  /** Locked at recording time. Old records never gain guessed market semantics. */
  marketContract?:"FT_HOME"|"FT_DRAW"|"FT_AWAY"|"FT_BTTS_YES"|"FT_BTTS_NO";
  selectionMarketKey?:string;selectionKey?:string;
@@ -34,6 +36,7 @@ export function parsePaperEntries(value:unknown):PaperEntry[]{
    typeof r.recordedAt==="string"&&Number.isFinite(Date.parse(r.recordedAt))&&
    (r.source==="SOURCE_SNAPSHOT"||r.source==="HYPOTHETICAL_MANUAL")&&
    (r.hypothesis===undefined||(typeof r.hypothesis==="string"&&r.hypothesis.length<=300))&&
+   (r.strategyTag===undefined||(typeof r.strategyTag==="string"&&r.strategyTag.length<=48))&&
    (r.estimatedProbability===undefined||(typeof r.estimatedProbability==="number"&&Number.isFinite(r.estimatedProbability)&&r.estimatedProbability>0&&r.estimatedProbability<1))&&
    (r.marketContract===undefined||["FT_HOME","FT_DRAW","FT_AWAY","FT_BTTS_YES","FT_BTTS_NO"].includes(r.marketContract))&&
    (r.selectionMarketKey===undefined||(typeof r.selectionMarketKey==="string"&&r.selectionMarketKey.length<=150))&&
@@ -122,7 +125,7 @@ export function paperJournalStats(entries:PaperEntry[],initialBankroll:number){
 export function paperCsv(entries:PaperEntry[]):string{
  const cols=["id","eventId","match","scenario","odds","stake","recordedAt","source","quoteCapturedAt","status","settledAt","manualProfit","verification","hypothesis","userEstimatedProbability",
   "marketContract","selectionMarketKey","selectionKey","verifiedProvider","verifiedAt","verifiedScore",
-  "modelProbability","modelVersion","modelCapturedAt"];
+  "modelProbability","modelVersion","modelCapturedAt","strategyTag"];
  const safe=(v:unknown)=>{
   const raw=String(v??"");
   const inert=/^[\s\uFEFF\u200B]*[=+\-@]/.test(raw)?"'"+raw:raw;
@@ -133,7 +136,7 @@ export function paperCsv(entries:PaperEntry[]):string{
    e.hypothesis||"",e.estimatedProbability??"",e.marketContract??"",e.selectionMarketKey??"",
    e.selectionKey??"",e.verifiedProvider??"",e.verifiedAt??"",
    e.verifiedScore?`${e.verifiedScore.home}:${e.verifiedScore.away}`:"",e.modelProbability??"",
-   e.modelVersion??"",e.modelCapturedAt??""].map(safe).join(","));
+   e.modelVersion??"",e.modelCapturedAt??"",e.strategyTag??""].map(safe).join(","));
  return [cols.map(safe).join(","),...rows].join("\r\n")+"\r\n";
 }
 export function paperJournalSelfcheck(){
@@ -155,6 +158,7 @@ export function paperJournalSelfcheck(){
   {name:"Subjective EV calculated without claiming model prediction",pass:Math.abs((paperExpectedValue(10,2,0.6)??0)-2)<1e-9&&paperExpectedValue(10,2,2)===null},
   {name:"Hypothesis and subjective probability retained",pass:parsePaperEntries([{...base,hypothesis:"Late goal",estimatedProbability:0.55}]).length===1},
   {name:"Out-of-range probability rejected",pass:parsePaperEntries([{...base,estimatedProbability:1.25}]).length===0},
+  {name:"Strategy tag survives browser storage parser and export",pass:parsePaperEntries([{...base,strategyTag:"Test"}]).length===1&&paperCsv([{...base,strategyTag:"Test"}]).includes("Test")},
   {name:"Bankroll ROI separated from yield",pass:stats.bankrollReturnPct===-0.5&&stats.hitRate===50},
   {name:"Brier requires provider-resolved model snapshot, not manual results",pass:stats.modelSnapshotSamples===0&&stats.modelBrier===null},
   {name:"One verified and contemporaneous model snapshot computes selection Brier",pass:(()=>{
