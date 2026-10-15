@@ -16,7 +16,7 @@ const outcomeNames:{[K in Exclude<PaperStatus,"UNSETTLED">]:string}={
 const ruDate=(date:string)=>new Date(date).toLocaleString("ru-RU",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
 const fmt=(x:number)=>Number.isFinite(x)?x.toFixed(2):"—";
 function PaperEquityChart({points,count}:{points:{at:string;equity:number}[];count:number}){
- if(count===0)return <div className="paperEquityEmpty">График появится после первого результата, <b>введённого вручную</b>. Пока доходность не рассчитана.</div>;
+ if(count===0)return <div className="paperEquityEmpty">График появится после первого результата: <b>сверенного по FT или внесённого вручную</b>. Пока доходность не рассчитана.</div>;
  const values=points.map(p=>p.equity);
  const min=Math.min(...values),max=Math.max(...values);
  const padding=Math.max(1,(max-min)*.17),lo=min-padding,hi=max+padding;
@@ -24,14 +24,14 @@ function PaperEquityChart({points,count}:{points:{at:string;equity:number}[];cou
  const y=(v:number)=>156-(v-lo)/(hi-lo)*125;
  const d=points.map((p,i)=>(i===0?"M ":"L ")+x(i).toFixed(1)+" "+y(p.equity).toFixed(1)).join(" ");
  return <div className="paperEquityChart">
-   <svg viewBox="0 0 620 185" role="img" aria-label="Виртуальная кривая капитала только по вручную внесённым результатам, без автоматически проверенных исходов">
+   <svg viewBox="0 0 620 185" role="img" aria-label="Виртуальная кривая капитала по сохранённым результатам с раздельной маркировкой подтверждения">
     {[0,1,2,3].map(k=><line key={k} x1="22" x2="590" y1={27+k*42} y2={27+k*42} stroke="#c5e2d0" strokeOpacity=".15" strokeDasharray="3 8"/>)}
     <path d={d} stroke="#a1dbb1" strokeWidth="3.5" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
     {points.map((p,i)=><circle key={i} cx={x(i)} cy={y(p.equity)} r="3.5" fill="#e5f7e9" stroke="#456d4f" strokeWidth="1"/>)}
     <text x="19" y="15" fill="#a7c1ad" fontSize="11">{fmt(max)}</text>
     <text x="19" y="178" fill="#a7c1ad" fontSize="11">{fmt(min)}</text>
    </svg>
-   <p>MANUAL P&amp;L · график отражает только результаты, внесённые пользователем. Это не доказанная историческая доходность стратегии.</p>
+   <p>PAPER P&amp;L · исходы смешивают ручные записи и сверку финального счёта API-Football. Это не подтверждение размещения ставок или реальной доходности.</p>
  </div>;
 }
 export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quotes:LiveQuotePreview[]}){
