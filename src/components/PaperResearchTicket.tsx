@@ -1,6 +1,6 @@
 "use client";
 import {useEffect,useMemo,useRef,useState} from "react";
-import type {LiveEventSummary,LiveQuotePreview} from "@/lib/live/types";
+import type {LiveEventSummary,LiveQuotePreview,LiveShadowPrediction} from "@/lib/live/types";
 import {MAX_ENTRIES,PAPER_BANK_KEY,PAPER_STORAGE_KEY,parsePaperEntries,
  paperCsv,paperJournalStats,paperProfit,paperExpectedValue,type PaperEntry,type PaperStatus} from "@/lib/paper/paper-ledger";
 import {paperContractFromQuote,reconcilePaperEntry,type CertifiedPaperFinal} from "@/lib/paper/paper-verification";
@@ -34,7 +34,7 @@ function PaperEquityChart({points,count}:{points:{at:string;equity:number}[];cou
    <p>PAPER P&amp;L · исходы смешивают ручные записи и сверку финального счёта API-Football. Это не подтверждение размещения ставок или реальной доходности.</p>
  </div>;
 }
-export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quotes:LiveQuotePreview[]}){
+export function PaperResearchTicket({event,quotes,modelPredictions=[]}:{event:LiveEventSummary;quotes:LiveQuotePreview[];modelPredictions?:LiveShadowPrediction[]}){
  const [entries,setEntries]=useState<PaperEntry[]>([]);
  const [bankroll,setBankroll]=useState(1000);
  const [manual,setManual]=useState("1.50");
@@ -72,6 +72,11 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
  },[quotes]);
  const candidate=deduped.find(q=>[q.provider,q.marketKey,q.selectionKey,q.bookmaker].join("|")===selected);
  const missingQuote=Boolean(selected&&!candidate);
+ const modelSnapshot=candidate?modelPredictions
+  .filter(p=>p.marketKey===candidate.marketKey&&p.selectionKey===candidate.selectionKey&&
+   p.modelVersion&&p.fairProbability>0&&p.fairProbability<1&&
+   Date.parse(p.capturedAt)<=Date.now()&&Date.now()-Date.parse(p.capturedAt)<=300_000)
+  .sort((a,b)=>Date.parse(b.capturedAt)-Date.parse(a.capturedAt))[0]:undefined;
  const odds=candidate?.decimalOdds??Number(manual);
  const amount=Number(stake);
  const valid=Number.isFinite(odds)&&odds>1&&odds<=1000&&Number.isFinite(amount)&&amount>0;
@@ -111,6 +116,9 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
    quoteCapturedAt:candidate?.capturedAt,
    marketContract:candidate?paperContractFromQuote(event,candidate)??undefined:undefined,
    selectionMarketKey:candidate?.marketKey,selectionKey:candidate?.selectionKey,
+   modelProbability:modelSnapshot?.fairProbability,
+   modelVersion:modelSnapshot?.modelVersion,
+   modelCapturedAt:modelSnapshot?.capturedAt,
    hypothesis:hypothesis.trim().slice(0,300)||undefined,
    estimatedProbability:userProbability??undefined,status:"UNSETTLED",
   };
@@ -229,6 +237,13 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
    <div><small>ДОХОДНОСТЬ НА БАНК · PAPER</small><b>{stats.settled?(stats.bankrollReturnPct>0?"+":"")+stats.bankrollReturnPct.toFixed(1)+"%":"—"}</b></div>
    <div><small>ОТКРЫТАЯ ЭКСПОЗИЦИЯ</small><b>{fmt(stats.exposure)}</b></div>
   </div>
+  <div className="paperModelScore" aria-label="Research-only calibration score">
+    <div><span>MODEL CALIBRATION · VERIFIED-ONLY SAMPLE</span>
+      <strong>{stats.modelBrier===null?"—":stats.modelBrier.toFixed(4)}</strong>
+      <small>Brier Score · {stats.modelSnapshotSamples} подтверждённых исходов с сохранённой вероятностью модели</small>
+    </div>
+    <p>Меньше — лучше, но одна выборка не доказывает предсказательную силу. Считаются только совпавшие по рынку и времени реальные snapshot модели и FT результаты; ручные исходы исключены.</p>
+  </div>
   <div className="paperEquityWrap">
    <header><span>PAPER P&amp;L / MIXED EVIDENCE</span><strong>История виртуального капитала</strong><small>{stats.wins} побед · {stats.losses} поражений · {stats.voids} возвратов</small></header>
    <PaperEquityChart points={stats.equityPoints} count={stats.settled}/>
@@ -267,6 +282,12 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
      <article><span>ПРИБЫЛЬ ПРИ РУЧНОМ WIN</span><strong>{valid?fmt(amount*(odds-1)):"—"}</strong></article>
      <article><span>ПОРОГ БЕЗУБЫТОЧНОСТИ</span><strong>{valid?(100/odds).toFixed(1)+"%":"—"}</strong></article>
     </div>
+    {candidate&&<div className="paperModelSnapshot" role="status">
+      <span>VETO MODEL SNAPSHOT · НЕ РЕАЛЬНАЯ СТАВКА</span>
+      {modelSnapshot?<><strong>{(modelSnapshot.fairProbability*100).toFixed(1)}% · {modelSnapshot.modelVersion}</strong>
+       <small>Снимок модели {ruDate(modelSnapshot.capturedAt)} · EV по модели: {fmt(paperExpectedValue(amount,odds,modelSnapshot.fairProbability)??0)} виртуальных ед. Сохраняется при создании эксперимента.</small></>:
+       <small>Нет свежего сохранённого прогноза с точным совпадением рынка и исхода. Модельную вероятность не придумываем.</small>}
+    </div>}
     <div className="paperSubjectiveEdge" role="status">
       <div><span>USER ESTIMATE · НЕ ПРОГНОЗ VETO</span>
        <strong>{subjectiveEV===null?"Укажи вероятность для оценки EV":(subjectiveEV>0?"+":"")+fmt(subjectiveEV)+" ед. ожидаемого P&L"}</strong></div>
@@ -297,6 +318,7 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
        {e.hypothesis&&e.hypothesis!==e.scenario?<small>ГИПОТЕЗА: {e.hypothesis}</small>:null}
        {e.estimatedProbability!==undefined?<small>ОЦЕНКА ПОЛЬЗОВАТЕЛЯ: {(e.estimatedProbability*100).toFixed(1)}% · EV {fmt(paperExpectedValue(e.stake,e.odds,e.estimatedProbability)??0)} · НЕ ВЕРИФИЦИРОВАНО</small>:null}
        {e.marketContract&&<small>ЗАФИКСИРОВАННЫЙ РЫНОК: {e.marketContract}</small>}
+       {e.modelProbability!==undefined&&e.modelVersion&&<small>MODEL SNAPSHOT: {(e.modelProbability*100).toFixed(1)}% · {e.modelVersion} · НЕ ДОКАЗАННОЕ ПРЕИМУЩЕСТВО</small>}
        {e.verifiedScore&&<small>СЧЁТ FT: {e.verifiedScore.home}:{e.verifiedScore.away} · {e.verifiedProvider} · НЕ ФАКТ ИСПОЛНЕНИЯ</small>}
       </div>
       <div><b>{e.odds.toFixed(2)}</b><small>{fmt(e.stake)} виртуальных единиц</small></div>
