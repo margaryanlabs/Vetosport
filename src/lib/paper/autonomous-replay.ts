@@ -85,7 +85,7 @@ export function replayPersistedPaper(input:{
  const providerOwners=new Map<string,Set<string>>();
  for(const st of input.states){
   const raw=st.state.providerEventId;
-  const id=typeof raw==="number"?raw:typeof raw==="string"&&/^\\d+$/.test(raw)?Number(raw):NaN;
+  const id=typeof raw==="number"?raw:typeof raw==="string"&&/^\d+$/.test(raw)?Number(raw):NaN;
   if(st.sourceProvider!=="api-football"||!Number.isSafeInteger(id)||id<=0)continue;
   const owners=providerOwners.get(String(id))??new Set<string>();
   owners.add(st.eventId);providerOwners.set(String(id),owners);
