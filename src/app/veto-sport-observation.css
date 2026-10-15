@@ -323,3 +323,6 @@
 .paperAutoResult>footer{margin-top:16px;border-top:1px solid rgba(255,255,255,.12);padding:12px 0 0;font-size:10px;line-height:1.7;color:#acaebb}
 @media(max-width:950px){.paperAutoMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.paperAutoCaseList article{grid-template-columns:1fr 1fr}.paperAutoCaseList article>div:first-child{grid-column:1/-1}}
 @media(max-width:650px){.paperAutoReplay{padding:13px;margin-top:15px}.paperAutoHeader{display:grid;gap:15px}.paperAutoHeader button{width:100%}.paperAutoMetrics article{padding:12px}.paperAutoCaseList article{grid-template-columns:1fr}.paperAutoCaseList article>div:first-child{grid-column:auto}}
+
+.paperLabBridge{display:inline-flex;margin-top:12px;color:#f0d5da;text-decoration:none;font-size:12px;font-weight:760;padding:9px 12px;border:1px solid rgba(235,130,144,.27);border-radius:9px;background:rgba(213,61,81,.1)}
+.paperLabBridge:hover{text-decoration:underline}
