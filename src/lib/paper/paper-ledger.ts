@@ -12,6 +12,8 @@ export interface PaperEntry {
  /** Locked at recording time. Old records never gain guessed market semantics. */
  marketContract?:"FT_HOME"|"FT_DRAW"|"FT_AWAY"|"FT_BTTS_YES"|"FT_BTTS_NO";
  selectionMarketKey?:string;selectionKey?:string;
+ /** Immutable optional MODEL snapshot observed before paper entry (not user-entered). */
+ modelProbability?:number;modelVersion?:string;modelCapturedAt?:string;
  verifiedProvider?:"api-football";verifiedAt?:string;
  verifiedScore?:{home:number;away:number};
  status:PaperStatus;settledAt?:string;
@@ -36,6 +38,10 @@ export function parsePaperEntries(value:unknown):PaperEntry[]{
    (r.marketContract===undefined||["FT_HOME","FT_DRAW","FT_AWAY","FT_BTTS_YES","FT_BTTS_NO"].includes(r.marketContract))&&
    (r.selectionMarketKey===undefined||(typeof r.selectionMarketKey==="string"&&r.selectionMarketKey.length<=150))&&
    (r.selectionKey===undefined||(typeof r.selectionKey==="string"&&r.selectionKey.length<=150))&&
+   (r.modelProbability===undefined||(typeof r.modelProbability==="number"&&Number.isFinite(r.modelProbability)&&r.modelProbability>0&&r.modelProbability<1))&&
+   (r.modelVersion===undefined||(typeof r.modelVersion==="string"&&r.modelVersion.length<=100))&&
+   (r.modelCapturedAt===undefined||(typeof r.modelCapturedAt==="string"&&Number.isFinite(Date.parse(r.modelCapturedAt))))&&
+   (r.modelProbability===undefined||(!!r.modelVersion&&!!r.modelCapturedAt))&&
    (r.verifiedProvider===undefined||r.verifiedProvider==="api-football")&&
    (r.verifiedAt===undefined||(typeof r.verifiedAt==="string"&&Number.isFinite(Date.parse(r.verifiedAt))))&&
    (r.verifiedScore===undefined||(r.verifiedScore!==null&&typeof r.verifiedScore==="object"&&!Array.isArray(r.verifiedScore)&&typeof r.verifiedScore.home==="number"&&typeof r.verifiedScore.away==="number"&&
@@ -69,6 +75,13 @@ export function paperJournalStats(entries:PaperEntry[],initialBankroll:number){
  const settled=entries.filter(x=>x.status!=="UNSETTLED").sort((a,b)=>Date.parse(a.settledAt||a.recordedAt)-Date.parse(b.settledAt||b.recordedAt));
  const open=entries.filter(x=>x.status==="UNSETTLED");
  const stakeSum=settled.reduce((sum,x)=>sum+x.stake,0);
+ const modelVerified=settled.filter(x=>x.status==="PROVIDER_WIN"||x.status==="PROVIDER_LOSS")
+  .filter(x=>x.modelProbability!==undefined&&x.modelVersion&&x.modelCapturedAt&&
+   Date.parse(x.modelCapturedAt)<=Date.parse(x.recordedAt)&&
+   Date.parse(x.modelCapturedAt)>=Date.parse(x.recordedAt)-300_000);
+ const modelBrier=modelVerified.length?
+  modelVerified.reduce((sum,x)=>sum+((x.modelProbability??0)-
+   (x.status==="PROVIDER_WIN"?1:0))**2,0)/modelVerified.length:null;
  const net=settled.reduce((sum,x)=>sum+(paperProfit(x)??0),0);
  let cumulative=0,peak=bankroll,maxDrawdown=0;
  const equityPoints=[{at:"",equity:bankroll}];
@@ -89,6 +102,8 @@ export function paperJournalStats(entries:PaperEntry[],initialBankroll:number){
   wins:settled.filter(x=>x.status==="MANUAL_WIN"||x.status==="PROVIDER_WIN").length,
   losses:settled.filter(x=>x.status==="MANUAL_LOSS"||x.status==="PROVIDER_LOSS").length,
   voids:settled.filter(x=>x.status==="MANUAL_VOID"||x.status==="PROVIDER_VOID").length,
+  modelSnapshotSamples:modelVerified.length,
+  modelBrier,
   providerSettled:settled.filter(x=>x.status.startsWith("PROVIDER_")).length,
   manualSettled:settled.filter(x=>x.status.startsWith("MANUAL_")).length,
   net,roi:stakeSum>0?net/stakeSum*100:0,
@@ -106,7 +121,8 @@ export function paperJournalStats(entries:PaperEntry[],initialBankroll:number){
 // CSV formulas can execute when a sheet opens. Prefix dangerous cells.
 export function paperCsv(entries:PaperEntry[]):string{
  const cols=["id","eventId","match","scenario","odds","stake","recordedAt","source","quoteCapturedAt","status","settledAt","manualProfit","verification","hypothesis","userEstimatedProbability",
-  "marketContract","selectionMarketKey","selectionKey","verifiedProvider","verifiedAt","verifiedScore"];
+  "marketContract","selectionMarketKey","selectionKey","verifiedProvider","verifiedAt","verifiedScore",
+  "modelProbability","modelVersion","modelCapturedAt"];
  const safe=(v:unknown)=>{
   const raw=String(v??"");
   const inert=/^[\s\uFEFF\u200B]*[=+\-@]/.test(raw)?"'"+raw:raw;
@@ -116,7 +132,8 @@ export function paperCsv(entries:PaperEntry[]):string{
    e.quoteCapturedAt||"",e.status,e.settledAt||"",paperProfit(e)??"",e.status.startsWith("PROVIDER_")?"PROVIDER_FT_SCORE_VERIFIED_PRICE_NOT_EXECUTED":"MANUAL_UNVERIFIED",
    e.hypothesis||"",e.estimatedProbability??"",e.marketContract??"",e.selectionMarketKey??"",
    e.selectionKey??"",e.verifiedProvider??"",e.verifiedAt??"",
-   e.verifiedScore?`${e.verifiedScore.home}:${e.verifiedScore.away}`:""].map(safe).join(","));
+   e.verifiedScore?`${e.verifiedScore.home}:${e.verifiedScore.away}`:"",e.modelProbability??"",
+   e.modelVersion??"",e.modelCapturedAt??""].map(safe).join(","));
  return [cols.map(safe).join(","),...rows].join("\r\n")+"\r\n";
 }
 export function paperJournalSelfcheck(){
@@ -139,6 +156,14 @@ export function paperJournalSelfcheck(){
   {name:"Hypothesis and subjective probability retained",pass:parsePaperEntries([{...base,hypothesis:"Late goal",estimatedProbability:0.55}]).length===1},
   {name:"Out-of-range probability rejected",pass:parsePaperEntries([{...base,estimatedProbability:1.25}]).length===0},
   {name:"Bankroll ROI separated from yield",pass:stats.bankrollReturnPct===-0.5&&stats.hitRate===50},
+  {name:"Brier requires provider-resolved model snapshot, not manual results",pass:stats.modelSnapshotSamples===0&&stats.modelBrier===null},
+  {name:"One verified and contemporaneous model snapshot computes selection Brier",pass:(()=>{
+    const snap={...win,status:"PROVIDER_WIN" as const,verifiedProvider:"api-football" as const,
+      verifiedAt:"2026-10-12T11:00:00Z",verifiedScore:{home:1,away:0},
+      modelProbability:0.7,modelVersion:"v1",modelCapturedAt:"2026-10-12T09:59:00Z"};
+    const r=paperJournalStats([snap],1000);
+    return r.modelSnapshotSamples===1&&Math.abs((r.modelBrier??-1)-0.09)<1e-9;
+   })()},
   {name:"Net and ROI use settled stake only",pass:stats.net===-5&&Math.abs(stats.roi+16.6666667)<.001},
   {name:"Drawdown detects loss after win",pass:stats.maxDrawdown===10},
   {name:"Open exposure and 2% cap",pass:stats.exposure===10&&stats.maxNewStake===20},
