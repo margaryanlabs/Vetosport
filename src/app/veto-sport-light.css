@@ -595,3 +595,11 @@ html[data-veto-sport-appearance="light"] .paperLedger .paperResearchInput input:
 html[data-veto-sport-appearance="light"] .paperLedger .paperTicketEditor :is(input,select),
 html[data-veto-sport-appearance="light"] .paperLedger .paperControlBar select,
 html[data-veto-sport-appearance="light"] .paperLedger .paperOutcomeControls :is(select,button){background:#fff!important;color:#1a2b3e!important}
+
+
+/* Certified FT verification notice stays legible on the light canvas. */
+html[data-veto-sport-appearance="light"] .paperLedger .paperFinalVerification{background:#fff4f5!important;border-color:rgba(154,45,62,.25)!important}
+html[data-veto-sport-appearance="light"] .paperLedger .paperFinalVerification strong{color:#263446!important}
+html[data-veto-sport-appearance="light"] .paperLedger .paperFinalVerification p,
+html[data-veto-sport-appearance="light"] .paperLedger .paperFinalVerification small{color:#506072!important}
+html[data-veto-sport-appearance="light"] .paperLedger .paperFinalVerification>button{background:#202b3c!important;color:#fff!important;border-color:#202b3c!important}
