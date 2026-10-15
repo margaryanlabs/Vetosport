@@ -38,7 +38,7 @@ export function parsePaperEntries(value:unknown):PaperEntry[]{
    (r.selectionKey===undefined||(typeof r.selectionKey==="string"&&r.selectionKey.length<=150))&&
    (r.verifiedProvider===undefined||r.verifiedProvider==="api-football")&&
    (r.verifiedAt===undefined||(typeof r.verifiedAt==="string"&&Number.isFinite(Date.parse(r.verifiedAt))))&&
-   (r.verifiedScore===undefined||(typeof r.verifiedScore.home==="number"&&typeof r.verifiedScore.away==="number"&&
+   (r.verifiedScore===undefined||(r.verifiedScore!==null&&typeof r.verifiedScore==="object"&&!Array.isArray(r.verifiedScore)&&typeof r.verifiedScore.home==="number"&&typeof r.verifiedScore.away==="number"&&
       Number.isInteger(r.verifiedScore.home)&&Number.isInteger(r.verifiedScore.away)&&
       r.verifiedScore.home>=0&&r.verifiedScore.away>=0&&r.verifiedScore.home<=40&&r.verifiedScore.away<=40))&&
    (r.status==="UNSETTLED"||r.status==="MANUAL_WIN"||r.status==="MANUAL_LOSS"||
@@ -133,6 +133,7 @@ export function paperJournalSelfcheck(){
   {name:"Void returns stake",pass:paperProfit(voided)===0},
   {name:"Provider-verified calculation remains paper-only",pass:paperProfit({...win,status:"PROVIDER_WIN"})===5},
   {name:"Provider status without evidence rejected at parse",pass:parsePaperEntries([{...win,status:"PROVIDER_WIN"}]).length===0},
+  {name:"Corrupted null FT score does not crash journal recovery",pass:parsePaperEntries([{...win,verifiedScore:null}]).length===0},
   {name:"Unverified manually-entered outcomes labeled",pass:stats.manualOnly===true},
   {name:"Subjective EV calculated without claiming model prediction",pass:Math.abs((paperExpectedValue(10,2,0.6)??0)-2)<1e-9&&paperExpectedValue(10,2,2)===null},
   {name:"Hypothesis and subjective probability retained",pass:parsePaperEntries([{...base,hypothesis:"Late goal",estimatedProbability:0.55}]).length===1},
