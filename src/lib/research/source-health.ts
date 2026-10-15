@@ -23,6 +23,8 @@ export interface SourceHealthView{
   pendingFixtureChecks:number|null;
   matchedFixtures:number|null;
   scannedActiveFixtures:number|null;
+  nearCaptureScoreFixtures:number|null;
+  medianScoreCaptureAgeSeconds:number|null;
   openProviderQuotes:number|null;
   quoteWriteFailures:number|null;
   journalWriteFailures:number|null;
@@ -66,6 +68,10 @@ export function toSourceHealthView(input:{
   asSafeCount(info.mapped):null;
  const scannedActiveFixtures=descriptor.id==="api-football-live-odds"?
   asSafeCount(info.scannedActiveFixtures):null;
+ const nearCaptureScoreFixtures=descriptor.id==="api-football-live-odds"?
+  asSafeCount(info.scoreSnapshotsWithin2m):null;
+ const medianScoreCaptureAgeSeconds=descriptor.id==="api-football-live-odds"?
+  asSafeCount(info.medianScoreAgeSeconds):null;
  const openProviderQuotes=descriptor.id==="api-football-live-odds"?
   asSafeCount(info.unsuspendedWritten):null;
  const quoteWriteFailures=descriptor.id==="api-football-live-odds"?
@@ -160,7 +166,8 @@ export function toSourceHealthView(input:{
  });
  return{id:descriptor.id,label:descriptor.label,state,updatedAt:ageMinutes===null?null:latest!.checkedAt,
   ageMinutes,receivedRecords:stored,scannedRecords:scanned,pendingFixtureChecks:pending,
-  matchedFixtures,scannedActiveFixtures,openProviderQuotes,quoteWriteFailures,journalWriteFailures,
+  matchedFixtures,scannedActiveFixtures,nearCaptureScoreFixtures,medianScoreCaptureAgeSeconds,
+  openProviderQuotes,quoteWriteFailures,journalWriteFailures,
   quoteWriteErrorClass,journalWriteErrorClass,
   targetedFixtureProbeUsed,targetedFailureCode,
   lastRunCode,lastFailureStage,upstreamAttempted,recentRuns,note};
