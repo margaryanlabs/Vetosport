@@ -288,3 +288,38 @@
 .paperValidation footer>span{font-size:11px;line-height:1.6;color:#b4b4be}
 @media(max-width:1000px){.paperValidationKpis,.paperValidationMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.paperValidationLower{grid-template-columns:1fr}}
 @media(max-width:650px){.paperValidation{margin:12px;padding:14px}.paperValidationHead{display:grid;gap:13px}.paperValidationBadge{justify-self:start}.paperValidationSelector{grid-template-columns:1fr}.paperValidationKpis article,.paperValidationMetrics article{padding:12px}.paperValidationKpis article>strong,.paperValidationMetrics article>strong{font-size:22px}}
+
+
+/* AUTONOMOUS PAPER REPLAY — premium black, bounded read-only research */
+.paperAutoReplay{margin:24px 0 0;padding:21px;background:#0d0d0f;border:1px solid rgba(255,255,255,.15);border-radius:15px}
+.paperAutoHeader{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:17px}
+.paperAutoHeader div{max-width:710px}.paperAutoHeader span{color:#bcb3b9;font-size:10px;letter-spacing:.12em;font-weight:800}
+.paperAutoHeader h3{color:#fafafa;font-size:clamp(23px,3vw,31px);margin:7px 0 11px}
+.paperAutoHeader p{color:#bcbcc5;line-height:1.7;font-size:12px;margin:0}
+.paperAutoHeader button{flex:0 0 auto;border:1px solid rgba(255,255,255,.18);border-radius:9px;background:#e04a59;color:#fff;padding:13px 18px;min-height:43px;font-size:12px;font-weight:800;cursor:pointer}
+.paperAutoHeader button:disabled{opacity:.7;cursor:default}
+.paperAutoHeader button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.paperAutoPolicy{background:linear-gradient(96deg,rgba(211,52,69,.09),rgba(255,255,255,.02));padding:15px 18px;border:1px solid rgba(233,70,84,.27);border-radius:10px;display:grid;gap:7px}
+.paperAutoPolicy strong{color:#ffc4c8;font-size:10px;letter-spacing:.1em}
+.paperAutoPolicy span{color:#e3d5d8;font-size:12px;line-height:1.6}
+.paperAutoPolicy small{color:#aeafb6;font-size:11px;line-height:1.5}
+.paperAutoEmpty{color:#b4b5bf;border:1px dashed rgba(255,255,255,.16);border-radius:9px;padding:17px;margin-top:16px;font-size:12px;line-height:1.6}
+.paperAutoWarning{background:rgba(233,79,91,.12);color:#ffb7bf;border-radius:10px;padding:13px 17px;border:1px solid rgba(233,79,91,.28);font-size:12px;margin:16px 0}
+.paperAutoMetrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px}
+.paperAutoMetrics article{background:#17171a;padding:16px;border:1px solid rgba(255,255,255,.12);border-radius:10px;display:grid;gap:8px;min-width:0}
+.paperAutoMetrics small{font-size:9px;color:#aeb0bd;letter-spacing:.08em;font-weight:760;line-height:1.4}
+.paperAutoMetrics strong{font:760 clamp(18px,2.6vw,29px)/1.1 var(--font-veto-tech),monospace;color:#f8f8fa}
+.paperAutoMetrics span{font-size:10px;color:#a5a6b1;line-height:1.5}
+.paperAutoAudit{display:flex;flex-wrap:wrap;gap:8px;margin:13px 0}
+.paperAutoAudit span{padding:7px 9px;border-radius:7px;background:#1b1b1f;color:#b5b6c0;font-size:10px}
+.paperAutoAudit b{color:#f9f9fa}
+.paperAutoCases{margin:20px 0 0}
+.paperAutoCases h4{margin:0 0 12px;font-size:15px;color:#f2f2f6}
+.paperAutoCaseList{display:grid;gap:7px}
+.paperAutoCaseList article{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.9fr) minmax(0,.9fr);gap:13px;background:#17171b;border:1px solid rgba(255,255,255,.1);padding:14px;border-radius:9px}
+.paperAutoCaseList article>div{min-width:0;display:grid;align-content:start;gap:5px}
+.paperAutoCaseList span,.paperAutoCaseList small{font-size:10px;line-height:1.6;color:#b6b8c0;overflow-wrap:anywhere}
+.paperAutoCaseList b{font-size:12px;line-height:1.6;color:#f8f8f9;overflow-wrap:anywhere}
+.paperAutoResult>footer{margin-top:16px;border-top:1px solid rgba(255,255,255,.12);padding:12px 0 0;font-size:10px;line-height:1.7;color:#acaebb}
+@media(max-width:950px){.paperAutoMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.paperAutoCaseList article{grid-template-columns:1fr 1fr}.paperAutoCaseList article>div:first-child{grid-column:1/-1}}
+@media(max-width:650px){.paperAutoReplay{padding:13px;margin-top:15px}.paperAutoHeader{display:grid;gap:15px}.paperAutoHeader button{width:100%}.paperAutoMetrics article{padding:12px}.paperAutoCaseList article{grid-template-columns:1fr}.paperAutoCaseList article>div:first-child{grid-column:auto}}
