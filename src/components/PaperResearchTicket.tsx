@@ -214,6 +214,7 @@ export function PaperResearchTicket({event,quotes,modelPredictions=[]}:{event:Li
   <header className="observedStudioSectionHead">
    <div><span>03 / PAPER LAB · NO REAL MONEY</span><h3>Paper Betting Lab</h3>
     <p>Сохраняй гипотезы и исходные цены. Поддерживаемые исходы 1X2/BTTS сверяются с сохранёнными результатами API-Football FT. Остальные исходы — только вручную.</p>
+    <a href="/research/paper-lab" className="paperLabBridge">Ежедневная автоматическая лаборатория · $200 ↗</a>
    </div>
    <span className="observedStudioCount">100% ВИРТУАЛЬНО</span>
   </header>
