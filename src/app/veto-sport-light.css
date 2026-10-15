@@ -624,3 +624,24 @@ html[data-veto-sport-appearance="light"] .paperCalibrationTracks>div>i{backgroun
 html[data-veto-sport-appearance="light"] .paperCalibrationTracks>div:nth-child(2)>i{background:#be384a!important}
 html[data-veto-sport-appearance="light"] .paperCalibrationLegend i:first-of-type{background:#6c7b8e!important}
 html[data-veto-sport-appearance="light"] .paperCalibrationLegend i:nth-of-type(2){background:#be384a!important}
+
+
+/* White appearance: research narrative, provenance and values stay fully legible. */
+html[data-veto-sport-appearance="light"] .paperAutoReplay{background:#fff!important;border-color:#d5d9e0!important;color:#172535!important}
+html[data-veto-sport-appearance="light"] .paperAutoHeader h3,
+html[data-veto-sport-appearance="light"] .paperAutoCases h4,
+html[data-veto-sport-appearance="light"] .paperAutoMetrics strong,
+html[data-veto-sport-appearance="light"] .paperAutoCaseList b,
+html[data-veto-sport-appearance="light"] .paperAutoAudit b{color:#1b2939!important}
+html[data-veto-sport-appearance="light"] .paperAutoHeader :is(span,p),
+html[data-veto-sport-appearance="light"] .paperAutoMetrics :is(small,span),
+html[data-veto-sport-appearance="light"] .paperAutoCaseList :is(small,span),
+html[data-veto-sport-appearance="light"] .paperAutoResult>footer{color:#526276!important}
+html[data-veto-sport-appearance="light"] .paperAutoPolicy{background:#fff5f6!important;border-color:#eac1c7!important}
+html[data-veto-sport-appearance="light"] .paperAutoPolicy strong{color:#982c3e!important}
+html[data-veto-sport-appearance="light"] .paperAutoPolicy :is(span,small){color:#576173!important}
+html[data-veto-sport-appearance="light"] .paperAutoMetrics article,
+html[data-veto-sport-appearance="light"] .paperAutoCaseList article,
+html[data-veto-sport-appearance="light"] .paperAutoAudit span{background:#f6f7f9!important;border-color:#d7dce4!important;color:#536074!important}
+html[data-veto-sport-appearance="light"] .paperAutoEmpty{color:#536276!important;border-color:#c7cdd8!important}
+html[data-veto-sport-appearance="light"] .paperAutoWarning{color:#9e2a40!important;background:#fff0f2!important;border-color:#e8b6c2!important}
