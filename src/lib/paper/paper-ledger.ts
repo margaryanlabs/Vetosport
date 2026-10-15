@@ -6,6 +6,8 @@ export type PaperSource="SOURCE_SNAPSHOT"|"HYPOTHETICAL_MANUAL";
 export interface PaperEntry {
  id:string;eventId:string;match:string;scenario:string;odds:number;stake:number;
  recordedAt:string;source:PaperSource;quoteCapturedAt?:string;
+ /** User-entered research context. Never claimed to be verified by VETO. */
+ hypothesis?:string;estimatedProbability?:number;
  status:PaperStatus;settledAt?:string;
 }
 export const PAPER_STORAGE_KEY="veto-sport-paper-research-v1";
@@ -23,6 +25,8 @@ export function parsePaperEntries(value:unknown):PaperEntry[]{
    typeof r.stake==="number"&&Number.isFinite(r.stake)&&r.stake>0&&r.stake<=100_000&&
    typeof r.recordedAt==="string"&&Number.isFinite(Date.parse(r.recordedAt))&&
    (r.source==="SOURCE_SNAPSHOT"||r.source==="HYPOTHETICAL_MANUAL")&&
+   (r.hypothesis===undefined||(typeof r.hypothesis==="string"&&r.hypothesis.length<=300))&&
+   (r.estimatedProbability===undefined||(typeof r.estimatedProbability==="number"&&Number.isFinite(r.estimatedProbability)&&r.estimatedProbability>0&&r.estimatedProbability<1))&&
    (r.status==="UNSETTLED"||r.status==="MANUAL_WIN"||r.status==="MANUAL_LOSS"||r.status==="MANUAL_VOID")&&
    (r.status==="UNSETTLED"||typeof r.settledAt==="string"&&Number.isFinite(Date.parse(r.settledAt)));
  }).slice(-MAX_ENTRIES);
@@ -34,6 +38,12 @@ export function paperProfit(entry:PaperEntry):number|null{
   case "MANUAL_VOID":return 0;
   case "UNSETTLED":return null;
  }
+}
+/** Subjective expectation ONLY: p is entered by the user, not inferred by the product. */
+export function paperExpectedValue(stake:number,odds:number,p:number):number|null{
+ if(!Number.isFinite(stake)||stake<=0||!Number.isFinite(odds)||odds<=1||
+    !Number.isFinite(p)||p<=0||p>=1)return null;
+ return stake*(p*odds-1);
 }
 export function paperJournalStats(entries:PaperEntry[],initialBankroll:number){
  const bankroll=Number.isFinite(initialBankroll)&&initialBankroll>=100&&initialBankroll<=100_000?initialBankroll:1000;
@@ -60,7 +70,12 @@ export function paperJournalStats(entries:PaperEntry[],initialBankroll:number){
   wins:settled.filter(x=>x.status==="MANUAL_WIN").length,
   losses:settled.filter(x=>x.status==="MANUAL_LOSS").length,
   voids:settled.filter(x=>x.status==="MANUAL_VOID").length,
-  net,roi:stakeSum>0?net/stakeSum*100:0,maxDrawdown,stakeSum,
+  net,roi:stakeSum>0?net/stakeSum*100:0,
+  bankrollReturnPct:bankroll>0?net/bankroll*100:0,
+  hitRate: settled.some(x=>x.status==="MANUAL_WIN"||x.status==="MANUAL_LOSS")
+   ?settled.filter(x=>x.status==="MANUAL_WIN").length/
+    settled.filter(x=>x.status==="MANUAL_WIN"||x.status==="MANUAL_LOSS").length*100:0,
+  maxDrawdown,stakeSum,
   exposure,available,maxNewStake,
   equity:bankroll+net,
   equityPoints:equityPoints.slice(-80),
@@ -69,14 +84,15 @@ export function paperJournalStats(entries:PaperEntry[],initialBankroll:number){
 }
 // CSV formulas can execute when a sheet opens. Prefix dangerous cells.
 export function paperCsv(entries:PaperEntry[]):string{
- const cols=["id","eventId","match","scenario","odds","stake","recordedAt","source","quoteCapturedAt","status","settledAt","manualProfit","verification"];
+ const cols=["id","eventId","match","scenario","odds","stake","recordedAt","source","quoteCapturedAt","status","settledAt","manualProfit","verification","hypothesis","userEstimatedProbability"];
  const safe=(v:unknown)=>{
   const raw=String(v??"");
   const inert=/^[\s\uFEFF\u200B]*[=+\-@]/.test(raw)?"'"+raw:raw;
   return '"'+inert.replace(/"/g,'""')+'"';
  };
  const rows=entries.map(e=>[e.id,e.eventId,e.match,e.scenario,e.odds,e.stake,e.recordedAt,e.source,
-   e.quoteCapturedAt||"",e.status,e.settledAt||"",paperProfit(e)??"","MANUAL_UNVERIFIED"].map(safe).join(","));
+   e.quoteCapturedAt||"",e.status,e.settledAt||"",paperProfit(e)??"","MANUAL_UNVERIFIED",
+   e.hypothesis||"",e.estimatedProbability??""].map(safe).join(","));
  return [cols.map(safe).join(","),...rows].join("\r\n")+"\r\n";
 }
 export function paperJournalSelfcheck(){
@@ -92,6 +108,10 @@ export function paperJournalSelfcheck(){
   {name:"Manual loss loses stake",pass:paperProfit(loss)===-10},
   {name:"Void returns stake",pass:paperProfit(voided)===0},
   {name:"Unverified manually-entered outcomes labeled",pass:stats.manualOnly===true},
+  {name:"Subjective EV calculated without claiming model prediction",pass:paperExpectedValue(10,2,0.6)===2&&paperExpectedValue(10,2,2)===null},
+  {name:"Hypothesis and subjective probability retained",pass:parsePaperEntries([{...base,hypothesis:"Late goal",estimatedProbability:0.55}]).length===1},
+  {name:"Out-of-range probability rejected",pass:parsePaperEntries([{...base,estimatedProbability:1.25}]).length===0},
+  {name:"Bankroll ROI separated from yield",pass:stats.bankrollReturnPct===-0.5&&stats.hitRate===50},
   {name:"Net and ROI use settled stake only",pass:stats.net===-5&&Math.abs(stats.roi+16.6666667)<.001},
   {name:"Drawdown detects loss after win",pass:stats.maxDrawdown===10},
   {name:"Open exposure and 2% cap",pass:stats.exposure===10&&stats.maxNewStake===20},
