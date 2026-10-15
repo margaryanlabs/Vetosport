@@ -424,12 +424,12 @@ test("Paper FT read API verifies stored source evidence and does not poll paid p
  assert.match(api,/ids.length<=8/);
  assert.match(api,/providerCalls:0/);
  assert.doesNotMatch(api,/API_FOOTBALL_KEY|the-odds-api.com|v3.football.api-sports.io/);
- assert.match(engine,/api-football\\.fixtures\\.results/);
+ assert.match(engine,/api-football\.fixtures\.results/);
  assert.match(engine,/regulationTimeOnly===true/);
  assert.match(engine,/event.event.status!=="finished"/);
  assert.match(engine,/paperContractFromQuote/);
  assert.match(engine,/entry.marketContract/);
- assert.match(engine,/Date.parse\\(entry.recordedAt\\)>=Date.parse\\(final.capturedAt\\)/);
+ assert.match(engine,/Date\.parse\(entry\.recordedAt\)>=Date\.parse\(final\.capturedAt\)/);
  assert.match(ledger,/PROVIDER_FT_SCORE_VERIFIED_PRICE_NOT_EXECUTED/);
  assert.match(lab,/Сверить исходы/);
  assert.match(lab,/checkCertifiedFinals/);
