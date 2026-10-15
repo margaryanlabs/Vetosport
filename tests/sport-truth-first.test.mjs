@@ -482,3 +482,30 @@ test("Strategy validation never presents repeated, post-event or hand-settled ti
  assert.match(journal,/verificationCursorRef.current/);
  assert.match(selfcheck,/strategies.passed/);
 });
+
+
+test("On-demand autonomous paper replay uses exact stored evidence and never places a bet",()=>{
+ const replay=read("src/lib/paper/autonomous-replay.ts");
+ const route=read("src/app/api/intelligence/paper-journal/autonomous/route.ts");
+ const ui=read("src/components/AutonomousReplayPanel.tsx");
+ const research=read("src/components/StrategyValidationPanel.tsx");
+ const self=read("src/app/api/intelligence/paper-journal/selfcheck/route.ts");
+ assert.match(replay,/certifyStoredPaperFinal/);
+ assert.match(replay,/prediction.fairProbability\*quote.decimalOdds-1/);
+ assert.match(replay,/quote.marketKey&&p.selectionKey===quote.selectionKey/);
+ assert.match(replay,/const MAX_AGE_MS=120_000/);
+ assert.match(replay,/if\(chosen\)rows.push\(chosen\)/);
+ assert.match(replay,/validatedEdgeCount:0/);
+ assert.match(replay,/autonomousReplaySelfcheck/);
+ assert.match(route,/listRecentEvents/);
+ assert.match(route,/listRecentQuotesForEvents/);
+ assert.match(route,/listRecentPredictionsForEvents/);
+ assert.match(route,/listRecentEventStates/);
+ assert.match(route,/sourceTruncationPossible:capped/);
+ assert.match(route,/providerCalls:0/);
+ assert.doesNotMatch(route,/appendEvent|appendDecision|settleFootballEvent|API_FOOTBALL_KEY|CRON_SECRET/);
+ assert.match(ui,/Исследовать архив/);
+ assert.match(ui,/КАНДИДАТ|ЗАФИКСИРОВАННЫЕ ПРАВИЛА/);
+ assert.match(research,/AutonomousReplayPanel/);
+ assert.match(self,/autonomous.passed/);
+});
