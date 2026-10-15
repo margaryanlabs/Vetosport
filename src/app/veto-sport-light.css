@@ -608,3 +608,19 @@ html[data-veto-sport-appearance="light"] .paperLedger .paperFinalVerification>bu
 html[data-veto-sport-appearance="light"] .paperLedger :is(.paperModelScore,.paperModelSnapshot){background:#fff!important;border-color:rgba(28,45,61,.16)!important}
 html[data-veto-sport-appearance="light"] .paperLedger :is(.paperModelScore strong,.paperModelSnapshot strong){color:#1e2b39!important}
 html[data-veto-sport-appearance="light"] .paperLedger :is(.paperModelScore span,.paperModelSnapshot span,.paperModelScore small,.paperModelScore p,.paperModelSnapshot small){color:#536173!important}
+
+
+/* Strategy Validation: no invisible statistics in the white appearance. */
+html[data-veto-sport-appearance="light"] .paperValidation{background:#fff!important;color:#1c2938!important;border-color:rgba(28,45,61,.16)!important}
+html[data-veto-sport-appearance="light"] .paperValidation :is(.paperValidationKpis article,.paperValidationMetrics article,.paperCalibration,.paperValidationEvidence,.paperValidationState,.paperValidation footer){background:#f7f8fa!important;color:#233245!important;border-color:rgba(28,45,61,.14)!important}
+html[data-veto-sport-appearance="light"] .paperValidation :is(h3,.paperCalibration header b,.paperValidationEvidence header b,.paperValidationKpis article strong,.paperValidationMetrics article strong,.paperValidationEvidence div strong){color:#192638!important}
+html[data-veto-sport-appearance="light"] .paperValidation :is(.paperValidationHead>div>span,.paperValidationHead p,.paperValidationKpis article span,.paperValidationKpis article small,.paperValidationMetrics article small,.paperValidationMetrics article span,.paperCalibration header span,.paperCalibrationRow>span,.paperCalibrationRow>b,.paperCalibration>small,.paperValidationEvidence header span,.paperValidationEvidence div small,.paperValidationEvidence p,.paperValidationState span,.paperValidation footer span,.paperCalibrationLegend){color:#536276!important}
+html[data-veto-sport-appearance="light"] .paperValidation :is(.paperValidationState b,.paperValidationEvidence>p b,.paperValidation footer>b){color:#9f2c3e!important}
+html[data-veto-sport-appearance="light"] .paperValidationBadge{color:#9f2c3e!important;background:#fce8ec!important;border-color:rgba(159,44,62,.25)!important}
+html[data-veto-sport-appearance="light"] .paperValidationSelector label{color:#304358!important}
+html[data-veto-sport-appearance="light"] .paperValidationSelector select{color:#192638!important;background:#fff!important;border-color:#9eaaba!important}
+html[data-veto-sport-appearance="light"] .paperCalibrationTracks>div{background:#e4e7ed!important}
+html[data-veto-sport-appearance="light"] .paperCalibrationTracks>div>i{background:#6c7b8e!important}
+html[data-veto-sport-appearance="light"] .paperCalibrationTracks>div:nth-child(2)>i{background:#be384a!important}
+html[data-veto-sport-appearance="light"] .paperCalibrationLegend i:first-of-type{background:#6c7b8e!important}
+html[data-veto-sport-appearance="light"] .paperCalibrationLegend i:nth-of-type(2){background:#be384a!important}
