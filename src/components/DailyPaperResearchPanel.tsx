@@ -92,8 +92,8 @@ export function DailyPaperResearchPanel(){
   </div>
   <div className="paperDailyRules">
    <strong>НАУЧНЫЙ ПРОТОКОЛ / $200 VIRTUAL BANK</strong>
-   <span>Стартовый банк $200 · до 3 экспериментов в сутки · $4 на эксперимент (2% стартового банка) · максимум $12 новой экспозиции за день · без автоматического увеличения ставки.</span>
-   <small>Количество тестов не гарантируется: при отсутствии свежих и проверяемых данных система может не сделать ни одной виртуальной ставки. Её модельные вероятности пока не прошли независимую калибровку.</small>
+   <span>Стартовый банк $200 · до 3 экспериментов в сутки · $4 на эксперимент (2% стартового банка) · максимум $12 дневного риска. Если нет прогноза VETO, можно наблюдать контрольную группу по реальным котировкам без утверждений о преимуществе.</span>
+   <small>Количество тестов не гарантируется. Контрольная вероятность = 1/коэффициент, получена из той же цены и НЕ является независимым прогнозом. Окончательный P&L возможен только при подтверждённом FT.</small>
   </div>
   {error&&<div className="paperDailyError" role="alert">{error}</div>}
   {!data&&!error&&<div className="paperDailyEmpty">Загружаем реальные записи. Ни демонстрационной прибыли, ни фиктивных матчей.</div>}
@@ -135,7 +135,7 @@ export function DailyPaperResearchPanel(){
      <div><span>{t.competition}</span><b>{t.match}</b>
       <small>{label(t.contract)} · {t.bookmaker} · {dt(t.pickedAt)}</small></div>
      <div><small>КОЭФФИЦИЕНТ</small><b>{t.odds.toFixed(2)}</b><span>{money(t.stake)} виртуально</span></div>
-     <div><small>ШАНС МОДЕЛИ</small><b>{(t.modelProbability*100).toFixed(1)}%</b><span>{t.modelVersion}</span></div>
+     <div><small>{t.modelVersion==="QUOTE_IMPLIED_CONTROL_V1"?"БАЗИС / ИЗ КОЭФФИЦИЕНТА":"ПРОГНОЗ VETO · НЕ ПРОВЕРЕН"}</small><b>{(t.modelProbability*100).toFixed(1)}%</b><span>{t.modelVersion==="QUOTE_IMPLIED_CONTROL_V1"?"CONTROL · не независимый прогноз":t.modelVersion}</span></div>
      <div><small>ИСХОД / P&L</small><b>{t.settlement?t.settlement.result:"ОЖИДАЕТ FT"}</b>
       <span className={t.settlement?.result==="LOSS"?"negative":"positive"}>{t.settlement?
        signed(t.settlement.result==="WIN"?t.stake*(t.odds-1):-t.stake):"—"}
