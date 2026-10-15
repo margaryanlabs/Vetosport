@@ -2,7 +2,7 @@
 import {useEffect,useMemo,useState} from "react";
 import type {LiveEventSummary,LiveQuotePreview} from "@/lib/live/types";
 import {MAX_ENTRIES,PAPER_BANK_KEY,PAPER_STORAGE_KEY,parsePaperEntries,
- paperCsv,paperJournalStats,paperProfit,type PaperEntry,type PaperStatus} from "@/lib/paper/paper-ledger";
+ paperCsv,paperJournalStats,paperProfit,paperExpectedValue,type PaperEntry,type PaperStatus} from "@/lib/paper/paper-ledger";
 
 const outcomeNames:{[K in Exclude<PaperStatus,"UNSETTLED">]:string}={
  MANUAL_WIN:"Победа — введено вручную",
@@ -36,6 +36,9 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
  const [manual,setManual]=useState("1.50");
  const [stake,setStake]=useState("10");
  const [selected,setSelected]=useState("");
+ const [hypothesis,setHypothesis]=useState("");
+ const [estimatedProbability,setEstimatedProbability]=useState("");
+ const [historyScope,setHistoryScope]=useState<"EVENT"|"ALL"|"PENDING">("EVENT");
  const [outcome,setOutcome]=useState<Record<string,string>>({});
  const [message,setMessage]=useState("");
  const [loaded,setLoaded]=useState(false);
@@ -58,11 +61,20 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
   return [...map.values()].sort((a,b)=>Date.parse(b.capturedAt)-Date.parse(a.capturedAt)).slice(0,24);
  },[quotes]);
  const candidate=deduped.find(q=>[q.provider,q.marketKey,q.selectionKey,q.bookmaker].join("|")===selected);
+ const missingQuote=Boolean(selected&&!candidate);
  const odds=candidate?.decimalOdds??Number(manual);
  const amount=Number(stake);
  const valid=Number.isFinite(odds)&&odds>1&&odds<=1000&&Number.isFinite(amount)&&amount>0;
  const withinRisk=valid&&amount<=stats.maxNewStake+.0001;
- const currentEntries=entries.filter(x=>x.eventId===event.id).slice(-12).reverse();
+ const probabilityInput=estimatedProbability.trim();
+ const userProbability=probabilityInput?Number(probabilityInput)/100:null;
+ const invalidProbability=userProbability!==null&&(!Number.isFinite(userProbability)||userProbability<=0||userProbability>=1);
+ const subjectiveEV=valid&&userProbability!==null&&!invalidProbability?paperExpectedValue(amount,odds,userProbability):null;
+ const canRecord=withinRisk&&!missingQuote&&!invalidProbability;
+ const currentEntries=useMemo(()=>entries.filter(x=>
+   historyScope==="EVENT"?x.eventId===event.id:
+   historyScope==="PENDING"?x.status==="UNSETTLED":true
+ ).slice(-20).reverse(),[entries,event.id,historyScope]);
  const save=(next:PaperEntry[],okText:string)=>{
   const safe=next.slice(-MAX_ENTRIES);
   setEntries(safe);
@@ -70,16 +82,20 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
   catch{setMessage("Изменение сохранено только до закрытия этого сеанса. Браузер запретил постоянное хранение.");}
  };
  const place=()=>{
-  if(!loaded||!valid||!withinRisk){
-   setMessage(`Виртуальный риск на одну запись ограничен 2% начального банка и доступным остатком: сейчас максимум ${fmt(stats.maxNewStake)} ед.`);
+  if(!loaded||!canRecord){
+   setMessage(missingQuote?"Исходный снимок коэффициента больше не доступен. Выбери другой снимок или явно переключись на ручную гипотезу.":
+    invalidProbability?"Вероятность должна быть больше 0% и меньше 100%.":
+    `Виртуальный риск на одну запись ограничен 2% начального банка и доступным остатком: сейчас максимум ${fmt(stats.maxNewStake)} ед.`);
    return;
   }
   const recordedAt=new Date().toISOString();
   const row:PaperEntry={
    id:crypto.randomUUID(),eventId:event.id,match:event.homeName+" — "+event.awayName,
-   scenario:candidate?candidate.selectionLabel+" · "+candidate.marketKey:"Ручная гипотеза · рынок НЕ проверен",
+   scenario:candidate?candidate.selectionLabel+" · "+candidate.marketKey:(hypothesis.trim()||"Ручная гипотеза · рынок НЕ проверен"),
    odds,stake:amount,recordedAt,source:candidate?"SOURCE_SNAPSHOT":"HYPOTHETICAL_MANUAL",
-   quoteCapturedAt:candidate?.capturedAt,status:"UNSETTLED",
+   quoteCapturedAt:candidate?.capturedAt,
+   hypothesis:hypothesis.trim().slice(0,300)||undefined,
+   estimatedProbability:userProbability??undefined,status:"UNSETTLED",
   };
   save([...entries,row],"Виртуальный тест сохранён локально. Исход матча автоматически не проверялся.");
  };
@@ -91,6 +107,7 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
  };
  const chooseBank=(n:number)=>{
   if(![100,1000,10000].includes(n))return;
+  if(entries.length>0){setMessage("Начальный виртуальный банк зафиксирован после первой записи. Изменение переписало бы историю результатов.");return;}
   setBankroll(n);
   try{localStorage.setItem(PAPER_BANK_KEY,String(n));}
   catch{setMessage("Браузер не сохранил выбранный виртуальный банк.");}
@@ -106,25 +123,32 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
  };
  return <section className="paperStudio paperLedger" id="veto-paper-studio">
   <header className="observedStudioSectionHead">
-   <div><span>03 / PAPER LAB · NO REAL MONEY</span><h3>Paper Trading · лаборатория</h3>
-    <p>Виртуальный банк, журнал исследований, ручной расчёт результатов и контроль риска. Никаких реальных ставок или подключений к букмекеру.</p>
+   <div><span>03 / PAPER LAB · NO REAL MONEY</span><h3>Paper Betting Lab</h3>
+    <p>Проверяй спортивные гипотезы без денег: сохраняй цену и предположение, сравнивай субъективную оценку с безубыточной вероятностью, веди единый журнал. Результаты пока подтверждаются только вручную.</p>
    </div>
    <span className="observedStudioCount">100% ВИРТУАЛЬНО</span>
   </header>
   <div className="paperControlBar">
     <label>Виртуальный начальный банк
-     <select value={bankroll} onChange={e=>chooseBank(Number(e.target.value))} aria-label="Начальный виртуальный банк">
+     <select value={bankroll} disabled={entries.length>0} onChange={e=>chooseBank(Number(e.target.value))} aria-label="Начальный виртуальный банк">
       <option value="100">100 единиц</option><option value="1000">1 000 единиц</option><option value="10000">10 000 единиц</option>
      </select>
     </label>
-    <span>Лимит на один тест: <strong>2%</strong> от начального банка</span>
+    <span>{entries.length?"Банк зафиксирован · ":"Лимит на один тест: "}<strong>{entries.length?fmt(bankroll):"2%"}</strong>{entries.length?" · журнал сохранён":" от начального банка"}</span>
     <button type="button" onClick={exportCsv} disabled={!entries.length}>Экспорт журнала CSV ↗</button>
   </div>
   <div className="paperPerformance" aria-label="Метрики виртуального журнала с результатами, внесёнными вручную">
-   <article><small>ВИРТУАЛЬНЫЙ КАПИТАЛ</small><strong>{fmt(stats.equity)}</strong><span>начальный банк + ручной P&amp;L</span></article>
+   <article><small>ВИРТУАЛЬНЫЙ КАПИТАЛ</small><strong>{fmt(stats.equity)}</strong><span>Доступно для новых тестов: {fmt(stats.available)}</span></article>
    <article><small>РУЧНОЙ P&amp;L</small><strong className={stats.net<0?"negative":stats.net>0?"positive":""}>{stats.net>0?"+":""}{fmt(stats.net)}</strong><span>не проверено VETO автоматически</span></article>
-   <article><small>ROI ПО РУЧНЫМ ИСХОДАМ</small><strong className={stats.roi<0?"negative":stats.roi>0?"positive":""}>{stats.roi>0?"+":""}{stats.roi.toFixed(1)}%</strong><span>{stats.settled} рассчитано · {stats.unsettled} ожидают</span></article>
+   <article><small>YIELD ПО РУЧНЫМ ИСХОДАМ</small><strong className={stats.roi<0?"negative":stats.roi>0?"positive":""}>{stats.settled?stats.roi>0?"+":"":""}{stats.settled?stats.roi.toFixed(1)+"%":"—"}</strong><span>Чистый P&amp;L / сумма рассчитанных ставок</span></article>
    <article><small>МАКСИМАЛЬНАЯ ПРОСАДКА</small><strong>{fmt(stats.maxDrawdown)}</strong><span>по введённым вручную исходам</span></article>
+  </div>
+  <div className="paperResearchPulse" aria-label="Статистика виртуальных экспериментов">
+   <div><small>ЗАПИСЕЙ</small><b>{entries.length}</b></div>
+   <div><small>ОЖИДАЮТ РЕЗУЛЬТАТА</small><b>{stats.unsettled}</b></div>
+   <div><small>WIN RATE · РУЧНОЙ</small><b>{stats.wins+stats.losses?stats.hitRate.toFixed(1)+"%":"—"}</b></div>
+   <div><small>ДОХОДНОСТЬ НА БАНК · РУЧНАЯ</small><b>{stats.settled?(stats.bankrollReturnPct>0?"+":"")+stats.bankrollReturnPct.toFixed(1)+"%":"—"}</b></div>
+   <div><small>ОТКРЫТАЯ ЭКСПОЗИЦИЯ</small><b>{fmt(stats.exposure)}</b></div>
   </div>
   <div className="paperEquityWrap">
    <header><span>P&amp;L / MANUAL EQUITY</span><strong>История виртуального капитала</strong><small>{stats.wins} побед · {stats.losses} поражений · {stats.voids} возвратов</small></header>
@@ -141,6 +165,10 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
       </option>)}
      </select>
     </label>
+    <label className="paperResearchInput">Гипотеза / причина эксперимента
+      <input type="text" maxLength={300} value={hypothesis} onChange={e=>setHypothesis(e.target.value)}
+       placeholder="Например: низкий темп во втором тайме" aria-label="Гипотеза эксперимента"/>
+    </label>
     <div className="paperTicketFields">
      <label>Коэффициент
       <input type="number" min="1.01" max="1000" step="0.01" inputMode="decimal" value={candidate?candidate.decimalOdds:manual}
@@ -150,26 +178,46 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
       <input type="number" min="0.01" step="0.1" inputMode="decimal" value={stake} onChange={e=>setStake(e.target.value)}/>
      </label>
     </div>
+    <label className="paperResearchInput">Твоя оценка вероятности, % (необязательно)
+      <input type="number" min="0.1" max="99.9" step="0.1" inputMode="decimal"
+       value={estimatedProbability} onChange={e=>setEstimatedProbability(e.target.value)}
+       placeholder="Например: 60" aria-label="Субъективная вероятность в процентах"/>
+    </label>
     <div className="paperTicketMetrics">
      <article><span>В РИСКЕ (ВИРТУАЛЬНО)</span><strong>{valid?fmt(amount):"—"}</strong></article>
      <article><span>ПРИБЫЛЬ ПРИ РУЧНОМ WIN</span><strong>{valid?fmt(amount*(odds-1)):"—"}</strong></article>
      <article><span>ПОРОГ БЕЗУБЫТОЧНОСТИ</span><strong>{valid?(100/odds).toFixed(1)+"%":"—"}</strong></article>
     </div>
+    <div className="paperSubjectiveEdge" role="status">
+      <div><span>USER ESTIMATE · НЕ ПРОГНОЗ VETO</span>
+       <strong>{subjectiveEV===null?"Укажи вероятность для оценки EV":(subjectiveEV>0?"+":"")+fmt(subjectiveEV)+" ед. ожидаемого P&L"}</strong></div>
+      <small>{subjectiveEV===null?"Ожидаемая стоимость рассчитывается только по твоей субъективной вероятности. Преимущество не подтверждено.":
+       "EV = сумма × (твоя вероятность × коэффициент − 1). Это математическая иллюстрация, не подтверждённое преимущество."}</small>
+    </div>
     <div className="paperRiskNotice" role="status">
      <span className={withinRisk?"ok":"warn"} aria-hidden="true">●</span>
-     <div><strong>{withinRisk?"Виртуальный лимит соблюдён":"Превышен виртуальный риск"}</strong>
+     <div><strong>{missingQuote?"Снимок коэффициента больше недоступен":invalidProbability?"Некорректная вероятность":withinRisk?"Виртуальный лимит соблюдён":"Превышен виртуальный риск"}</strong>
        <p>Максимум для новой записи: {fmt(stats.maxNewStake)} ед. · Открытая виртуальная экспозиция: {fmt(stats.exposure)} ед.</p>
      </div>
     </div>
     {candidate?<p className="paperQuoteCaveat">Цена провайдера {candidate.provider} · записана {ruDate(candidate.capturedAt)}. Это архивный снимок, не обещание исполнения.</p>:
      <p className="paperQuoteCaveat">Ручная цена — гипотеза, которой нет в подтверждённой букмекерской линии.</p>}
-    <button className="paperTicketCommit" type="button" disabled={!loaded||!withinRisk} onClick={place}>Записать виртуальную ставку ↗</button>
+    <button className="paperTicketCommit" type="button" disabled={!loaded||!canRecord} onClick={place}>Зафиксировать paper-эксперимент ↗</button>
     {message&&<p className="paperTicketMessage" role="status">{message}</p>}
    </div>
    <div className="paperTicketHistory">
-    <div className="paperTicketHistoryHeading"><span>ЖУРНАЛ ЭТОГО МАТЧА</span><b>{currentEntries.length} ПОКАЗАНО</b></div>
+    <div className="paperTicketHistoryHeading"><span>ЖУРНАЛ ЭКСПЕРИМЕНТОВ</span><b>{currentEntries.length} ИЗ {entries.length}</b></div>
+    <div className="paperHistoryFilters" role="group" aria-label="Фильтр виртуального журнала">
+      <button type="button" className={historyScope==="EVENT"?"active":""} aria-pressed={historyScope==="EVENT"} onClick={()=>setHistoryScope("EVENT")}>Этот матч</button>
+      <button type="button" className={historyScope==="ALL"?"active":""} aria-pressed={historyScope==="ALL"} onClick={()=>setHistoryScope("ALL")}>Все матчи</button>
+      <button type="button" className={historyScope==="PENDING"?"active":""} aria-pressed={historyScope==="PENDING"} onClick={()=>setHistoryScope("PENDING")}>Ожидают · {stats.unsettled}</button>
+    </div>
     {currentEntries.length?currentEntries.map(e=><article className="paperLedgerEntry" key={e.id}>
-      <div><strong>{e.scenario}</strong><span>{e.source==="SOURCE_SNAPSHOT"?"СОХРАНЁННЫЙ СНИМОК · НЕ ИСПОЛНЕН":"РУЧНАЯ ГИПОТЕЗА"}</span></div>
+      <div><strong>{e.scenario}</strong>
+       <span>{historyScope==="EVENT"?"":e.match+" · "}{e.source==="SOURCE_SNAPSHOT"?"СНИМОК КОЭФФИЦИЕНТА · НЕ ИСПОЛНЕН":"РУЧНАЯ ГИПОТЕЗА"}</span>
+       {e.hypothesis&&e.hypothesis!==e.scenario?<small>ГИПОТЕЗА: {e.hypothesis}</small>:null}
+       {e.estimatedProbability!==undefined?<small>ОЦЕНКА ПОЛЬЗОВАТЕЛЯ: {(e.estimatedProbability*100).toFixed(1)}% · EV {fmt(paperExpectedValue(e.stake,e.odds,e.estimatedProbability)??0)} · НЕ ВЕРИФИЦИРОВАНО</small>:null}
+      </div>
       <div><b>{e.odds.toFixed(2)}</b><small>{fmt(e.stake)} виртуальных единиц</small></div>
       <time dateTime={e.recordedAt}>{ruDate(e.recordedAt)}</time>
       <em>{e.status==="UNSETTLED"?"НЕ РАССЧИТАНО":outcomeNames[e.status]}</em>
@@ -187,9 +235,9 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
        <strong className={"paperOutcomeNet "+((paperProfit(e)??0)<0?"negative":"positive")}>
         РУЧНОЙ P&amp;L: {(paperProfit(e)??0)>0?"+":""}{fmt(paperProfit(e)??0)} · НЕ ПРОВЕРЕНО
        </strong>}
-    </article>):<div className="paperEmpty"><span aria-hidden="true">▱</span><strong>Виртуальный журнал пуст</strong>
-      <p>Добавь гипотетический тест. Ни банк, ни результат не являются реальными деньгами.</p></div>}
-    <p className="paperJournalCaveat">Данные хранятся на этом устройстве. Расчёт победы/поражения делается ТОЛЬКО после твоего ручного подтверждения. VETO не проверяет итог матча или правила букмекерского рынка. Экспортируй CSV для резервной копии.</p>
+    </article>):<div className="paperEmpty"><span aria-hidden="true">▱</span><strong>{entries.length?"В выбранном фильтре нет записей":"Виртуальный журнал пуст"}</strong>
+      <p>{entries.length?"Переключись на «Все матчи», чтобы увидеть другие исследования.":"Добавь гипотетический тест. Ни банк, ни результат не являются реальными деньгами."}</p></div>}
+    <p className="paperJournalCaveat">Локальный исследовательский журнал: данные остаются на устройстве. Исходы вручную введены и НЕ подтверждены VETO. Вероятность — только оценка пользователя; не является сигналом к ставке. Перед очисткой браузера экспортируй CSV.{entries.length>=MAX_ENTRIES-10?" Лимит журнала почти достигнут: старые записи могут удаляться при добавлении новых.":""}</p>
    </div>
   </div>
  </section>;
