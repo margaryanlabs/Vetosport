@@ -98,6 +98,40 @@ export default function DiscoveryPage(){
            <article><small>СВЕЖИЕ СЧЁТ + ЦЕНА СЕЙЧАС</small><strong>{coverage.freshScoreAndPriceEvents}</strong><span>за последние 2 минуты; не доказанный EV</span></article>
            <article className="discoveryHistoricalEvidence"><small>ИСТОРИЧЕСКИЕ СНИМКИ СЧЁТ + ЦЕНА</small><strong>{coverage.historicalScoreAndPriceCoCapturedEvents}</strong><span>пары в пределах {coverage.historicalCoCaptureWindowSeconds} сек · записи источников, не готовые ставки</span></article>
          </div>
+         <section className="discoveryLagPanel" aria-label="Дистанция между сохранёнными снимками счёта и котировок">
+           <div className="discoveryLagHeading">
+             <div>
+               <span className="discoveryLagEyebrow">OBSERVATION QUALITY / DATA TIMING</span>
+               <h3>Насколько близко по времени?<br/><em>Счёт ↔ котировка.</em></h3>
+             </div>
+             <div className="discoveryLagTotal"><small>МАТЧЕЙ С ДВУМЯ ТИПАМИ НАБЛЮДЕНИЙ</small>
+               <strong>{coverage.captureLag?.withBothSources??0}</strong>
+             </div>
+           </div>
+           <div className="discoveryLagBars">
+             {([
+               ["within2m","≤ 2 МИН","score-price-aligned"],
+               ["between2and10m","2–10 МИН","score-price-delayed"],
+               ["between10and30m","10–30 МИН","score-price-distant"],
+               ["over30m","> 30 МИН","score-price-too-far"]
+             ] as const).map(([key,label,kind])=>{
+               const value=coverage.captureLag?.eventCounts[key]??0;
+               const total=coverage.captureLag?.withBothSources??0;
+               const max=total>0?Math.max(5,Math.min(100,100*value/total)):0;
+               return <article key={key} className={"discoveryLagRow "+kind}>
+                 <div><span>{label}</span><strong>{value}</strong></div>
+                 <div className="discoveryLagTrack" aria-label={label+": "+value}>
+                   <i style={{width:max+"%"}} />
+                 </div>
+               </article>;
+             })}
+           </div>
+           <div className="discoveryLagCaveats">
+             <span><b>01 / ВРЕМЯ</b> Сравниваются времена записи, а не доказанно синхронизированные часы поставщиков.</span>
+             <span><b>02 / БУКМЕКЕР</b> {coverage.captureLag?.unidentifiedBookmakerMatches??0} событий без установленного букмекера в ближайшей паре.</span>
+             <span><b>03 / ИСПОЛНЕНИЕ</b> Ни один интервал не удостоверяет доступность цены, прибыльность или результат матча.</span>
+           </div>
+         </section>
          <div className="discoveryGates" aria-label="Этапы готовности спортивных данных">
            {coverage.gates.map((gate,i)=><article key={gate.id} className={"discoveryGate discoveryGate-"+gate.stage}>
              <div className="discoveryGateHead"><span>{String(i+1).padStart(2,"0")}</span><h3>{gate.label}</h3><b>{gate.stage==="blocked"?"НЕ ГОТОВО":gate.stage==="partial"?"ЧАСТИЧНО":"ГОТОВО"}</b></div>
