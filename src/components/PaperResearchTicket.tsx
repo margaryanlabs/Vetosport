@@ -4,6 +4,7 @@ import type {LiveEventSummary,LiveQuotePreview,LiveShadowPrediction} from "@/lib
 import {MAX_ENTRIES,PAPER_BANK_KEY,PAPER_STORAGE_KEY,parsePaperEntries,
  paperCsv,paperJournalStats,paperProfit,paperExpectedValue,type PaperEntry,type PaperStatus} from "@/lib/paper/paper-ledger";
 import {paperContractFromQuote,reconcilePaperEntry,type CertifiedPaperFinal} from "@/lib/paper/paper-verification";
+import {StrategyValidationPanel} from "@/components/StrategyValidationPanel";
 
 const outcomeNames:{[K in Exclude<PaperStatus,"UNSETTLED">]:string}={
  MANUAL_WIN:"Победа — введено вручную",
@@ -41,6 +42,7 @@ export function PaperResearchTicket({event,quotes,modelPredictions=[]}:{event:Li
  const [stake,setStake]=useState("10");
  const [selected,setSelected]=useState("");
  const [hypothesis,setHypothesis]=useState("");
+ const [strategyTag,setStrategyTag]=useState("");
  const [estimatedProbability,setEstimatedProbability]=useState("");
  const [historyScope,setHistoryScope]=useState<"EVENT"|"ALL"|"PENDING">("EVENT");
  const [outcome,setOutcome]=useState<Record<string,string>>({});
@@ -120,6 +122,7 @@ export function PaperResearchTicket({event,quotes,modelPredictions=[]}:{event:Li
    modelVersion:modelSnapshot?.modelVersion,
    modelCapturedAt:modelSnapshot?.capturedAt,
    hypothesis:hypothesis.trim().slice(0,300)||undefined,
+   strategyTag:strategyTag.trim().slice(0,48)||undefined,
    estimatedProbability:userProbability??undefined,status:"UNSETTLED",
   };
   save([...entries,row],"Виртуальный тест сохранён локально. Исход матча автоматически не проверялся.");
@@ -259,6 +262,10 @@ export function PaperResearchTicket({event,quotes,modelPredictions=[]}:{event:Li
       </option>)}
      </select>
     </label>
+    <label className="paperResearchInput">Метка стратегии (необязательно)
+      <input type="text" maxLength={48} value={strategyTag} onChange={e=>setStrategyTag(e.target.value)}
+       placeholder="Например: FT Home v1" aria-label="Метка исследовательской когорты"/>
+    </label>
     <label className="paperResearchInput">Гипотеза / причина эксперимента
       <input type="text" maxLength={300} value={hypothesis} onChange={e=>setHypothesis(e.target.value)}
        placeholder="Например: низкий темп во втором тайме" aria-label="Гипотеза эксперимента"/>
@@ -318,6 +325,7 @@ export function PaperResearchTicket({event,quotes,modelPredictions=[]}:{event:Li
        {e.hypothesis&&e.hypothesis!==e.scenario?<small>ГИПОТЕЗА: {e.hypothesis}</small>:null}
        {e.estimatedProbability!==undefined?<small>ОЦЕНКА ПОЛЬЗОВАТЕЛЯ: {(e.estimatedProbability*100).toFixed(1)}% · EV {fmt(paperExpectedValue(e.stake,e.odds,e.estimatedProbability)??0)} · НЕ ВЕРИФИЦИРОВАНО</small>:null}
        {e.marketContract&&<small>ЗАФИКСИРОВАННЫЙ РЫНОК: {e.marketContract}</small>}
+       {e.strategyTag&&<small>МЕТКА КОГОРТЫ: {e.strategyTag}</small>}
        {e.modelProbability!==undefined&&e.modelVersion&&<small>MODEL SNAPSHOT: {(e.modelProbability*100).toFixed(1)}% · {e.modelVersion} · НЕ ДОКАЗАННОЕ ПРЕИМУЩЕСТВО</small>}
        {e.verifiedScore&&<small>СЧЁТ FT: {e.verifiedScore.home}:{e.verifiedScore.away} · {e.verifiedProvider} · НЕ ФАКТ ИСПОЛНЕНИЯ</small>}
       </div>
@@ -343,5 +351,6 @@ export function PaperResearchTicket({event,quotes,modelPredictions=[]}:{event:Li
     <p className="paperJournalCaveat">Локальный исследовательский журнал: данные остаются на устройстве. Исходы MANUAL не подтверждены VETO, результаты PROVIDER подтверждают лишь финальный счёт, а не реальность ставки. Вероятность — только оценка пользователя; не является сигналом к ставке. Перед очисткой браузера экспортируй CSV.{entries.length>=MAX_ENTRIES-10?" Лимит журнала почти достигнут: старые записи могут удаляться при добавлении новых.":""}</p>
    </div>
   </div>
+  <StrategyValidationPanel entries={entries}/>
  </section>;
 }
