@@ -412,3 +412,22 @@ test("Data-readiness no longer crops real busy football days to three 100-event 
  assert.match(route,/sampleMayBeCapped/);
  assert.match(route,/windowHours:windows\*windowHours/);
 });
+
+test("Historical evidence timing bars distinguish real observability from executable live prices",()=>{
+ const alignment=read("src/lib/research/capture-lag-spectrum.ts");
+ const coverage=read("src/lib/research/evidence-coverage.ts");
+ const page=read("src/app/research/discovery/page.tsx");
+ const self=read("src/app/api/intelligence/research/data-readiness/selfcheck/route.ts");
+ assert.match(alignment,/function captureLagSpectrum\(/);
+ assert.match(alignment,/captureLagSpectrumSelfcheck/);
+ assert.match(alignment,/q.suspended!==false/);
+ assert.match(alignment,/Number\.isFinite\(updated\)/);
+ assert.match(alignment,/gatewayTimesNotIndependent:true/);
+ assert.match(alignment,/providerValidatedExecution:false/);
+ assert.match(coverage,/captureLag:captureLagSpectrum|const captureLag=captureLagSpectrum/);
+ assert.match(coverage,/historicalPairsAreNotLiveSignals:true/);
+ assert.match(page,/доказанно синхронизированные/);
+ assert.match(page,/ни один интервал|Ни один интервал/);
+ assert.match(page,/value>0/);
+ assert.match(self,/captureLagSpectrumSelfcheck/);
+});
