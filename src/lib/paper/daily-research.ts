@@ -129,7 +129,7 @@ export function proposeForwardPaper(input:{
    modelAt:p?.capturedAt??state.capturedAt,pickedAt:input.asOf};
   // Pick the earliest quoted eligible price, stable tie breakers;
   // never choose the best eventual result in retrospect.
-  if(!best)best=row;
+  if(!best||(best.modelVersion==="QUOTE_IMPLIED_CONTROL_V1"&&!control))best=row;
  }
  return best;
 }
