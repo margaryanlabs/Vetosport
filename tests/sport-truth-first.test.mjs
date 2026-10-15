@@ -509,3 +509,35 @@ test("On-demand autonomous paper replay uses exact stored evidence and never pla
  assert.match(research,/AutonomousReplayPanel/);
  assert.match(self,/autonomous.passed/);
 });
+
+
+test("Forward daily paper lab remains server-only, auditable and bound to real observed data",()=>{
+ const migration=read("database/migrations/011_forward_paper_lab.sql");
+ const engine=read("src/lib/paper/daily-research.ts");
+ const runner=read("src/lib/paper/daily-runner.ts");
+ const cron=read("src/app/api/cron/shadow-football/route.ts");
+ const route=read("src/app/api/intelligence/paper-journal/daily/route.ts");
+ const page=read("src/app/research/paper-lab/page.tsx");
+ const self=read("src/app/api/intelligence/paper-journal/selfcheck/route.ts");
+ assert.match(migration,/virtual_stake numeric/);
+ assert.match(migration,/unique \(protocol,day_utc,daily_slot\)/);
+ assert.match(migration,/enable row level security/);
+ assert.match(migration,/from anon, authenticated/);
+ assert.match(migration,/PAPER_PICK_EVIDENCE_STALE/);
+ assert.match(engine,/INITIAL_PAPER_BANK=200/);
+ assert.match(engine,/DAILY_PAPER_STAKE=4/);
+ assert.match(engine,/MAX_PAPER_PICKS_PER_DAY=3/);
+ assert.match(engine,/paperContractFromQuote/);
+ assert.match(engine,/certifyStoredPaperFinal/);
+ assert.match(engine,/v.mode==="SHADOW"/);
+ assert.match(engine,/dailyPaperSelfcheck/);
+ assert.match(runner,/runDailyPaperTick/);
+ assert.match(runner,/input.observedEvents/);
+ assert.match(runner,/LEDGER_HISTORY_WINDOW_EXHAUSTED/);
+ assert.match(cron,/runDailyPaperTick/);
+ assert.match(cron,/Bearer/);
+ assert.match(route,/accountFromPaper/);
+ assert.doesNotMatch(route,/export async function POST|appendDecision|insertPaperDailyPick/);
+ assert.match(page,/DailyPaperResearchPanel/);
+ assert.match(self,/daily.passed/);
+});
