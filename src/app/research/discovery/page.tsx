@@ -96,7 +96,9 @@ export default function DiscoveryPage(){
            <article><small>ОТДЕЛЬНО ПОДТВЕРЖДЁННЫЕ FT</small><strong>{coverage.certifiedRegulationFinals}</strong><span>не равны количеству верных прогнозов</span></article>
            <article><small>МАТЧИ С ЗАПИСАННЫМИ ЦЕНАМИ</small><strong>{coverage.eventsWithRecordedPrices}</strong><span>включая исторические, неактуальные</span></article>
            <article><small>СВЕЖИЕ СЧЁТ + ЦЕНА СЕЙЧАС</small><strong>{coverage.freshScoreAndPriceEvents}</strong><span>за последние 2 минуты; не доказанный EV</span></article>
-           <article className="discoveryHistoricalEvidence"><small>ИСТОРИЧЕСКИЕ СНИМКИ СЧЁТ + ЦЕНА</small><strong>{coverage.historicalScoreAndPriceCoCapturedEvents}</strong><span>пары в пределах {coverage.historicalCoCaptureWindowSeconds} сек · записи источников, не готовые ставки</span></article>
+           <article className="discoveryHistoricalEvidence"><small>ИСТОРИЧЕСКИЕ СНИМКИ СЧЁТ + ЦЕНА</small><strong>{coverage.historicalScoreAndPriceCoCapturedEvents}</strong><span>≤ {coverage.historicalCoCaptureWindowSeconds} сек; часть пар может содержать будущий счёт</span></article>
+           <article className="discoveryHistoricalEvidence"><small>ХРОНОЛОГИЧЕСКИ ДОПУСТИМЫЕ</small><strong>{coverage.historicalCausallyAlignedEvents}</strong><span>сначала счёт → затем цена; всё ещё не подтверждённая исполнимость</span></article>
+           <article className="discoveryHistoricalEvidence"><small>ОПАСНЫЙ ЗАГЛЯД В БУДУЩЕЕ</small><strong>{coverage.historicalLookaheadOnlyEvents}</strong><span>цена записана РАНЬШЕ доступного счёта · исключено из causal replay</span></article>
          </div>
          <section className="discoveryLagPanel" aria-label="Дистанция между сохранёнными снимками счёта и котировок">
            <div className="discoveryLagHeading">
@@ -128,6 +130,7 @@ export default function DiscoveryPage(){
            </div>
            <div className="discoveryLagCaveats">
              <span><b>01 / ВРЕМЯ</b> Сравниваются времена записи, а не доказанно синхронизированные часы поставщиков.</span>
+             <span><b>00 / CAUSAL ORDER</b> Интервал ±2 мин не доказывает, что информация была известна в момент цены. Для ретроспективного решения используем только счёт, записанный ДО котировки.</span>
              <span><b>02 / БУКМЕКЕР</b> {coverage.captureLag?.unidentifiedBookmakerMatches??0} событий без установленного букмекера в ближайшей паре.</span>
              <span><b>03 / ИСПОЛНЕНИЕ</b> Ни один интервал не удостоверяет доступность цены, прибыльность или результат матча.</span>
            </div>
