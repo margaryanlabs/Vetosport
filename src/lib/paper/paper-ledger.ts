@@ -38,7 +38,8 @@ export function parsePaperEntries(value:unknown):PaperEntry[]{
    (r.selectionKey===undefined||(typeof r.selectionKey==="string"&&r.selectionKey.length<=150))&&
    (r.verifiedProvider===undefined||r.verifiedProvider==="api-football")&&
    (r.verifiedAt===undefined||(typeof r.verifiedAt==="string"&&Number.isFinite(Date.parse(r.verifiedAt))))&&
-   (r.verifiedScore===undefined||(Number.isInteger(r.verifiedScore?.home)&&Number.isInteger(r.verifiedScore?.away)&&
+   (r.verifiedScore===undefined||(typeof r.verifiedScore.home==="number"&&typeof r.verifiedScore.away==="number"&&
+      Number.isInteger(r.verifiedScore.home)&&Number.isInteger(r.verifiedScore.away)&&
       r.verifiedScore.home>=0&&r.verifiedScore.away>=0&&r.verifiedScore.home<=40&&r.verifiedScore.away<=40))&&
    (r.status==="UNSETTLED"||r.status==="MANUAL_WIN"||r.status==="MANUAL_LOSS"||
      r.status==="MANUAL_VOID"||r.status==="PROVIDER_WIN"||r.status==="PROVIDER_LOSS"||r.status==="PROVIDER_VOID")&&
