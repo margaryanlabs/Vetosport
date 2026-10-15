@@ -1,3 +1,4 @@
+import {cronOrderingSelfcheck} from "@/lib/providers/inplay-score-cadence";
 import {storageFailureSelfcheck} from "@/lib/persistence/failure-codes";
 import {marketQuotePayloadSelfcheck} from "@/lib/persistence/market-quote-rows";
 import {NextResponse} from "next/server";
@@ -8,12 +9,13 @@ export function GET(){
  const matches=oddsMatchIndexSelfcheck();
  const provider=inPlayProviderFailureSelfcheck();
  const targeted=targetedInplayProbeSelfcheck();
+ const chronological=cronOrderingSelfcheck();
  const insert=marketQuotePayloadSelfcheck();
  const storage=storageFailureSelfcheck();
  const checks=[...matches.checks.map(x=>({name:x.name,passed:x.pass})),
   ...provider.checks.map(x=>({name:x.name,passed:x.pass})),
   ...targeted.checks.map(x=>({name:x.name,passed:x.pass})),
-  ...insert.checks,...storage.checks];
+  ...insert.checks,...storage.checks,...chronological.tests];
  const passed=checks.every(x=>x.passed);
  return NextResponse.json({model:"veto.inplay-odds-integrity.selfcheck.v1",
   passed,checks,syntheticOnly:true,externalProviderCalls:0,
