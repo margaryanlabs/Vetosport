@@ -180,6 +180,8 @@ export default function DiscoveryPage(){
             {provider.pendingFixtureChecks!==null&&<small>К проверке FT: {provider.pendingFixtureChecks}</small>}
             {provider.scannedActiveFixtures!==null&&<small>Проверено активных матчей: {provider.scannedActiveFixtures}</small>}
             {provider.matchedFixtures!==null&&<small>Точно совпали с линией: {provider.matchedFixtures}</small>}
+            {provider.nearCaptureScoreFixtures!==null&&<small>Снимков счёта не старше 2 мин при запуске проверки рынка: {provider.nearCaptureScoreFixtures} · часы источников не подтверждены</small>}
+            {provider.medianScoreCaptureAgeSeconds!==null&&<small>Медианный возраст исходного счёта: {provider.medianScoreCaptureAgeSeconds} с · не гарантия исполнения</small>}
             {provider.targetedFixtureProbeUsed===true&&<small>Поиск по точному ID матча: выполнен · без гарантии наличия рынков</small>}
             {provider.openProviderQuotes!==null&&<small>Неприостановленные цены: {provider.openProviderQuotes} · букмекер не подтверждён</small>}
             {provider.quoteWriteFailures!==null&&provider.quoteWriteFailures>0&&<small>Ошибок записи котировок: {provider.quoteWriteFailures}</small>}
