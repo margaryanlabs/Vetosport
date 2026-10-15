@@ -117,7 +117,7 @@ export default function DiscoveryPage(){
              ] as const).map(([key,label,kind])=>{
                const value=coverage.captureLag?.eventCounts[key]??0;
                const total=coverage.captureLag?.withBothSources??0;
-               const max=total>0?Math.max(5,Math.min(100,100*value/total)):0;
+               const max=total>0&&value>0?Math.max(5,Math.min(100,100*value/total)):0;
                return <article key={key} className={"discoveryLagRow "+kind}>
                  <div><span>{label}</span><strong>{value}</strong></div>
                  <div className="discoveryLagTrack" aria-label={label+": "+value}>
