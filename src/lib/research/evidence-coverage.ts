@@ -1,5 +1,5 @@
 import {captureLagSpectrum} from "@/lib/research/capture-lag-spectrum";
-import {historicalCoCapturedEvents,historicalCoCaptureSelfcheck,CO_CAPTURE_WINDOW_SECONDS} from "@/lib/research/historical-co-capture";
+import {historicalTimingEvidence,historicalCoCaptureSelfcheck,CO_CAPTURE_WINDOW_SECONDS} from "@/lib/research/historical-co-capture";
 import type {PersistedEvent,PersistedEventStateRecord,PersistedMarketQuoteRecord} from "@/lib/persistence/contracts";
 
 const seconds=(t:string|undefined,now:number):number|null=>{
@@ -36,6 +36,9 @@ export type EvidenceCoverage={
  freshQuotedEvents:number;
  freshScoreAndPriceEvents:number;
  historicalScoreAndPriceCoCapturedEvents:number;
+ historicalCausallyAlignedEvents:number;
+ historicalLookaheadOnlyEvents:number;
+ historicalCausalIsNotExecution:true;
  captureLag:ReturnType<typeof captureLagSpectrum>;
  historicalCoCaptureWindowSeconds:120;
  historicalPairsAreNotLiveSignals:true;
@@ -79,7 +82,8 @@ export function evidenceCoverage(input:{
   }
  }
  const aligned=[...freshPrices].filter(id=>freshStates.has(id)).length;
- const historicalCoCaptured=historicalCoCapturedEvents({events:[...events.values()],states:input.states,quotes:input.quotes,asOf:input.at});
+ const chronology=historicalTimingEvidence({events:[...events.values()],states:input.states,quotes:input.quotes,asOf:input.at});
+ const historicalCoCaptured=chronology.observedWithin2m;
  const captureLag=captureLagSpectrum({events:[...events.values()],states:input.states,quotes:input.quotes,asOf:input.at});
  const count=(n:number)=>n>0?"partial" as const:"blocked" as const;
  const gates:EvidenceCheck[]=[
@@ -99,8 +103,15 @@ export function evidenceCoverage(input:{
       "Для этих наблюдаемых матчей нет сохранённых подходящих букмекерских цен."},
   {id:"historical-capture",label:"Исторические пары: счёт + цена",
    stage:count(historicalCoCaptured),detail:historicalCoCaptured?
-    `${historicalCoCaptured} реальных матчей имеют сохранённые счёт и неприостановленную котировку в пределах ${CO_CAPTURE_WINDOW_SECONDS} секунд по времени записи. Это исторические совместные снимки, а НЕ актуальные сигналы и НЕ доказательство доступности цены.`:
+    `${historicalCoCaptured} матчей имеют близкие по времени снимки. Из них ${chronology.lookaheadOnlyWithin2m} — только со счётом, записанным ПОСЛЕ цены. Такие пары нельзя использовать как вход для прогнозного бэктеста.`:
     "В выбранной сохранённой выборке нет совместных исторических снимков счёта и неприостановленной цены в пределах двух минут."},
+  {id:"causal-ordering",label:"Хронологическая честность анализа",
+   stage:count(chronology.causallyAlignedWithin2m),
+   detail:chronology.causallyAlignedWithin2m?
+    `${chronology.causallyAlignedWithin2m} матчей имеют счёт, записанный не позже цены (≤2 минуты); доступность ставок и независимость часов источников НЕ подтверждены.`:
+    historicalCoCaptured?
+     `Из ${historicalCoCaptured} близких пар ни одна не содержит сохранённого счёта ДО цены. Эти снимки нельзя использовать для ретроспективного принятия решений без будущей информации.`:
+     "Не найдено хронологически допустимых пар счёт → котировка."},
   {id:"independent-probability",label:"Независимая валидация модели",
    stage:"blocked",detail:"Пока нет доказанной вневыборочной калибровки и контроля множества проверенных гипотез."},
   {id:"execution",label:"Исполнение и чистый EV",
@@ -114,6 +125,9 @@ export function evidenceCoverage(input:{
   eventsWithRecordedPrices:quotesAvailable.size,freshEventStates:freshStates.size,
   freshQuotedEvents:freshPrices.size,freshScoreAndPriceEvents:aligned,
   historicalScoreAndPriceCoCapturedEvents:historicalCoCaptured,
+  historicalCausallyAlignedEvents:chronology.causallyAlignedWithin2m,
+  historicalLookaheadOnlyEvents:chronology.lookaheadOnlyWithin2m,
+  historicalCausalIsNotExecution:true,
   captureLag,
   historicalCoCaptureWindowSeconds:120,historicalPairsAreNotLiveSignals:true,
   researchReadyForRealMoney:false,externalProviderCalls:0,
@@ -145,6 +159,16 @@ export function evidenceCoverageSelfcheck(){
  const checks=[
   {name:"Historical observation tests fail closed",passed:historicalSelfcheck.passed},
   {name:"Co-capture is not promoted to currently fresh evidence",passed:r.historicalScoreAndPriceCoCapturedEvents===1&&r.historicalPairsAreNotLiveSignals===true},
+  {name:"Causal observation counts separate from look-ahead-only counts",
+   passed:r.historicalCausallyAlignedEvents===1&&r.historicalLookaheadOnlyEvents===0&&
+     r.historicalCausalIsNotExecution===true},
+  {name:"Future score recorded after price cannot count as causal historical prediction input",
+   passed:(()=>{
+     const after=evidenceCoverage({...input,states:[{...live("a"),capturedAt:"2026-10-13T12:00:00Z"}]});
+     // Quote was observed 15 seconds BEFORE score: bidirectional proximity
+     // exists but must never imply this score was available when priced.
+     return after.historicalCausallyAlignedEvents===0&&after.historicalLookaheadOnlyEvents===1;
+   })()},
   {name:"Distinct certified FT counted exactly once",passed:r.certifiedRegulationFinals===1},
   {name:"Fresh price plus independent live score share canonical event",passed:r.freshScoreAndPriceEvents===1},
   {name:"Final status alone does not certify outcome",passed:evidenceCoverage({...input,states:[live("a"),live("b")]}).certifiedRegulationFinals===0},
