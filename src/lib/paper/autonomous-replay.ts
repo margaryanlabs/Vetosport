@@ -80,9 +80,21 @@ export function replayPersistedPaper(input:{
   e.event.competition!=="VETO Storage Selfcheck").map(e=>[e.id,e])).values()]
   .sort((a,b)=>ms(a.event.startsAt)-ms(b.event.startsAt)||a.id.localeCompare(b.id));
  const rows:ReplayCase[]=[];
+ // A source fixture ID appearing under two canonical events must never count
+ // as two independent sports matches, even when both FT rows look plausible.
+ const providerOwners=new Map<string,Set<string>>();
+ for(const st of input.states){
+  const raw=st.state.providerEventId;
+  const id=typeof raw==="number"?raw:typeof raw==="string"&&/^\\d+$/.test(raw)?Number(raw):NaN;
+  if(st.sourceProvider!=="api-football"||!Number.isSafeInteger(id)||id<=0)continue;
+  const owners=providerOwners.get(String(id))??new Set<string>();
+  owners.add(st.eventId);providerOwners.set(String(id),owners);
+ }
+ const ambiguousIds=new Set([...providerOwners.entries()].filter(([,owners])=>owners.size>1)
+  .flatMap(([,owners])=>[...owners]));
  let certifiedFinals=0,noEligiblePair=0,ambiguousMatch=0,providerStatusUnknown=0;
  for(const event of events){
-  if(!isUnambiguous(event)){ambiguousMatch++;continue;}
+  if(!isUnambiguous(event)||ambiguousIds.has(event.id)){ambiguousMatch++;continue;}
   const states=input.states.filter(x=>x.eventId===event.id);
   const final=certifyStoredPaperFinal(event,states,input.asOf);
   if(final)certifiedFinals++;
@@ -183,6 +195,10 @@ export function autonomousReplaySelfcheck(){
   {name:"Future prediction cannot be used",pass:go({predictions:[{...prediction,capturedAt:"2026-10-15T12:35:00Z"}]}).counts.eligible===0},
   {name:"No provider-certified score means no fictional profit",pass:noFinal.cases[0].paperProfitUnits===null},
   {name:"Duplicate polling does not multiply fixtures",pass:go({quotes:[quote,quote],states:[live,live,ft]}).counts.eligible===1},
+  {name:"Conflicting canonical ownership of provider fixture excludes both",pass:(()=>{
+    const clone={...event,id:"duplicate",canonicalKey:"duplicate"};
+    return go({events:[event,clone],states:[live,ft,{...ft,eventId:"duplicate"}]}).counts.eligible===0;
+   })()},
  ];
  return{passed:tests.every(x=>x.pass),tests};
 }
