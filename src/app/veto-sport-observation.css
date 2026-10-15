@@ -217,3 +217,16 @@
  .paperLedger .paperResearchPulse b{font-size:16px}
  .paperLedger .paperHistoryFilters button{flex:1;min-height:40px;padding:0 7px;font-size:10px}
 }
+
+
+/* Read-only FT reconciliation. No wager execution or promotional return colors. */
+.paperLedger .paperFinalVerification{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 25px 21px;padding:16px 18px;background:linear-gradient(105deg,rgba(195,45,58,.10),rgba(255,255,255,.014));border:1px solid rgba(240,78,91,.25);border-radius:12px}
+.paperLedger .paperFinalVerification div{min-width:0}
+.paperLedger .paperFinalVerification strong{display:block;color:#f6f6f7;font-size:13px}
+.paperLedger .paperFinalVerification p{margin:7px 0;color:#c8c8cf;font-size:12px;line-height:1.5}
+.paperLedger .paperFinalVerification small{color:#aaaab3;font-size:11px;line-height:1.5}
+.paperLedger .paperFinalVerification>button{flex:0 0 auto;min-height:42px;padding:0 14px;background:#252529;border:1px solid rgba(255,255,255,.18);color:#fff;font-weight:700;font-size:12px;border-radius:9px;cursor:pointer}
+.paperLedger .paperFinalVerification>button:hover{background:#35353a}
+.paperLedger .paperFinalVerification>button:disabled{opacity:.55;cursor:not-allowed}
+.paperLedger .paperFinalVerification>button:focus-visible{outline:2px solid #e34b5e;outline-offset:3px}
+@media(max-width:700px){.paperLedger .paperFinalVerification{margin:0 12px 15px;padding:14px;flex-direction:column;align-items:stretch}.paperLedger .paperFinalVerification>button{width:100%}}
