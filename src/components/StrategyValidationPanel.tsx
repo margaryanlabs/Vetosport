@@ -1,5 +1,6 @@
 "use client";
 import {useMemo,useState} from "react";
+import {AutonomousReplayPanel} from "@/components/AutonomousReplayPanel";
 import type {PaperEntry} from "@/lib/paper/paper-ledger";
 import {validatePaperStrategies,type StrategyCohort} from "@/lib/paper/strategy-validation";
 
@@ -71,5 +72,6 @@ export function StrategyValidationPanel({entries}:{entries:PaperEntry[]}){
    <span>Исключено: ожидающие {report.excluded.unsettled} · ручные {report.excluded.manual} · без доказательств {report.excluded.missingProof} · неверное время {report.excluded.invalidTiming} · повторные записи {report.excluded.duplicate}.</span>
    <span>Для полноценного исследования нужны серверный журнал всех возможностей, заранее фиксированная стратегия, честное сравнение с базовой моделью, независимый период и учёт комиссий/проскальзывания. Пока никаких сигналов к реальным ставкам.</span>
   </footer>
+  <AutonomousReplayPanel/>
  </section>;
 }
