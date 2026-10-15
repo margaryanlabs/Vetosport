@@ -1,13 +1,17 @@
 "use client";
-import {useEffect,useMemo,useState} from "react";
+import {useEffect,useMemo,useRef,useState} from "react";
 import type {LiveEventSummary,LiveQuotePreview} from "@/lib/live/types";
 import {MAX_ENTRIES,PAPER_BANK_KEY,PAPER_STORAGE_KEY,parsePaperEntries,
  paperCsv,paperJournalStats,paperProfit,paperExpectedValue,type PaperEntry,type PaperStatus} from "@/lib/paper/paper-ledger";
+import {paperContractFromQuote,reconcilePaperEntry,type CertifiedPaperFinal} from "@/lib/paper/paper-verification";
 
 const outcomeNames:{[K in Exclude<PaperStatus,"UNSETTLED">]:string}={
  MANUAL_WIN:"Победа — введено вручную",
  MANUAL_LOSS:"Поражение — введено вручную",
  MANUAL_VOID:"Возврат — введено вручную",
+ PROVIDER_WIN:"Победа · результат API-Football FT",
+ PROVIDER_LOSS:"Поражение · результат API-Football FT",
+ PROVIDER_VOID:"Возврат · результат API-Football FT",
 };
 const ruDate=(date:string)=>new Date(date).toLocaleString("ru-RU",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
 const fmt=(x:number)=>Number.isFinite(x)?x.toFixed(2):"—";
@@ -42,6 +46,12 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
  const [outcome,setOutcome]=useState<Record<string,string>>({});
  const [message,setMessage]=useState("");
  const [loaded,setLoaded]=useState(false);
+ const [verifying,setVerifying]=useState(false);
+ const [verificationNote,setVerificationNote]=useState("");
+ const entriesRef=useRef<PaperEntry[]>([]);
+ const autoCheckedRef=useRef(false);
+ const inFlightRef=useRef(false);
+ entriesRef.current=entries;
  useEffect(()=>{
   try{
    setEntries(parsePaperEntries(JSON.parse(localStorage.getItem(PAPER_STORAGE_KEY)||"[]")));
@@ -70,20 +80,25 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
  const userProbability=probabilityInput?Number(probabilityInput)/100:null;
  const invalidProbability=userProbability!==null&&(!Number.isFinite(userProbability)||userProbability<=0||userProbability>=1);
  const subjectiveEV=valid&&userProbability!==null&&!invalidProbability?paperExpectedValue(amount,odds,userProbability):null;
- const canRecord=withinRisk&&!missingQuote&&!invalidProbability;
+ const quoteCapturedMs=Date.parse(candidate?.capturedAt??"");
+ const canRecord=withinRisk&&!missingQuote&&!invalidProbability&&
+  event.status!=="finished"&&event.status!=="suspended"&&
+  (!candidate||(Number.isFinite(quoteCapturedMs)&&quoteCapturedMs<=Date.now()+5000));
  const currentEntries=useMemo(()=>entries.filter(x=>
    historyScope==="EVENT"?x.eventId===event.id:
    historyScope==="PENDING"?x.status==="UNSETTLED":true
  ).slice(-20).reverse(),[entries,event.id,historyScope]);
  const save=(next:PaperEntry[],okText:string)=>{
   const safe=next.slice(-MAX_ENTRIES);
+  entriesRef.current=safe;
   setEntries(safe);
   try{localStorage.setItem(PAPER_STORAGE_KEY,JSON.stringify(safe));setMessage(okText);}
   catch{setMessage("Изменение сохранено только до закрытия этого сеанса. Браузер запретил постоянное хранение.");}
  };
  const place=()=>{
   if(!loaded||!canRecord){
-   setMessage(missingQuote?"Исходный снимок коэффициента больше не доступен. Выбери другой снимок или явно переключись на ручную гипотезу.":
+   setMessage(event.status==="finished"||event.status==="suspended"?"Матч уже завершён или приостановлен. Новые эксперименты после результата не записываем.":
+    missingQuote?"Исходный снимок коэффициента больше не доступен. Выбери другой снимок или явно переключись на ручную гипотезу.":
     invalidProbability?"Вероятность должна быть больше 0% и меньше 100%.":
     `Виртуальный риск на одну запись ограничен 2% начального банка и доступным остатком: сейчас максимум ${fmt(stats.maxNewStake)} ед.`);
    return;
@@ -94,6 +109,8 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
    scenario:candidate?candidate.selectionLabel+" · "+candidate.marketKey:(hypothesis.trim()||"Ручная гипотеза · рынок НЕ проверен"),
    odds,stake:amount,recordedAt,source:candidate?"SOURCE_SNAPSHOT":"HYPOTHETICAL_MANUAL",
    quoteCapturedAt:candidate?.capturedAt,
+   marketContract:candidate?paperContractFromQuote(event,candidate)??undefined:undefined,
+   selectionMarketKey:candidate?.marketKey,selectionKey:candidate?.selectionKey,
    hypothesis:hypothesis.trim().slice(0,300)||undefined,
    estimatedProbability:userProbability??undefined,status:"UNSETTLED",
   };
@@ -105,6 +122,59 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
   const next=entries.map(e=>e.id===row.id?{...e,status:status as PaperStatus,settledAt:new Date().toISOString()}:e);
   save(next,"Результат внесён ВРУЧНУЮ. Его достоверность VETO не проверял.");
  };
+ /** Run once on journal hydration and on demand. Only exact certified FT
+  * is applied locally, and only to selections locked before the FT record.
+  */
+ const checkCertifiedFinals=async()=>{
+  if(!loaded||inFlightRef.current)return;
+  const pending=entriesRef.current.filter(e=>e.status==="UNSETTLED"&&
+   e.source==="SOURCE_SNAPSHOT"&&e.marketContract&&e.quoteCapturedAt);
+  const eventIds=[...new Set(pending.map(e=>e.eventId))].slice(0,8);
+  if(!eventIds.length){setVerificationNote("Нет незавершённых записей с однозначным рынком и снимком реальной цены.");return;}
+  inFlightRef.current=true;
+  setVerifying(true);
+  setVerificationNote("Сверяем сохранённые события с записями FT провайдера…");
+  try{
+   const response=await fetch("/api/intelligence/paper-journal/finals",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({eventIds}),cache:"no-store"});
+   if(!response.ok)throw Error("PROVIDER_FT_NOT_AVAILABLE");
+   const data:unknown=await response.json();
+   const finals=(data&&typeof data==="object"&&"finals" in data)?
+    (data as {finals?:unknown}).finals:null;
+   if(!Array.isArray(finals))throw Error("INVALID_CERTIFICATE_REPLY");
+   const byId=new Map<string,CertifiedPaperFinal>();
+   for(const raw of finals){
+    if(!raw||typeof raw!=="object")continue;
+    const cert=raw as CertifiedPaperFinal;
+    if(typeof cert.eventId==="string"&&
+      cert.source==="api-football.fixtures.results"&&cert.provider==="api-football"&&
+      cert.regulationTimeOnly===true)byId.set(cert.eventId,cert);
+   }
+   let updated=0;
+   const next=entriesRef.current.map(e=>{
+    const cert=byId.get(e.eventId);
+    const settled=cert?reconcilePaperEntry(e,cert):null;
+    if(settled){updated++;return settled;}
+    return e;
+   });
+   if(updated)save(next,`Сверено ${updated} виртуальных исходов. Это не доказательство доступной ставки или прибыльности модели.`);
+   setVerificationNote(updated?
+    `Подтверждено по FT провайдера: ${updated}. Остальные исходы требуют данных или ручной проверки.`:
+    "Новых однозначно подтверждённых FT нет. Никаких результатов не подставлено.");
+  }catch{
+   setVerificationNote("Источник финальных результатов временно недоступен. Записи остаются без изменений.");
+  }finally{inFlightRef.current=false;setVerifying(false);}
+ };
+ // The background-free hydration check runs only when a journal is opened.
+ useEffect(()=>{
+  if(!loaded||autoCheckedRef.current)return;
+  autoCheckedRef.current=true;
+  if(entries.some(e=>e.status==="UNSETTLED"&&e.marketContract&&e.source==="SOURCE_SNAPSHOT"))
+   void checkCertifiedFinals();
+ // Intentionally one run per mounting of the lab, not polling.
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ },[loaded]);
  const chooseBank=(n:number)=>{
   if(![100,1000,10000].includes(n))return;
   if(entries.length>0){setMessage("Начальный виртуальный банк зафиксирован после первой записи. Изменение переписало бы историю результатов.");return;}
@@ -124,7 +194,7 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
  return <section className="paperStudio paperLedger" id="veto-paper-studio">
   <header className="observedStudioSectionHead">
    <div><span>03 / PAPER LAB · NO REAL MONEY</span><h3>Paper Betting Lab</h3>
-    <p>Проверяй спортивные гипотезы без денег: сохраняй цену и предположение, сравнивай субъективную оценку с безубыточной вероятностью, веди единый журнал. Результаты пока подтверждаются только вручную.</p>
+    <p>Сохраняй гипотезы и исходные цены. Поддерживаемые исходы 1X2/BTTS сверяются с сохранёнными результатами API-Football FT. Остальные исходы — только вручную.</p>
    </div>
    <span className="observedStudioCount">100% ВИРТУАЛЬНО</span>
   </header>
@@ -137,21 +207,30 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
     <span>{entries.length?"Банк зафиксирован · ":"Лимит на один тест: "}<strong>{entries.length?fmt(bankroll):"2%"}</strong>{entries.length?" · журнал сохранён":" от начального банка"}</span>
     <button type="button" onClick={exportCsv} disabled={!entries.length}>Экспорт журнала CSV ↗</button>
   </div>
-  <div className="paperPerformance" aria-label="Метрики виртуального журнала с результатами, внесёнными вручную">
+  <div className="paperFinalVerification" role="status">
+   <div><strong>Сверка результатов · API-Football FT</strong>
+    <p>{verificationNote||"Только однозначные исходы 1X2 / BTTS по сохранённым котировкам. Неподдерживаемые рынки останутся для ручного подтверждения."}</p>
+    <small>Подтверждение счёта ≠ подтверждение исполнимости коэффициента или доходности стратегии.</small>
+   </div>
+   <button type="button" disabled={!loaded||verifying} onClick={()=>void checkCertifiedFinals()}>
+    {verifying?"Проверяем…":"Сверить исходы ↗"}
+   </button>
+  </div>
+  <div className="paperPerformance" aria-label="Метрики виртуального журнала с ручными и отдельно помеченными сверенными результатами">
    <article><small>ВИРТУАЛЬНЫЙ КАПИТАЛ</small><strong>{fmt(stats.equity)}</strong><span>Доступно для новых тестов: {fmt(stats.available)}</span></article>
-   <article><small>РУЧНОЙ P&amp;L</small><strong className={stats.net<0?"negative":stats.net>0?"positive":""}>{stats.net>0?"+":""}{fmt(stats.net)}</strong><span>не проверено VETO автоматически</span></article>
-   <article><small>YIELD ПО РУЧНЫМ ИСХОДАМ</small><strong className={stats.roi<0?"negative":stats.roi>0?"positive":""}>{stats.settled?stats.roi>0?"+":"":""}{stats.settled?stats.roi.toFixed(1)+"%":"—"}</strong><span>Чистый P&amp;L / сумма рассчитанных ставок</span></article>
-   <article><small>МАКСИМАЛЬНАЯ ПРОСАДКА</small><strong>{fmt(stats.maxDrawdown)}</strong><span>по введённым вручную исходам</span></article>
+   <article><small>PAPER P&amp;L · СВЕРЕННЫЙ + РУЧНОЙ</small><strong className={stats.net<0?"negative":stats.net>0?"positive":""}>{stats.net>0?"+":""}{fmt(stats.net)}</strong><span>{stats.providerSettled} исходов подтверждено FT · {stats.manualSettled} вручную</span></article>
+   <article><small>PAPER YIELD · ВСЕ РЕЗУЛЬТАТЫ</small><strong className={stats.roi<0?"negative":stats.roi>0?"positive":""}>{stats.settled?stats.roi>0?"+":"":""}{stats.settled?stats.roi.toFixed(1)+"%":"—"}</strong><span>Чистый P&amp;L / сумма завершённых виртуальных ставок</span></article>
+   <article><small>МАКСИМАЛЬНАЯ ПРОСАДКА</small><strong>{fmt(stats.maxDrawdown)}</strong><span>по сохранённым виртуальным результатам</span></article>
   </div>
   <div className="paperResearchPulse" aria-label="Статистика виртуальных экспериментов">
    <div><small>ЗАПИСЕЙ</small><b>{entries.length}</b></div>
    <div><small>ОЖИДАЮТ РЕЗУЛЬТАТА</small><b>{stats.unsettled}</b></div>
-   <div><small>WIN RATE · РУЧНОЙ</small><b>{stats.wins+stats.losses?stats.hitRate.toFixed(1)+"%":"—"}</b></div>
-   <div><small>ДОХОДНОСТЬ НА БАНК · РУЧНАЯ</small><b>{stats.settled?(stats.bankrollReturnPct>0?"+":"")+stats.bankrollReturnPct.toFixed(1)+"%":"—"}</b></div>
+   <div><small>WIN RATE · PAPER</small><b>{stats.wins+stats.losses?stats.hitRate.toFixed(1)+"%":"—"}</b></div>
+   <div><small>ДОХОДНОСТЬ НА БАНК · PAPER</small><b>{stats.settled?(stats.bankrollReturnPct>0?"+":"")+stats.bankrollReturnPct.toFixed(1)+"%":"—"}</b></div>
    <div><small>ОТКРЫТАЯ ЭКСПОЗИЦИЯ</small><b>{fmt(stats.exposure)}</b></div>
   </div>
   <div className="paperEquityWrap">
-   <header><span>P&amp;L / MANUAL EQUITY</span><strong>История виртуального капитала</strong><small>{stats.wins} побед · {stats.losses} поражений · {stats.voids} возвратов</small></header>
+   <header><span>PAPER P&amp;L / MIXED EVIDENCE</span><strong>История виртуального капитала</strong><small>{stats.wins} побед · {stats.losses} поражений · {stats.voids} возвратов</small></header>
    <PaperEquityChart points={stats.equityPoints} count={stats.settled}/>
   </div>
   <div className="paperStudioGrid">
@@ -200,7 +279,7 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
        <p>Максимум для новой записи: {fmt(stats.maxNewStake)} ед. · Открытая виртуальная экспозиция: {fmt(stats.exposure)} ед.</p>
      </div>
     </div>
-    {candidate?<p className="paperQuoteCaveat">Цена провайдера {candidate.provider} · записана {ruDate(candidate.capturedAt)}. Это архивный снимок, не обещание исполнения.</p>:
+    {candidate?<p className="paperQuoteCaveat">Цена провайдера {candidate.provider} · записана {ruDate(candidate.capturedAt)}. {paperContractFromQuote(event,candidate)?"Исход подходит для сверки после FT.":"Рынок пока можно закрыть только вручную."} Это архивный снимок, не обещание исполнения.</p>:
      <p className="paperQuoteCaveat">Ручная цена — гипотеза, которой нет в подтверждённой букмекерской линии.</p>}
     <button className="paperTicketCommit" type="button" disabled={!loaded||!canRecord} onClick={place}>Зафиксировать paper-эксперимент ↗</button>
     {message&&<p className="paperTicketMessage" role="status">{message}</p>}
@@ -217,6 +296,8 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
        <span>{historyScope==="EVENT"?"":e.match+" · "}{e.source==="SOURCE_SNAPSHOT"?"СНИМОК КОЭФФИЦИЕНТА · НЕ ИСПОЛНЕН":"РУЧНАЯ ГИПОТЕЗА"}</span>
        {e.hypothesis&&e.hypothesis!==e.scenario?<small>ГИПОТЕЗА: {e.hypothesis}</small>:null}
        {e.estimatedProbability!==undefined?<small>ОЦЕНКА ПОЛЬЗОВАТЕЛЯ: {(e.estimatedProbability*100).toFixed(1)}% · EV {fmt(paperExpectedValue(e.stake,e.odds,e.estimatedProbability)??0)} · НЕ ВЕРИФИЦИРОВАНО</small>:null}
+       {e.marketContract&&<small>ЗАФИКСИРОВАННЫЙ РЫНОК: {e.marketContract}</small>}
+       {e.verifiedScore&&<small>СЧЁТ FT: {e.verifiedScore.home}:{e.verifiedScore.away} · {e.verifiedProvider} · НЕ ФАКТ ИСПОЛНЕНИЯ</small>}
       </div>
       <div><b>{e.odds.toFixed(2)}</b><small>{fmt(e.stake)} виртуальных единиц</small></div>
       <time dateTime={e.recordedAt}>{ruDate(e.recordedAt)}</time>
@@ -233,11 +314,11 @@ export function PaperResearchTicket({event,quotes}:{event:LiveEventSummary;quote
         <button type="button" disabled={!outcome[e.id]} onClick={()=>settle(e)}>Подтвердить результат ↗</button>
        </div>:
        <strong className={"paperOutcomeNet "+((paperProfit(e)??0)<0?"negative":"positive")}>
-        РУЧНОЙ P&amp;L: {(paperProfit(e)??0)>0?"+":""}{fmt(paperProfit(e)??0)} · НЕ ПРОВЕРЕНО
+        {e.status.startsWith("PROVIDER_")?"PAPER P&L / FT СВЕРЕН":"РУЧНОЙ P&L / НЕ ПРОВЕРЕНО"}: {(paperProfit(e)??0)>0?"+":""}{fmt(paperProfit(e)??0)}
        </strong>}
     </article>):<div className="paperEmpty"><span aria-hidden="true">▱</span><strong>{entries.length?"В выбранном фильтре нет записей":"Виртуальный журнал пуст"}</strong>
       <p>{entries.length?"Переключись на «Все матчи», чтобы увидеть другие исследования.":"Добавь гипотетический тест. Ни банк, ни результат не являются реальными деньгами."}</p></div>}
-    <p className="paperJournalCaveat">Локальный исследовательский журнал: данные остаются на устройстве. Исходы вручную введены и НЕ подтверждены VETO. Вероятность — только оценка пользователя; не является сигналом к ставке. Перед очисткой браузера экспортируй CSV.{entries.length>=MAX_ENTRIES-10?" Лимит журнала почти достигнут: старые записи могут удаляться при добавлении новых.":""}</p>
+    <p className="paperJournalCaveat">Локальный исследовательский журнал: данные остаются на устройстве. Исходы MANUAL не подтверждены VETO, результаты PROVIDER подтверждают лишь финальный счёт, а не реальность ставки. Вероятность — только оценка пользователя; не является сигналом к ставке. Перед очисткой браузера экспортируй CSV.{entries.length>=MAX_ENTRIES-10?" Лимит журнала почти достигнут: старые записи могут удаляться при добавлении новых.":""}</p>
    </div>
   </div>
  </section>;
