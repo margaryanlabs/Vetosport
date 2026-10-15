@@ -1,3 +1,4 @@
+import {captureLagSpectrum} from "@/lib/research/capture-lag-spectrum";
 import {historicalCoCapturedEvents,historicalCoCaptureSelfcheck,CO_CAPTURE_WINDOW_SECONDS} from "@/lib/research/historical-co-capture";
 import type {PersistedEvent,PersistedEventStateRecord,PersistedMarketQuoteRecord} from "@/lib/persistence/contracts";
 
@@ -35,6 +36,7 @@ export type EvidenceCoverage={
  freshQuotedEvents:number;
  freshScoreAndPriceEvents:number;
  historicalScoreAndPriceCoCapturedEvents:number;
+ captureLag:ReturnType<typeof captureLagSpectrum>;
  historicalCoCaptureWindowSeconds:120;
  historicalPairsAreNotLiveSignals:true;
  researchReadyForRealMoney:false;
@@ -78,6 +80,7 @@ export function evidenceCoverage(input:{
  }
  const aligned=[...freshPrices].filter(id=>freshStates.has(id)).length;
  const historicalCoCaptured=historicalCoCapturedEvents({events:[...events.values()],states:input.states,quotes:input.quotes,asOf:input.at});
+ const captureLag=captureLagSpectrum({events:[...events.values()],states:input.states,quotes:input.quotes,asOf:input.at});
  const count=(n:number)=>n>0?"partial" as const:"blocked" as const;
  const gates:EvidenceCheck[]=[
   {id:"live-scores",label:"Наблюдаемые матчи",
@@ -111,6 +114,7 @@ export function evidenceCoverage(input:{
   eventsWithRecordedPrices:quotesAvailable.size,freshEventStates:freshStates.size,
   freshQuotedEvents:freshPrices.size,freshScoreAndPriceEvents:aligned,
   historicalScoreAndPriceCoCapturedEvents:historicalCoCaptured,
+  captureLag,
   historicalCoCaptureWindowSeconds:120,historicalPairsAreNotLiveSignals:true,
   researchReadyForRealMoney:false,externalProviderCalls:0,
   sampleMayBeCapped:Boolean(input.sampleMayBeCapped),
