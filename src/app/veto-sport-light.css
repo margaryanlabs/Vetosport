@@ -570,3 +570,28 @@ html[data-veto-sport-appearance="light"] :is(
 html[data-veto-sport-appearance="light"] :is(
   .paperPerformance strong.negative,.paperOutcomeNet.negative
 ) {color:#b52f40 !important}
+
+
+/* Paper research upgrade: new elements inherit accessible light appearance. */
+html[data-veto-sport-appearance="light"] .paperLedger.paperStudio,
+html[data-veto-sport-appearance="light"] .paperLedger .paperTicketEditor,
+html[data-veto-sport-appearance="light"] .paperLedger .paperTicketHistory,
+html[data-veto-sport-appearance="light"] .paperLedger .paperPerformance article,
+html[data-veto-sport-appearance="light"] .paperLedger .paperEquityWrap,
+html[data-veto-sport-appearance="light"] .paperLedger .paperResearchPulse>div,
+html[data-veto-sport-appearance="light"] .paperLedger .paperSubjectiveEdge {
+ background:#fff!important;border-color:rgba(28,45,61,.16)!important;box-shadow:none;color:#16212e!important;
+}
+html[data-veto-sport-appearance="light"] .paperLedger .paperResearchPulse>div,
+html[data-veto-sport-appearance="light"] .paperLedger .paperSubjectiveEdge,
+html[data-veto-sport-appearance="light"] .paperLedger .paperHistoryFilters button {
+ background:#f5f7fa!important;
+}
+html[data-veto-sport-appearance="light"] .paperLedger :is(.paperResearchPulse b,.paperSubjectiveEdge strong){color:#182330!important}
+html[data-veto-sport-appearance="light"] .paperLedger :is(.paperResearchPulse small,.paperSubjectiveEdge span,.paperSubjectiveEdge small,.paperTicketHistory article>div:first-child small){color:#536173!important}
+html[data-veto-sport-appearance="light"] .paperLedger .paperHistoryFilters button{color:#415064!important;border-color:rgba(28,45,61,.22)!important}
+html[data-veto-sport-appearance="light"] .paperLedger .paperHistoryFilters button.active{background:#fbe9eb!important;color:#9d2434!important;border-color:#bf4050!important}
+html[data-veto-sport-appearance="light"] .paperLedger .paperResearchInput input::placeholder{color:#6a7788!important}
+html[data-veto-sport-appearance="light"] .paperLedger .paperTicketEditor :is(input,select),
+html[data-veto-sport-appearance="light"] .paperLedger .paperControlBar select,
+html[data-veto-sport-appearance="light"] .paperLedger .paperOutcomeControls :is(select,button){background:#fff!important;color:#1a2b3e!important}
