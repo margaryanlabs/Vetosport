@@ -96,7 +96,7 @@ export default function DiscoveryPage(){
            <article><small>ОТДЕЛЬНО ПОДТВЕРЖДЁННЫЕ FT</small><strong>{coverage.certifiedRegulationFinals}</strong><span>не равны количеству верных прогнозов</span></article>
            <article><small>МАТЧИ С ЗАПИСАННЫМИ ЦЕНАМИ</small><strong>{coverage.eventsWithRecordedPrices}</strong><span>включая исторические, неактуальные</span></article>
            <article><small>СВЕЖИЕ СЧЁТ + ЦЕНА СЕЙЧАС</small><strong>{coverage.freshScoreAndPriceEvents}</strong><span>за последние 2 минуты; не доказанный EV</span></article>
-           <article className="discoveryHistoricalEvidence"><small>БЛИЗКИЕ СНИМКИ (В ЛЮБОМ ПОРЯДКЕ)</small><strong>{coverage.historicalScoreAndPriceCoCapturedEvents}</strong><span>≤ {coverage.historicalCoCaptureWindowSeconds} сек; часть пар может содержать будущий счёт</span></article>
+           <article className="discoveryHistoricalEvidence"><small>ИСТОРИЧЕСКИЕ СНИМКИ СЧЁТ + ЦЕНА</small><strong>{coverage.historicalScoreAndPriceCoCapturedEvents}</strong><span>≤ {coverage.historicalCoCaptureWindowSeconds} сек; часть пар может содержать будущий счёт</span></article>
            <article className="discoveryHistoricalEvidence"><small>ХРОНОЛОГИЧЕСКИ ДОПУСТИМЫЕ</small><strong>{coverage.historicalCausallyAlignedEvents}</strong><span>сначала счёт → затем цена; всё ещё не подтверждённая исполнимость</span></article>
            <article className="discoveryHistoricalEvidence"><small>ОПАСНЫЙ ЗАГЛЯД В БУДУЩЕЕ</small><strong>{coverage.historicalLookaheadOnlyEvents}</strong><span>цена записана РАНЬШЕ доступного счёта · исключено из causal replay</span></article>
          </div>
