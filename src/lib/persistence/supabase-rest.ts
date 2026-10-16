@@ -225,12 +225,19 @@ export class SupabaseRestPersistence implements VetoPersistence {
     to: string;
     statuses?: SportEvent["status"][];
     limit?: number;
+    canonicalKeyPrefix?: string;
   }): Promise<PersistedEvent[]> {
     const query = new URLSearchParams();
     query.set("starts_at", `gte.${new Date(input.from).toISOString()}`);
     query.append("starts_at", `lte.${new Date(input.to).toISOString()}`);
     if (input.statuses?.length) {
       query.set("status", `in.(${input.statuses.join(",")})`);
+    }
+    if(input.canonicalKeyPrefix){
+      if(!/^[a-z0-9:._-]{1,80}$/.test(input.canonicalKeyPrefix))
+       throw new Error("UNSAFE_CANONICAL_FILTER");
+      // PostgREST star in LIKE is an SQL % wildcard.
+      query.set("canonical_key",`like.${input.canonicalKeyPrefix}*`);
     }
     query.set("order", "starts_at.asc");
     query.set("limit", String(Math.min(100, Math.max(1, input.limit ?? 30))));
