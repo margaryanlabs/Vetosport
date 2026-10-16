@@ -12,7 +12,7 @@ export interface PaperEntry {
  /** Optional user-authored cohort label, never a preregistered strategy rulebook. */
  strategyTag?:string;
  /** Locked at recording time. Old records never gain guessed market semantics. */
- marketContract?:"FT_HOME"|"FT_DRAW"|"FT_AWAY"|"FT_BTTS_YES"|"FT_BTTS_NO";
+ marketContract?:import("@/lib/paper/paper-verification").PaperContract;
  selectionMarketKey?:string;selectionKey?:string;
  /** Immutable optional MODEL snapshot observed before paper entry (not user-entered). */
  modelProbability?:number;modelVersion?:string;modelCapturedAt?:string;
@@ -38,7 +38,7 @@ export function parsePaperEntries(value:unknown):PaperEntry[]{
    (r.hypothesis===undefined||(typeof r.hypothesis==="string"&&r.hypothesis.length<=300))&&
    (r.strategyTag===undefined||(typeof r.strategyTag==="string"&&r.strategyTag.length<=48))&&
    (r.estimatedProbability===undefined||(typeof r.estimatedProbability==="number"&&Number.isFinite(r.estimatedProbability)&&r.estimatedProbability>0&&r.estimatedProbability<1))&&
-   (r.marketContract===undefined||["FT_HOME","FT_DRAW","FT_AWAY","FT_BTTS_YES","FT_BTTS_NO"].includes(r.marketContract))&&
+   (r.marketContract===undefined||/^(FT_(HOME|DRAW|AWAY|BTTS_(YES|NO))|FT_TOTAL_(OVER|UNDER)_[1-4]_5)$/.test(r.marketContract))&&
    (r.selectionMarketKey===undefined||(typeof r.selectionMarketKey==="string"&&r.selectionMarketKey.length<=150))&&
    (r.selectionKey===undefined||(typeof r.selectionKey==="string"&&r.selectionKey.length<=150))&&
    (r.modelProbability===undefined||(typeof r.modelProbability==="number"&&Number.isFinite(r.modelProbability)&&r.modelProbability>0&&r.modelProbability<1))&&
