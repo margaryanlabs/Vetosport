@@ -3,7 +3,6 @@ import { getPersistence } from "@/lib/persistence/factory";
 import { runFootballShadowPrediction } from "@/lib/live/shadow-football";
 import {selectFeedCandidates} from "@/lib/live/feed-priority";
 import {isSelfcheckEvent} from "@/lib/live/persisted-utils";
-import {runDailyPaperTick} from "@/lib/paper/daily-runner";
 
 export const dynamic = "force-dynamic";
 
@@ -50,43 +49,10 @@ export async function GET(request: Request) {
     }
   }
 
-  // Piggyback on the existing 5-minute authorized research cron.
-  // This is independent of whether the single shadow model produced signals.
-  // Missing migration, FT or prices never creates fictional paper picks.
-  // The EPL control lane is independent of stale 30-minute live game clocks.
-  // Scheduled observations are sampled twice per hour from persisted odds.
-  // No extra sports provider calls are made here.
-  const time=new Date();
-  const prematchDue=time.getUTCMinutes()%30<5;
-  const prematch=prematchDue?await persistence.listRecentEvents({
-    from:new Date(time.getTime()+30*60_000).toISOString(),
-    to:new Date(time.getTime()+48*3600000).toISOString(),
-    statuses:["scheduled"],limit:100,
-  }).catch(()=>[]):[];
-  const prematchEPL=prematch.filter(e=>e.canonicalKey.startsWith("football::epl::")&&
-   /^[a-f0-9]{32}$/i.test(e.providerRefs?.["the-odds-api"]??""));
-  const dailyPaper=await runDailyPaperTick({
-    observedEvents:[...football,...prematchEPL],asOf:new Date().toISOString(),capture:true,
-  }).catch(()=>({ok:false,skipped:"DAILY_PAPER_TICK_UNAVAILABLE",realBetsPlaced:0}));
-  // Hourly heartbeat distinguishes "no eligible research" from a cron that
-  // never ran. A failed optional health write must not break live prediction.
-  if(new Date().getUTCMinutes()<5){
-    await persistence.appendProviderHealth({
-      providerId:"veto-paper-forward",
-      status:dailyPaper.ok?"healthy":"degraded",
-      checkedAt:new Date().toISOString(),
-      message:dailyPaper.ok?"Forward paper observer executed":"Paper observer unavailable or schema not ready",
-      metadata:{researchOnly:true,realBetsPlaced:0,externalProviderCalls:0,
-        selected:"recorded" in dailyPaper?dailyPaper.recorded:0,
-        reason:"skipped" in dailyPaper?dailyPaper.skipped:null,
-        screened:"scanned" in dailyPaper?dailyPaper.scanned:0,
-        eligible:"eligible" in dailyPaper?dailyPaper.eligible:0,
-        blockedBy:"blockedBy" in dailyPaper?dailyPaper.blockedBy:{}},
-    }).catch(()=>undefined);
-  }
+  // The independent paper cron is responsible for virtual research.
+  // Shadow inference does not depend on paper ledger health.
 
   return NextResponse.json({
-    paperResearch:dailyPaper,
     ok: results.every((row) => row.ok !== false),
     generatedAt: new Date().toISOString(),
     mode: "SHADOW",
