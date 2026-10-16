@@ -59,7 +59,8 @@ export function evidenceCoverage(input:{
  const freshStates=new Set<string>(),quotesAvailable=new Set<string>(),freshPrices=new Set<string>();
  // Diagnostic co-capture needs chronological timestamps, not merely two
  // independently fresh sources attached to the same event.
- const freshStateTimes=new Map<string,number[]>(),freshPriceTimes=new Map<string,number[]>();
+ const freshStateTimes=new Map<string,number[]>();
+ const freshPriceTimes=new Map<string,number[]>();
  for(const row of input.states){
   const event=events.get(row.eventId);if(!event)continue;
   const age=seconds(row.capturedAt,now);
