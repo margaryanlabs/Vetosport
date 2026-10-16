@@ -53,8 +53,20 @@ export async function GET(request: Request) {
   // Piggyback on the existing 5-minute authorized research cron.
   // This is independent of whether the single shadow model produced signals.
   // Missing migration, FT or prices never creates fictional paper picks.
+  // The EPL control lane is independent of stale 30-minute live game clocks.
+  // Scheduled observations are sampled twice per hour from persisted odds.
+  // No extra sports provider calls are made here.
+  const time=new Date();
+  const prematchDue=time.getUTCMinutes()%30<5;
+  const prematch=prematchDue?await persistence.listRecentEvents({
+    from:new Date(time.getTime()+30*60_000).toISOString(),
+    to:new Date(time.getTime()+48*3600000).toISOString(),
+    statuses:["scheduled"],limit:100,
+  }).catch(()=>[]):[];
+  const prematchEPL=prematch.filter(e=>e.canonicalKey.startsWith("football::epl::")&&
+   /^[a-f0-9]{32}$/i.test(e.providerRefs?.["the-odds-api"]??""));
   const dailyPaper=await runDailyPaperTick({
-    observedEvents:football,asOf:new Date().toISOString(),capture:true,
+    observedEvents:[...football,...prematchEPL],asOf:new Date().toISOString(),capture:true,
   }).catch(()=>({ok:false,skipped:"DAILY_PAPER_TICK_UNAVAILABLE",realBetsPlaced:0}));
   // Hourly heartbeat distinguishes "no eligible research" from a cron that
   // never ran. A failed optional health write must not break live prediction.

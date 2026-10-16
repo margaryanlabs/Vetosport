@@ -4,7 +4,7 @@
 import {getPersistence,persistenceConfiguration} from "@/lib/persistence/factory";
 import type {PersistedEvent} from "@/lib/persistence/contracts";
 import {INITIAL_PAPER_BANK,DAILY_PAPER_STAKE,DAILY_PROTOCOL,MAX_PAPER_PICKS_PER_DAY,
- accountFromPaper,confirmForwardPaper,explainPaperBlock,paperDay,proposeForwardPaper,
+ accountFromPaper,confirmForwardPaper,explainPaperBlock,paperDay,proposeForwardPaper,proposePrematchPaper,
  type DailyPaperPick} from "@/lib/paper/daily-research";
 
 export type DailyPaperTick={
@@ -62,11 +62,14 @@ export async function runDailyPaperTick(input:{
  if(remaining<=0)return {...report,limitHit:true,skipped:"THREE_DAILY_PAPER_PICKS_ALREADY_RECORDED"};
  const already=new Set(existing.map(x=>x.eventId));
  const candidates=input.observedEvents.filter(e=>e.event.sport==="football"&&
-   e.event.status==="live"&&!already.has(e.id));
- // Round robin to cover eligible events across repeated 5-minute cron runs.
- const offset=candidates.length?Math.floor(Date.parse(input.asOf)/(5*60_000))%candidates.length:0;
- const events=Array.from({length:Math.min(3,candidates.length)},
-  (_,i)=>candidates[(offset+i)%candidates.length]);
+   (e.event.status==="live"||e.event.status==="scheduled")&&!already.has(e.id));
+ // Rotate source groups independently: expensive live matches should not
+ // indefinitely crowd out the separate scheduled EPL market control.
+ const rotate=(rows:PersistedEvent[],max:number)=>{const offset=rows.length?
+  Math.floor(Date.parse(input.asOf)/(5*60_000))%rows.length:0;
+  return Array.from({length:Math.min(max,rows.length)},(_,i)=>rows[(offset+i)%rows.length]);};
+ const events=[...rotate(candidates.filter(e=>e.event.status==="live"),3),
+  ...rotate(candidates.filter(e=>e.event.status==="scheduled"),3)];
  report.scanned=events.length;
  if(!events.length)return {...report,skipped:"NO_NEW_LIVE_FIXTURE"};
  // Missing/partial source rows must not be counted as filled matches. Read
@@ -74,14 +77,23 @@ export async function runDailyPaperTick(input:{
  const proposals=[];
  for(const event of events){
   try{
-   const [[state,quote,prediction]]=await Promise.all([
-    Promise.all([
+   if(event.event.status==="scheduled"){
+    const quote=await store.listRecentQuotesForEvents({eventIds:[event.id],limit:500});
+    if(quote.length>=500){report.blockedBy.PREMATCH_QUOTES_CAPPED=(report.blockedBy.PREMATCH_QUOTES_CAPPED??0)+1;continue;}
+    const proposal=proposePrematchPaper({event,quotes:quote,asOf:input.asOf});
+    if(proposal)proposals.push(proposal);
+    else report.blockedBy.PREMATCH_COMPLETE_BOOKMAKER_TRIO_MISSING=
+      (report.blockedBy.PREMATCH_COMPLETE_BOOKMAKER_TRIO_MISSING??0)+1;
+    continue;
+   }
+   const [state,quote,prediction]=await Promise.all([
      store.listRecentEventStates({eventIds:[event.id],limit:120}),
      store.listRecentQuotesForEvents({eventIds:[event.id],limit:300}),
      store.listRecentPredictionsForEvents({eventIds:[event.id],limit:120}),
-    ]),
    ]);
-   if(state.length>=120||quote.length>=300||prediction.length>=120)continue;
+   if(state.length>=120||quote.length>=300||prediction.length>=120){
+    report.blockedBy.LIVE_HISTORY_CAPPED=(report.blockedBy.LIVE_HISTORY_CAPPED??0)+1;continue;
+   }
    const proposal=proposeForwardPaper({event,states:state,quotes:quote,predictions:prediction,
     asOf:input.asOf});
    if(proposal)proposals.push(proposal);
@@ -90,10 +102,15 @@ export async function runDailyPaperTick(input:{
   }catch{report.errors++;}
  }
  report.eligible=proposals.length;
- // Deterministic prospective selection: rank current candidate model EV,
+ // Deterministic forward-only selection: rank current candidate model EV,
  // then event ID; keep one per fixture, max 3 daily. This is NOT calibrated EV.
- proposals.sort((a,b)=>(b.modelProbability*b.odds-a.modelProbability*a.odds)||
-  a.eventId.localeCompare(b.eventId));
+ proposals.sort((a,b)=>{
+  // Give independently recorded VETO research priority over price-only controls.
+  const lane=(x:typeof a)=>x.modelVersion.includes("CONTROL")?1:0;
+  return lane(a)-lane(b)||
+   (b.modelProbability*b.odds-a.modelProbability*a.odds)||
+    a.eventId.localeCompare(b.eventId);
+ });
  const occupied=new Set(today.map(x=>x.dailySlot));
  let funds=bank.available;
  for(const candidate of proposals.slice(0,remaining)){
