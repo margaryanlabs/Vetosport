@@ -9,12 +9,13 @@ export async function GET(){
   noFabricatedReturns:true},{status:503,headers});
  try{
   const store=getPersistence();
-  const [picks,settlements,health,finalsHealth,shadowHealth]=await Promise.all([
+  const [picks,settlements,health,finalsHealth,shadowHealth,oddsScoresHealth]=await Promise.all([
    store.listPaperDailyPicks(900),
    store.listPaperDailySettlements(900),
    store.listRecentProviderHealth({providerId:"veto-paper-forward",limit:1}),
    store.listRecentProviderHealth({providerId:"api-football-finals",limit:1}),
    store.listRecentProviderHealth({providerId:"veto-shadow-football",limit:1}),
+   store.listRecentProviderHealth({providerId:"the-odds-api-scores",limit:1}),
   ]);
   const account=accountFromPaper(picks,settlements);
   const lastHeartbeat=health[0]?.checkedAt??null;
@@ -28,6 +29,8 @@ export async function GET(){
     health:lastHeartbeat&&(Date.now()-Date.parse(lastHeartbeat)<90*60_000)?"OBSERVED_RECENTLY":"NOT_RECENTLY_OBSERVED",
     note:"Existing shadow-football cron can run paper observation. No picks are invented on days with insufficient evidence."},
    sourceHealth:{
+    oddsScores:{lastCheckedAt:oddsScoresHealth[0]?.checkedAt??null,
+     healthy:oddsScoresHealth[0]?.status==="healthy"},
     ftProvider:{status:finalsHealth[0]?.status??"unknown",lastCheckedAt:finalsHealth[0]?.checkedAt??null,
      subscriptionBlocked:finalsHealth[0]?.metadata?.failureCode==="UPSTREAM_SUBSCRIPTION"},
     model:{recentlyProduced:shadowHealth[0]?Date.now()-Date.parse(shadowHealth[0].checkedAt)<24*60*60_000:false,

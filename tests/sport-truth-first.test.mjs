@@ -594,3 +594,24 @@ test("Paper observer reports source blockers and cannot present missing forecast
  assert.match(panel,/ПОЧЕМУ НЕ БЫЛО PAPER-СТАВОК/);
  assert.match(panel,/ПОДПИСКА API ОГРАНИЧЕНА/);
 });
+
+test("Daily paper supports native-ID EPL score reconciling without guessing paid provider FT",()=>{
+ const final=read("src/lib/paper/odds-score-certification.ts");
+ const scoreCron=read("src/app/api/cron/the-odds-scores/route.ts");
+ const daily=read("src/lib/paper/daily-research.ts");
+ const migration=read("database/migrations/013_prematch_native_odds_and_scores.sql");
+ const schedule=read("vercel.json");
+ assert.match(final,/parseOddsApiScore/);
+ assert.match(final,/matchOddsApiScore/);
+ assert.match(final,/certifyPersistedOddsScore/);
+ assert.match(scoreCron,/VETO_ODDS_SCORES_ENABLED/);
+ assert.match(scoreCron,/CRON_SECRET/);
+ assert.match(scoreCron,/nominalCredits:2/);
+ assert.match(scoreCron,/appendTruthJournal/);
+ assert.match(daily,/proposePrematchPaper/);
+ assert.match(daily,/ODDS_PREMATCH_DEVIG_CONTROL_V1/);
+ assert.match(daily,/certifyPersistedOddsScore/);
+ assert.match(migration,/PREMATCH_ODDS_CONTROL/);
+ assert.match(migration,/PAPER_PREMATCH_NATIVE_SOURCE_NOT_VALID/);
+ assert.match(schedule,/\/api\/cron\/the-odds-scores/);
+});

@@ -4,7 +4,8 @@ import type {DailyPaperAccount,DailyPaperTicket} from "@/lib/paper/daily-researc
 
 type Reply={ok:true;source:string;generatedAt:string;account:DailyPaperAccount;
  scheduler:{configuredInRepo:boolean;lastHeartbeat:string|null;health:string;note:string;blockedBy:Record<string,number>};
- sourceHealth:{ftProvider:{status:string;lastCheckedAt:string|null;subscriptionBlocked:boolean};
+ sourceHealth:{oddsScores:{lastCheckedAt:string|null;healthy:boolean};
+ ftProvider:{status:string;lastCheckedAt:string|null;subscriptionBlocked:boolean};
  model:{recentlyProduced:boolean;lastRecordedAt:string|null}};
  coverage:{historyMayBeCapped:boolean;realBetsPlaced:0;prospectiveProfitabilityProven:false}};
 const money=(n:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",
@@ -115,6 +116,11 @@ export function DailyPaperResearchPanel(){
      <strong>{data.sourceHealth.model.recentlyProduced?"SHADOW SNAPSHOTS ОБНАРУЖЕНЫ":"НОВЫХ SHADOW SNAPSHOTS НЕТ"}</strong>
      <span>При отсутствии прогноза VETO возможны только отдельные контрольные наблюдения по реальным котировкам.</span>
     </article>
+    <article>
+     <small>THE ODDS API / INDEPENDENT EPL SCORES</small>
+     <strong>{data.sourceHealth.oddsScores.healthy?"ИСТОЧНИК FT ПОДТВЕРЖДЁН":"FT-СВЕРКА НЕ ЗАПУЩЕНА ИЛИ НЕДОСТУПНА"}</strong>
+     <span>Проверка EPL по точному ID источника; плановая стоимость 2 API-кредита в день. Выключена без явного разрешения оператора.</span>
+    </article>
    </div>
    {Object.entries(data.scheduler.blockedBy).length>0&&<div className="paperDailyBlocked">
     <strong>ПОЧЕМУ НЕ БЫЛО PAPER-СТАВОК / ПОСЛЕДНЯЯ ПРОВЕРКА</strong>
@@ -124,6 +130,9 @@ export function DailyPaperResearchPanel(){
       FRESH_OPEN_PRICE_MISSING:"Нет свежей открытой котировки",
       FULLTIME_MARKET_NOT_MAPPED:"Нет безопасно сопоставленного FT-рынка",
       TIMESTAMP_OR_MODEL_PROOF_INCOMPLETE:"Не совпали временные доказательства",
+      PREMATCH_QUOTES_CAPPED:"Архив котировок неполный",
+      PREMATCH_COMPLETE_BOOKMAKER_TRIO_MISSING:"Нет полной тройки 1X2 одного букмекера",
+      LIVE_HISTORY_CAPPED:"Live-история ограничена",
      } as Record<string,string>)[key]??key}: <b>{n}</b></span>)}</div>
    </div>}
    {data.coverage.historyMayBeCapped&&<div className="paperDailyError">Предупреждение: объём архива достиг лимита чтения — показатели могут быть неполными.</div>}
@@ -175,7 +184,7 @@ export function DailyPaperResearchPanel(){
    </div>
    <footer><b>RESEARCH ONLY · НЕ БУКМЕКЕР</b>
     <span>Последнее подтверждённое выполнение: {last?dt(last):"не обнаружено"}. {data.scheduler.note}</span>
-    <span>Серверная история общая для VETO Sport, не личный депозит. Баланс — математическая симуляция без исполнения реальных коэффициентов, комиссий, ограничений ставок и проскальзывания. Положительный результат не гарантирован.</span>
+    <span>Серверная история общая для VETO Sport, не личный депозит. Pre-match источник не передаёт надёжного флага доступности ставки: его цены только индикативные. Контрольная вероятность вычислена из котировок, а не предсказана VETO. Отсутствуют комиссии, лимиты, гарантии исполнения и прибыль.</span>
    </footer>
   </div>}
  </section>;

@@ -36,7 +36,7 @@ export function matchOddsApiScore(e:PersistedEvent,score:OddsScoreCandidate):boo
  if(e.event.sport!=="football"||e.event.status==="finished"||
   !e.canonicalKey.startsWith("football::epl::")||
   e.providerRefs?.["the-odds-api"]!==score.externalId||
-  e.event.startsAt!==score.startsAt||
+  Date.parse(e.event.startsAt)!==Date.parse(score.startsAt)||
   !e.event.home?.name||!e.event.away?.name)return false;
  // The original odds and the final are from the SAME provider fixture id.
  // Team names are an additional integrity check, never a fuzzy join.
