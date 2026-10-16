@@ -552,7 +552,7 @@ test("Forward daily paper lab remains server-only, auditable and bound to real o
  const migration=read("database/migrations/011_forward_paper_lab.sql");
  const engine=read("src/lib/paper/daily-research.ts");
  const runner=read("src/lib/paper/daily-runner.ts");
- const cron=read("src/app/api/cron/shadow-football/route.ts");
+ const cron=read("src/app/api/cron/paper-research/route.ts");
  const route=read("src/app/api/intelligence/paper-journal/daily/route.ts");
  const page=read("src/app/research/paper-lab/page.tsx");
  const self=read("src/app/api/intelligence/paper-journal/selfcheck/route.ts");
@@ -614,4 +614,21 @@ test("Daily paper supports native-ID EPL score reconciling without guessing paid
  assert.match(migration,/PREMATCH_ODDS_CONTROL/);
  assert.match(migration,/PAPER_PREMATCH_NATIVE_SOURCE_NOT_VALID/);
  assert.match(schedule,/\/api\/cron\/the-odds-scores/);
+});
+
+test("Dedicated half-hour paper cron runs independently of model inference, selects scoped EPL odds",()=>{
+ const cron=read("src/app/api/cron/paper-research/route.ts");
+ const shadow=read("src/app/api/cron/shadow-football/route.ts");
+ const runner=read("src/lib/paper/daily-runner.ts");
+ const storage=read("src/lib/persistence/supabase-rest.ts");
+ const schedules=read("vercel.json");
+ assert.match(cron,/runDailyPaperTick/);
+ assert.match(cron,/CRON_SECRET/);
+ assert.match(cron,/appendProviderHealth/);
+ assert.doesNotMatch(shadow,/runDailyPaperTick/);
+ assert.match(runner,/marketKey:"soccer_epl.h2h"/);
+ assert.match(runner,/capturedSince:/);
+ assert.match(storage,/input.capturedSince/);
+ assert.match(schedules,/\/api\/cron\/paper-research/);
+ assert.doesNotMatch(cron,/THE_ODDS_API_KEY|API_FOOTBALL_KEY|placeWager|executeBet/);
 });
