@@ -112,7 +112,7 @@ export function reconcilePaperEntry(entry:PaperEntry,final:CertifiedPaperFinal):
  const status:PaperStatus=win?"PROVIDER_WIN":"PROVIDER_LOSS";
  return {...entry,status,settledAt:final.capturedAt,
   verifiedAt:new Date().toISOString(),verifiedProvider:"api-football",
-  verifiedScore:{home,away}};
+  verifiedScore:{home:final.score.home,away:final.score.away}};
 }
 export function paperFinalVerificationSelfcheck(){
  const event:PersistedEvent={id:"e1",canonicalKey:"real",event:{
