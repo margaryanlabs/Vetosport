@@ -476,6 +476,45 @@ test("In-play market cron is scheduled after live-score ingestion with no extra 
  assert.match(report,/asSafeCount\(info.scoreSnapshotsWithin2m\)/);
 });
 
+test("Decision inputs and public freshness KPI reject score-after-price leakage",()=>{
+ const temporal=read("src/lib/live/temporal-data-safety.ts");
+ const evidence=read("src/lib/research/evidence-coverage.ts");
+ assert.match(temporal,/quoteTime>=stateTime/);
+ assert.match(temporal,/input\.state\?\.sourceProvider==="api-football"/);
+ assert.match(temporal,/Date\.parse\(q\.providerLastUpdate!\)>=Date\.parse\(input\.state!\.capturedAt\)/);
+ assert.match(temporal,/Later score cannot authorize a quote/);
+ assert.match(temporal,/Provider's quote source clock cannot be later/);
+ assert.match(temporal,/Untrusted provider score cannot authorize/);
+ assert.match(evidence,/const freshStateTimes=new Map/);
+ assert.match(evidence,/const freshPriceTimes=new Map/);
+ assert.match(evidence,/states\.some\(st=>st<=q&&q-st<=120_000\)/);
+ assert.match(evidence,/Two independently fresh snapshots are not a causal pair/);
+ assert.match(evidence,/Valid ordered score followed by a quote/);
+});
+
+test("Real score-price audit rows show exact causal time and explicitly exclude look-ahead matches",()=>{
+ const builder=read("src/lib/research/historical-observation-ledger.ts");
+ const readiness=read("src/lib/research/evidence-coverage.ts");
+ const page=read("src/app/research/discovery/page.tsx");
+ assert.match(builder,/buildHistoricalObservationLedger/);
+ assert.match(builder,/historicalObservationLedgerSelfcheck/);
+ assert.match(builder,/SCORE_BEFORE_PRICE/);
+ assert.match(builder,/SCORE_AFTER_PRICE/);
+ assert.match(builder,/q\.suspended!==false/);
+ assert.match(builder,/q\.eventId/);
+ assert.match(builder,/sourceClockIndependent:false/);
+ assert.match(builder,/executablePriceVerified:false/);
+ assert.match(builder,/maxShown:12/);
+ assert.match(readiness,/observationLedger:ReturnType<typeof buildHistoricalObservationLedger>/);
+ assert.match(readiness,/const observationLedger=buildHistoricalObservationLedger/);
+ assert.match(readiness,/ledgerSelfcheck\.passed/);
+ assert.match(page,/discoveryObservationLedger/);
+ assert.match(page,/coverage\.observationLedger\.rows\.map/);
+ assert.match(page,/EXCLUDED · FUTURE SCORE/);
+ assert.match(page,/БУКМЕКЕР НЕ УСТАНОВЛЕН/);
+ assert.doesNotMatch(builder,/appendQuotes|appendEventState|appendDecision|appendTruthJournal/);
+});
+
 
 test("Paper FT read API verifies stored source evidence and does not poll paid providers",()=>{
  const api=read("src/app/api/intelligence/paper-journal/finals/route.ts");

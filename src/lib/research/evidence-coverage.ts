@@ -1,4 +1,5 @@
 import {captureLagSpectrum} from "@/lib/research/capture-lag-spectrum";
+import {buildHistoricalObservationLedger,historicalObservationLedgerSelfcheck} from "@/lib/research/historical-observation-ledger";
 import {historicalTimingEvidence,historicalCoCaptureSelfcheck,CO_CAPTURE_WINDOW_SECONDS} from "@/lib/research/historical-co-capture";
 import type {PersistedEvent,PersistedEventStateRecord,PersistedMarketQuoteRecord} from "@/lib/persistence/contracts";
 
@@ -40,6 +41,7 @@ export type EvidenceCoverage={
  historicalLookaheadOnlyEvents:number;
  historicalCausalIsNotExecution:true;
  captureLag:ReturnType<typeof captureLagSpectrum>;
+ observationLedger:ReturnType<typeof buildHistoricalObservationLedger>;
  historicalCoCaptureWindowSeconds:120;
  historicalPairsAreNotLiveSignals:true;
  researchReadyForRealMoney:false;
@@ -57,13 +59,22 @@ export function evidenceCoverage(input:{
  const events=new Map(input.events.filter(e=>e.event.sport==="football").map(e=>[e.id,e]));
  const seenLive=new Set<string>(),certificate=new Set<string>(),statusOnly=new Set<string>();
  const freshStates=new Set<string>(),quotesAvailable=new Set<string>(),freshPrices=new Set<string>();
+ // Diagnostic co-capture needs chronological timestamps, not merely two
+ // independently fresh sources attached to the same event.
+ const freshStateTimes=new Map<string,number[]>();
+ const freshPriceTimes=new Map<string,number[]>();
  for(const row of input.states){
   const event=events.get(row.eventId);if(!event)continue;
   const age=seconds(row.capturedAt,now);
   if(age===null)continue;
   if(row.state.status==="live"&&row.sourceProvider==="api-football"){
     seenLive.add(row.eventId);
-    if(age<=120&&event.event.status==="live")freshStates.add(row.eventId);
+    if(age<=120&&event.event.status==="live"){
+     freshStates.add(row.eventId);
+     const at=Date.parse(row.capturedAt);
+     const times=freshStateTimes.get(row.eventId)??[];
+     times.push(at);freshStateTimes.set(row.eventId,times);
+    }
   }
   if(certifiedRegulationFinal(row,event))certificate.add(row.eventId);
  }
@@ -77,14 +88,26 @@ export function evidenceCoverage(input:{
   if(age===null)continue;
   quotesAvailable.add(row.eventId);
   const sourceAge=seconds(row.providerLastUpdate??row.capturedAt,now);
-  if(!row.suspended&&age<=120&&sourceAge!==null&&sourceAge<=120&&events.get(row.eventId)?.event.status==="live"){
+  const sourceTime=row.providerLastUpdate?Date.parse(row.providerLastUpdate):NaN;
+  const quoteTime=Date.parse(row.capturedAt);
+  if(!row.suspended&&age<=120&&sourceAge!==null&&sourceAge<=120&&
+    (!row.providerLastUpdate||(Number.isFinite(sourceTime)&&sourceTime<=quoteTime))&&
+    events.get(row.eventId)?.event.status==="live"){
     freshPrices.add(row.eventId);
+    const times=freshPriceTimes.get(row.eventId)??[];
+    times.push(quoteTime);freshPriceTimes.set(row.eventId,times);
   }
  }
- const aligned=[...freshPrices].filter(id=>freshStates.has(id)).length;
+ const aligned=[...freshPriceTimes].filter(([id,quotes])=>{
+  const states=freshStateTimes.get(id)??[];
+  // A later score cannot make an earlier market a legitimate input.
+  // 120 seconds is an observation diagnostic, not proof of execution.
+  return quotes.some(q=>states.some(st=>st<=q&&q-st<=120_000));
+ }).length;
  const chronology=historicalTimingEvidence({events:[...events.values()],states:input.states,quotes:input.quotes,asOf:input.at});
  const historicalCoCaptured=chronology.observedWithin2m;
  const captureLag=captureLagSpectrum({events:[...events.values()],states:input.states,quotes:input.quotes,asOf:input.at});
+ const observationLedger=buildHistoricalObservationLedger({events:[...events.values()],states:input.states,quotes:input.quotes,asOf:input.at});
  const count=(n:number)=>n>0?"partial" as const:"blocked" as const;
  const gates:EvidenceCheck[]=[
   {id:"live-scores",label:"Наблюдаемые матчи",
@@ -97,7 +120,7 @@ export function evidenceCoverage(input:{
     "Нет отдельно подтверждённых FT-снимков: исследовательская статистика исходов пока недоступна."},
   {id:"prices",label:"Совпадающие цены и время",
    stage:count(aligned),detail:aligned?
-    `${aligned} матчей имеют свежий счёт и котировку по одному каноническому событию. Линия может быть недоступна для исполнения.`:
+    `${aligned} матчей имеют счёт, записанный до близкой по времени цены. Часы источников и исполнение ещё не подтверждены.`:
     quotesAvailable.size?
       `Записаны цены для ${quotesAvailable.size} матчей, но нет одновременно свежей пары счёт + котировка.`:
       "Для этих наблюдаемых матчей нет сохранённых подходящих букмекерских цен."},
@@ -128,7 +151,7 @@ export function evidenceCoverage(input:{
   historicalCausallyAlignedEvents:chronology.causallyAlignedWithin2m,
   historicalLookaheadOnlyEvents:chronology.lookaheadOnlyWithin2m,
   historicalCausalIsNotExecution:true,
-  captureLag,
+  captureLag,observationLedger,
   historicalCoCaptureWindowSeconds:120,historicalPairsAreNotLiveSignals:true,
   researchReadyForRealMoney:false,externalProviderCalls:0,
   sampleMayBeCapped:Boolean(input.sampleMayBeCapped),
@@ -156,8 +179,10 @@ export function evidenceCoverageSelfcheck(){
  const input={events:[ev("a","live"),ev("b","finished")],states:[live("a"),live("b"),final("b")],quotes:[quote],at};
  const r=evidenceCoverage(input);
  const historicalSelfcheck=historicalCoCaptureSelfcheck();
+ const ledgerSelfcheck=historicalObservationLedgerSelfcheck();
  const checks=[
   {name:"Historical observation tests fail closed",passed:historicalSelfcheck.passed},
+  {name:"Inspectable sample ledger never treats future score as current evidence",passed:ledgerSelfcheck.passed},
   {name:"Co-capture is not promoted to currently fresh evidence",passed:r.historicalScoreAndPriceCoCapturedEvents===1&&r.historicalPairsAreNotLiveSignals===true},
   {name:"Causal observation counts separate from look-ahead-only counts",
    passed:r.historicalCausallyAlignedEvents===1&&r.historicalLookaheadOnlyEvents===0&&
@@ -177,6 +202,15 @@ export function evidenceCoverageSelfcheck(){
   {name:"Stale price cannot create aligned pair",passed:evidenceCoverage({...input,quotes:[{...quote,capturedAt:"2026-10-13T11:30:00Z"}]}).freshScoreAndPriceEvents===0},
   {name:"Suspension rejects active price",passed:evidenceCoverage({...input,quotes:[{...quote,suspended:true}]}).freshScoreAndPriceEvents===0},
   {name:"Future provider time rejected",passed:evidenceCoverage({...input,quotes:[{...quote,providerLastUpdate:"2026-10-13T12:05:00Z"}]}).freshScoreAndPriceEvents===0},
+  {name:"Two independently fresh snapshots are not a causal pair when quote comes first",
+   passed:(()=>{
+    const futureScore={...live("a"),capturedAt:"2026-10-13T11:59:55Z"};
+    const result=evidenceCoverage({...input,states:[futureScore,live("b"),final("b")]});
+    return result.freshEventStates===1&&result.freshQuotedEvents===1&&
+     result.freshScoreAndPriceEvents===0;
+   })()},
+  {name:"Valid ordered score followed by a quote remains a fresh observed pair",
+   passed:evidenceCoverage({...input,quotes:[{...quote,capturedAt:"2026-10-13T11:59:55Z"}]}).freshScoreAndPriceEvents===1},
   {name:"No real-money edge ever minted by observational coverage",passed:r.researchReadyForRealMoney===false},
   {name:"No external API requests in coverage",passed:r.externalProviderCalls===0},
  ];
