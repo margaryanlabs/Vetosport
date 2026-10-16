@@ -4,7 +4,7 @@
 import {getPersistence,persistenceConfiguration} from "@/lib/persistence/factory";
 import type {PersistedEvent} from "@/lib/persistence/contracts";
 import {INITIAL_PAPER_BANK,DAILY_PAPER_STAKE,DAILY_PROTOCOL,MAX_PAPER_PICKS_PER_DAY,
- accountFromPaper,confirmForwardPaper,paperDay,proposeForwardPaper,
+ accountFromPaper,confirmForwardPaper,explainPaperBlock,paperDay,proposeForwardPaper,
  type DailyPaperPick} from "@/lib/paper/daily-research";
 
 export type DailyPaperTick={
@@ -12,13 +12,14 @@ export type DailyPaperTick={
  source:"PERSISTED_ONLY";externalProviderCalls:0;realBetsPlaced:0;
  scanned:number;eligible:number;recorded:number;settled:number;
  limitHit:boolean;skipped?:string;errors:number;
+ blockedBy:Record<string,number>;
 };
 export async function runDailyPaperTick(input:{
  observedEvents:PersistedEvent[];asOf:string;capture:boolean;
 }):Promise<DailyPaperTick>{
  const report:DailyPaperTick={ok:true,asOf:input.asOf,mode:"PAPER_ONLY",
   simulatedBank:INITIAL_PAPER_BANK,source:"PERSISTED_ONLY",externalProviderCalls:0,
-  realBetsPlaced:0,scanned:0,eligible:0,recorded:0,settled:0,limitHit:false,errors:0};
+  realBetsPlaced:0,scanned:0,eligible:0,recorded:0,settled:0,limitHit:false,errors:0,blockedBy:{}};
  if(!persistenceConfiguration().supabaseConfigured)return {...report,ok:false,skipped:"STORAGE_DISABLED"};
  const store=getPersistence();
  const day=paperDay(input.asOf);
@@ -84,6 +85,8 @@ export async function runDailyPaperTick(input:{
    const proposal=proposeForwardPaper({event,states:state,quotes:quote,predictions:prediction,
     asOf:input.asOf});
    if(proposal)proposals.push(proposal);
+   else {const reason=explainPaperBlock({event,states:state,quotes:quote,predictions:prediction,asOf:input.asOf});
+    report.blockedBy[reason]=(report.blockedBy[reason]??0)+1;}
   }catch{report.errors++;}
  }
  report.eligible=proposals.length;

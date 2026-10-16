@@ -3,7 +3,9 @@ import {useCallback,useEffect,useState} from "react";
 import type {DailyPaperAccount,DailyPaperTicket} from "@/lib/paper/daily-research";
 
 type Reply={ok:true;source:string;generatedAt:string;account:DailyPaperAccount;
- scheduler:{configuredInRepo:boolean;lastHeartbeat:string|null;health:string;note:string};
+ scheduler:{configuredInRepo:boolean;lastHeartbeat:string|null;health:string;note:string;blockedBy:Record<string,number>};
+ sourceHealth:{ftProvider:{status:string;lastCheckedAt:string|null;subscriptionBlocked:boolean};
+ model:{recentlyProduced:boolean;lastRecordedAt:string|null}};
  coverage:{historyMayBeCapped:boolean;realBetsPlaced:0;prospectiveProfitabilityProven:false}};
 const money=(n:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",
  minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
@@ -99,6 +101,31 @@ export function DailyPaperResearchPanel(){
   {error&&<div className="paperDailyError" role="alert">{error}</div>}
   {!data&&!error&&<div className="paperDailyEmpty">Загружаем реальные записи. Ни демонстрационной прибыли, ни фиктивных матчей.</div>}
   {a&&<div className="paperDailyData">
+   <div className="paperDailySourceStatus">
+    <article className={data.sourceHealth.ftProvider.subscriptionBlocked?"blocked":""}>
+     <small>FT CERTIFICATION / ИСХОДЫ</small>
+     <strong>{data.sourceHealth.ftProvider.subscriptionBlocked?"ПОДПИСКА API ОГРАНИЧЕНА":
+      data.sourceHealth.ftProvider.status==="healthy"?"ПРОВАЙДЕР ДОСТУПЕН":"ПОДТВЕРЖДЕНИЕ НЕ ПРОВЕРЕНО"}</strong>
+     <span>{data.sourceHealth.ftProvider.subscriptionBlocked?
+      "Без разрешённого API-Football FT невозможно подтверждать исходы. Мы не рисуем прибыль.":
+      "Счёт не меняется, пока для конкретного матча нет сохранённого FT-сертификата."}</span>
+    </article>
+    <article className={!data.sourceHealth.model.recentlyProduced?"blocked":""}>
+     <small>MODEL PIPELINE / КАЛИБРОВКА</small>
+     <strong>{data.sourceHealth.model.recentlyProduced?"SHADOW SNAPSHOTS ОБНАРУЖЕНЫ":"НОВЫХ SHADOW SNAPSHOTS НЕТ"}</strong>
+     <span>При отсутствии прогноза VETO возможны только отдельные контрольные наблюдения по реальным котировкам.</span>
+    </article>
+   </div>
+   {Object.entries(data.scheduler.blockedBy).length>0&&<div className="paperDailyBlocked">
+    <strong>ПОЧЕМУ НЕ БЫЛО PAPER-СТАВОК / ПОСЛЕДНЯЯ ПРОВЕРКА</strong>
+    <div>{Object.entries(data.scheduler.blockedBy).map(([key,n])=><span key={key}>
+     {({
+      EVENT_NOT_LIVE:"Матч не в live",FRESH_SCORE_MISSING:"Нет свежего счёта",
+      FRESH_OPEN_PRICE_MISSING:"Нет свежей открытой котировки",
+      FULLTIME_MARKET_NOT_MAPPED:"Нет безопасно сопоставленного FT-рынка",
+      TIMESTAMP_OR_MODEL_PROOF_INCOMPLETE:"Не совпали временные доказательства",
+     } as Record<string,string>)[key]??key}: <b>{n}</b></span>)}</div>
+   </div>}
    {data.coverage.historyMayBeCapped&&<div className="paperDailyError">Предупреждение: объём архива достиг лимита чтения — показатели могут быть неполными.</div>}
    <div className="paperDailyKpis">
     <article className="main"><small>ВИРТУАЛЬНЫЙ БАЛАНС</small><strong>{money(a.balance)}</strong><span>Старт {money(a.initialBank)} · резерв {money(a.reserved)}</span></article>

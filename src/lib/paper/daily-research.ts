@@ -129,6 +129,30 @@ export function proposeForwardPaper(input:{
  }
  return best;
 }
+/** Exact eligibility remains owned by proposeForwardPaper; this is a
+ * presentation-only high-level reason for a missing candidate, not an
+ * alternative admission path. Do not derive model wins from this diagnostic.
+ */
+export type DailyPaperBlock="EVENT_NOT_LIVE"|"FRESH_SCORE_MISSING"|
+ "FRESH_OPEN_PRICE_MISSING"|"FULLTIME_MARKET_NOT_MAPPED"|"TIMESTAMP_OR_MODEL_PROOF_INCOMPLETE";
+export function explainPaperBlock(input:Parameters<typeof proposeForwardPaper>[0]):DailyPaperBlock{
+ const now=ms(input.asOf);
+ if(input.event.event.status!=="live")return "EVENT_NOT_LIVE";
+ const freshState=input.states.some(s=>s.eventId===input.event.id&&
+  s.sourceProvider==="api-football"&&s.state.status==="live"&&ageValid(s.capturedAt,now));
+ if(!freshState)return "FRESH_SCORE_MISSING";
+ const freshPrices=input.quotes.filter(q=>q.eventId===input.event.id&&q.suspended===false&&
+  ageValid(q.capturedAt,now)&&ageValid(q.providerLastUpdate??"",now)&&
+  Number.isFinite(q.decimalOdds)&&q.decimalOdds>1&&q.decimalOdds<=20);
+ if(!freshPrices.length)return "FRESH_OPEN_PRICE_MISSING";
+ if(!freshPrices.some(q=>paperContractFromQuote(label(input.event),{
+  provider:q.provider,bookmaker:q.bookmaker,marketKey:q.marketKey,
+  selectionKey:q.selectionKey,selectionLabel:q.selectionLabel,
+  decimalOdds:q.decimalOdds,capturedAt:q.capturedAt,suspended:q.suspended,
+ } as LiveQuotePreview)))return "FULLTIME_MARKET_NOT_MAPPED";
+ return "TIMESTAMP_OR_MODEL_PROOF_INCOMPLETE";
+}
+
 export const paperSettlement=(pick:DailyPaperPick,score:{home:number;away:number},
  finalAt:string,settledAt:string):DailyPaperSettlement=>({
  pickId:pick.id,eventId:pick.eventId,

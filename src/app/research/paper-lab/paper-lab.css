@@ -84,3 +84,22 @@ html[data-veto-sport-appearance="light"] .paperDaily .negative{color:#b12743!imp
 html[data-veto-sport-appearance="light"] .paperDaily .positive{color:#16794b!important}
 html[data-veto-sport-appearance="light"] .paperDaily :is(.paperDailyError,.paperDailyEmpty,.paperDailyNoChart){background:#fff7f9!important;color:#8a2e41!important}
 html[data-veto-sport-appearance="light"] .paperLabFooter a{color:#283c4e!important}
+
+.paperDailySourceStatus{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:17px 0}
+.paperDailySourceStatus article{background:#181b1b;border:1px solid rgba(132,198,143,.17);border-radius:10px;padding:15px;display:grid;gap:7px}
+.paperDailySourceStatus article.blocked{background:#281d20;border-color:rgba(231,93,114,.27)}
+.paperDailySourceStatus small{font-size:10px;color:#b8bbc3;letter-spacing:.09em}
+.paperDailySourceStatus strong{font-size:13px;color:#f4f4f6}
+.paperDailySourceStatus span{font-size:11px;color:#adb1b9;line-height:1.6}
+.paperDailyBlocked{background:#1d1d21;border:1px solid rgba(255,255,255,.11);padding:15px;border-radius:9px;margin:10px 0 17px}
+.paperDailyBlocked>strong{font-size:10px;letter-spacing:.08em;color:#d6c7cb}
+.paperDailyBlocked>div{display:flex;flex-wrap:wrap;gap:9px;margin-top:11px}
+.paperDailyBlocked>div span{background:#303035;padding:8px 11px;border-radius:7px;color:#d4d4dc;font-size:11px}
+.paperDailyBlocked b{color:#fff}
+@media(max-width:630px){.paperDailySourceStatus{grid-template-columns:1fr}}
+html[data-veto-sport-appearance="light"] .paperDailySourceStatus article,
+html[data-veto-sport-appearance="light"] .paperDailyBlocked{background:#fff!important;border-color:#d7dce4!important}
+html[data-veto-sport-appearance="light"] .paperDailySourceStatus article.blocked{background:#fff6f6!important;border-color:#edc9cc!important}
+html[data-veto-sport-appearance="light"] .paperDailySourceStatus :is(strong,small,span),
+html[data-veto-sport-appearance="light"] .paperDailyBlocked :is(strong,span){color:#2b3a4e!important}
+html[data-veto-sport-appearance="light"] .paperDailyBlocked>div span{background:#f5f7fa!important}

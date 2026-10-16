@@ -66,7 +66,10 @@ export async function GET(request: Request) {
       message:dailyPaper.ok?"Forward paper observer executed":"Paper observer unavailable or schema not ready",
       metadata:{researchOnly:true,realBetsPlaced:0,externalProviderCalls:0,
         selected:"recorded" in dailyPaper?dailyPaper.recorded:0,
-        reason:"skipped" in dailyPaper?dailyPaper.skipped:null},
+        reason:"skipped" in dailyPaper?dailyPaper.skipped:null,
+        screened:"scanned" in dailyPaper?dailyPaper.scanned:0,
+        eligible:"eligible" in dailyPaper?dailyPaper.eligible:0,
+        blockedBy:"blockedBy" in dailyPaper?dailyPaper.blockedBy:{}},
     }).catch(()=>undefined);
   }
 

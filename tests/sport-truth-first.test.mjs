@@ -578,3 +578,19 @@ test("Forward daily paper lab remains server-only, auditable and bound to real o
  assert.match(page,/DailyPaperResearchPanel/);
  assert.match(self,/daily.passed/);
 });
+
+test("Paper observer reports source blockers and cannot present missing forecasts or FT as profits",()=>{
+ const engine=read("src/lib/paper/daily-research.ts");
+ const runner=read("src/lib/paper/daily-runner.ts");
+ const readApi=read("src/app/api/intelligence/paper-journal/daily/route.ts");
+ const panel=read("src/components/DailyPaperResearchPanel.tsx");
+ assert.match(engine,/explainPaperBlock/);
+ assert.match(engine,/FRESH_SCORE_MISSING/);
+ assert.match(engine,/FULLTIME_MARKET_NOT_MAPPED/);
+ assert.match(runner,/blockedBy/);
+ assert.match(runner,/explainPaperBlock/);
+ assert.match(readApi,/UPSTREAM_SUBSCRIPTION/);
+ assert.match(readApi,/lastHeartbeat/);
+ assert.match(panel,/ПОЧЕМУ НЕ БЫЛО PAPER-СТАВОК/);
+ assert.match(panel,/ПОДПИСКА API ОГРАНИЧЕНА/);
+});
