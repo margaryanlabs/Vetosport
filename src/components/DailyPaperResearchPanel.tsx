@@ -143,6 +143,30 @@ export function DailyPaperResearchPanel(){
     <article><small>ПРОВЕРЕННЫЕ ИСХОДЫ</small><strong>{a.settled}</strong><span>{a.wins} побед · {a.losses} поражений · {a.open} открыто</span></article>
     <article><small>PAPER YIELD</small><strong>{a.yieldPct===null?"—":`${a.yieldPct>0?"+":""}${a.yieldPct.toFixed(2)}%`}</strong><span>Прибыль / сумма закрытых paper-тестов</span></article>
    </div>
+   <section className="paperDailyCohorts" aria-label="Независимые исследовательские группы">
+    <header><span>SCIENTIFIC SCOREBOARD / COHORTS ≠ VERIFIED EDGE</span>
+     <h4>Какая гипотеза действительно работает?</h4>
+     <p>Сравниваем три группы отдельно. Контрольные вероятности взяты из самих котировок. Модельные результаты не являются доказательством преимущества даже при положительном P&L.</p>
+    </header>
+    <div className="paperDailyCohortGrid">
+     {a.cohorts.map(cohort=><article key={cohort.id}>
+      <small>{cohort.id}</small>
+      <h5>{cohort.label}</h5>
+      <strong className={cohort.net<0?"negative":cohort.net>0?"positive":""}>{signed(cohort.net)}</strong>
+      <div><span>Виртуальные тесты</span><b>{cohort.count}</b></div>
+      <div><span>Подтверждено FT</span><b>{cohort.settled}</b></div>
+      <div><span>W / L · ожидают</span><b>{cohort.wins} / {cohort.losses} · {cohort.open}</b></div>
+      <div><span>Yield по ставкам</span><b>{cohort.yieldPct===null?"—":cohort.yieldPct.toFixed(2)+"%"}</b></div>
+      <div><span>Brier (меньше лучше)</span><b>{cohort.brier===null?"—":cohort.brier.toFixed(4)}</b></div>
+      <div><span>95% Wilson win-rate</span><b>{cohort.wilson95?
+       `${(cohort.wilson95[0]*100).toFixed(1)}–${(cohort.wilson95[1]*100).toFixed(1)}%`:"—"}</b></div>
+      <footer>{cohort.minimumSampleReached?
+       "Есть ≥30 исходов, но преимущество не доказано.":
+       `До порога 30 подтверждённых исходов: ${Math.max(0,30-cohort.settled)}.`}
+      </footer>
+     </article>)}
+    </div>
+   </section>
    <div className="paperDailySecondary">
     <div className="paperDailyEquity">
      <header><span>BANKROLL CURVE / ONLY VERIFIED FT</span><b>Как меняются виртуальные $200</b></header>
