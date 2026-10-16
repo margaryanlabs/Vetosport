@@ -13,6 +13,7 @@ export default function PaperLabPage(){
   <nav className="paperLabNav">
    <Link href="/" className="paperLabBrand"><VetoMark size={28}/>VETO <em>SPORT</em></Link>
    <div><span>RESEARCH / AUTOMATIC PAPER LAB</span><SportAppearanceToggle/>
+    <Link href="/research/high-odds">High Odds 10×–50×+ ↗</Link>
     <Link href="/research/discovery">Исследования ↗</Link></div>
   </nav>
   <header className="paperLabHero">

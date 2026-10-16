@@ -20,11 +20,12 @@ export async function GET(req:Request){
    reason:"OPERATOR_OPT_IN_OR_KEY_REQUIRED",quotaCharged:0},{headers});
  const store=getPersistence(),now=new Date(),asOf=now.toISOString();
  try{
-  const [paperPicks,paperSettled,quotaHealth]=await Promise.all([
+  const [paperPicks,paperSettled,highPicks,highSettled,quotaHealth]=await Promise.all([
    store.listPaperDailyPicks(900),store.listPaperDailySettlements(900),
+   store.listHighOddsPaperTickets(850),store.listHighOddsPaperSettlements(850),
    store.listRecentProviderHealth({providerId:"the-odds-api",limit:1}),
   ]);
-  if(paperPicks.length>=900||paperSettled.length>=900)
+  if(paperPicks.length>=900||paperSettled.length>=900||highPicks.length>=850||highSettled.length>=850)
    return NextResponse.json({ok:false,skipped:true,reason:"PAPER_HISTORY_CAPPED",
     quotaCharged:0},{status:503,headers});
   const settledIds=new Set(paperSettled.map(x=>x.pickId));
@@ -35,7 +36,16 @@ export async function GET(req:Request){
    p.lane==="PREMATCH_ODDS_CONTROL"&&!settledIds.has(p.id)&&
    Date.parse(p.eventStartsAt)>=now.getTime()-3*DAY&&
    Date.parse(p.eventStartsAt)<=now.getTime()-60*60_000).slice(0,30);
-  if(!outstanding.length)return NextResponse.json({ok:true,skipped:true,
+  // Include distinct fixture legs from any LOCKED unresolved high-odds
+  // research slip; no need to spend scores credits otherwise.
+  const highSettledIds=new Set(highSettled.map(x=>x.ticketId));
+  const highDue=highPicks.filter(p=>!highSettledIds.has(p.id))
+   .flatMap(p=>p.legs).filter(leg=>
+    Date.parse(leg.eventStartsAt)>=now.getTime()-3*DAY&&
+    Date.parse(leg.eventStartsAt)<=now.getTime()-60*60_000);
+  const dueEventIds=[...new Set([...outstanding.map(p=>p.eventId),
+    ...highDue.map(leg=>leg.eventId)])].slice(0,30);
+  if(!dueEventIds.length)return NextResponse.json({ok:true,skipped:true,
    reason:"NO_DUE_PAPER_FT_CERTIFICATES",quotaCharged:0},{headers});
   // Consult the existing EPL odds quota budget. Missing/stale remaining-credit
   // proof fails closed: no silent spending on an unfunded provider.
@@ -45,7 +55,7 @@ export async function GET(req:Request){
      Date.parse(quota.checkedAt)<now.getTime()-6*3600_000)
    return NextResponse.json({ok:true,skipped:true,reason:"SOURCE_QUOTA_NOT_PROVEN_SAFE",
     quotaCharged:0},{headers});
-  const fetched=await Promise.all(outstanding.map(p=>store.getEventById(p.eventId)));
+  const fetched=await Promise.all(dueEventIds.map(id=>store.getEventById(id)));
   const candidates=[...new Map(fetched.filter((e):e is NonNullable<typeof e>=>
     !!e&&e.event.status!=="finished"&&e.event.sport==="football"&&
     e.canonicalKey.startsWith("football::epl::")&&

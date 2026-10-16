@@ -683,3 +683,30 @@ test("Virtual paper bankroll separates uncalibrated VETO research from price-der
  assert.match(panel,/95% Wilson win-rate/);
  assert.match(panel,/cohort.minimumSampleReached/);
 });
+
+test("High odds paper lab keeps same-game combinations unpriced and certifies only stored FT",()=>{
+ const research=read("src/lib/paper/high-odds-research.ts");
+ const runner=read("src/lib/paper/high-odds-runner.ts");
+ const cron=read("src/app/api/cron/paper-research/route.ts");
+ const api=read("src/app/api/intelligence/paper-journal/high-odds/route.ts");
+ const migration=read("database/migrations/014_paper_high_odds_lab.sql");
+ const score=read("src/app/api/cron/the-odds-scores/route.ts");
+ const page=read("src/app/research/high-odds/page.tsx");
+ assert.match(research,/HIGH_ODDS_INITIAL_BANK=200/);
+ assert.match(research,/HIGH_ODDS_STAKE=1/);
+ assert.match(research,/HIGH_ODDS_MAX_LEG_EXPOSURE_PER_DAY=2/);
+ assert.match(research,/PRODUCT_OF_SINGLE_MARKET_PRICES_NOT_EXECUTABLE/);
+ assert.match(research,/new Set\(slip.legs.map\(x=>x.eventId\)\)/);
+ assert.match(research,/settleHighOddsSlip/);
+ assert.match(research,/highOddsSelfcheck/);
+ assert.match(runner,/runHighOddsTick/);
+ assert.match(cron,/runHighOddsTick/);
+ assert.match(api,/highOddsAccount/);
+ assert.doesNotMatch(api,/export async function POST|createWager|insertHighOddsPaperTicket/);
+ assert.match(migration,/HIGH_ODDS_SAME_EVENT_COMBO_HAS_NO_BOOK_PRICE/);
+ assert.match(migration,/HIGH_ODDS_SOURCE_QUOTE_NOT_FOUND/);
+ assert.match(migration,/HIGH_ODDS_FIXTURE_EXPOSURE_LIMIT/);
+ assert.match(migration,/HIGH_ODDS_PROVIDER_CERTIFICATE_NOT_FOUND/);
+ assert.match(score,/highDue/);
+ assert.match(page,/HighOddsLabPanel/);
+});
