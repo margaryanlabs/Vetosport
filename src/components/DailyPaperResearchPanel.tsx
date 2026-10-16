@@ -84,7 +84,7 @@ export function DailyPaperResearchPanel(){
   <div className="paperDailyTop">
    <div><span className="paperDailyEyebrow">06 / FORWARD RESEARCH · AUTOMATIC VIRTUAL TESTS</span>
     <h3 id="daily-research-title">Daily Paper Research</h3>
-    <p>VETO исследует реальные сохранённые котировки и прогнозы, фиксирует виртуальные решения ДО исхода матча и проверяет их по API-Football FT. Общий научный счёт, без реальных ставок.</p>
+    <p>VETO фиксирует виртуальные решения до исхода: live-рынки и отдельные заранее определённые pre-match контрольные исследования. Результаты — только после точного провайдерского FT. Общий виртуальный счёт, никаких реальных ставок.</p>
    </div>
    <div className="paperDailyTools">
     <span className={last&&data?.scheduler.health==="OBSERVED_RECENTLY"?"paperDailyState running":"paperDailyState"}>
@@ -107,7 +107,7 @@ export function DailyPaperResearchPanel(){
      <strong>{data.sourceHealth.ftProvider.subscriptionBlocked?"ПОДПИСКА API ОГРАНИЧЕНА":
       data.sourceHealth.ftProvider.status==="healthy"?"ПРОВАЙДЕР ДОСТУПЕН":"ПОДТВЕРЖДЕНИЕ НЕ ПРОВЕРЕНО"}</strong>
      <span>{data.sourceHealth.ftProvider.subscriptionBlocked?
-      "Без разрешённого API-Football FT невозможно подтверждать исходы. Мы не рисуем прибыль.":
+      "Провайдер API-Football FT недоступен. EPL можно подтверждать альтернативно по тому же ID в The Odds API, если разрешён scores cron. Мы не рисуем прибыль.":
       "Счёт не меняется, пока для конкретного матча нет сохранённого FT-сертификата."}</span>
     </article>
     <article className={!data.sourceHealth.model.recentlyProduced?"blocked":""}>
@@ -163,7 +163,7 @@ export function DailyPaperResearchPanel(){
      <div><span>{t.competition}</span><b>{t.match}</b>
       <small>{label(t.contract)} · {t.bookmaker} · {dt(t.pickedAt)}</small></div>
      <div><small>КОЭФФИЦИЕНТ</small><b>{t.odds.toFixed(2)}</b><span>{money(t.stake)} виртуально</span></div>
-     <div><small>{t.modelVersion==="QUOTE_IMPLIED_CONTROL_V1"?"БАЗИС / ИЗ КОЭФФИЦИЕНТА":"ПРОГНОЗ VETO · НЕ ПРОВЕРЕН"}</small><b>{(t.modelProbability*100).toFixed(1)}%</b><span>{t.modelVersion==="QUOTE_IMPLIED_CONTROL_V1"?"CONTROL · не независимый прогноз":t.modelVersion}</span></div>
+     <div><small>{t.modelVersion.includes("CONTROL")?"РЫНОЧНЫЙ КОНТРОЛЬ · НЕ ПРОГНОЗ VETO":"ПРОГНОЗ VETO · НЕ ПРОВЕРЕН"}</small><b>{(t.modelProbability*100).toFixed(1)}%</b><span>{t.modelVersion.includes("CONTROL")?"MARKET BASELINE · без независимого преимущества":t.modelVersion}</span></div>
      <div><small>ИСХОД / P&L</small><b>{t.settlement?t.settlement.result:"ОЖИДАЕТ FT"}</b>
       <span className={t.settlement?.result==="LOSS"?"negative":"positive"}>{t.settlement?
        signed(t.settlement.result==="WIN"?t.stake*(t.odds-1):-t.stake):"—"}

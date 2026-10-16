@@ -1264,12 +1264,14 @@ export class SupabaseRestPersistence implements VetoPersistence {
       limit:String(Math.min(1000,Math.max(1,limit)))});
     type Row={id:string;protocol:string;event_id:string;event_starts_at:string;
       day_utc:string;daily_slot:number;match:string;competition:string;contract:DailyPaperPick["contract"];
+      lane?:"LIVE_OBSERVED"|"PREMATCH_ODDS_CONTROL";
       market_key:string;selection_key:string;decimal_odds:number;virtual_stake:number;
       model_probability:number;model_version:string;quote_provider:string;bookmaker:string;
-      quote_at:string;provider_updated_at:string;state_at:string;model_at:string;picked_at:string};
+      quote_at:string;provider_updated_at:string;state_at:string|null;model_at:string|null;picked_at:string};
     const rows=await this.request<Row[]>(this.tablePath("paper_daily_picks",query.toString()),{method:"GET"});
     return rows.map(r=>({id:r.id,protocol:r.protocol,eventId:r.event_id,eventStartsAt:r.event_starts_at,
       dayUTC:r.day_utc,dailySlot:r.daily_slot,match:r.match,competition:r.competition,contract:r.contract,
+      lane:r.lane??"LIVE_OBSERVED",
       marketKey:r.market_key,selectionKey:r.selection_key,odds:Number(r.decimal_odds),
       stake:Number(r.virtual_stake),modelProbability:Number(r.model_probability),
       modelVersion:r.model_version,quoteProvider:r.quote_provider,bookmaker:r.bookmaker,
@@ -1277,7 +1279,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
       pickedAt:r.picked_at}));
   }
   async insertPaperDailyPick(input:PaperProposal&{dailySlot:number}):Promise<DailyPaperPick|null>{
-    const row={protocol:input.protocol,event_id:input.eventId,event_starts_at:input.eventStartsAt,
+    const row={protocol:input.protocol,lane:input.lane??"LIVE_OBSERVED",event_id:input.eventId,event_starts_at:input.eventStartsAt,
       day_utc:input.dayUTC,daily_slot:input.dailySlot,match:input.match,competition:input.competition,
       contract:input.contract,market_key:input.marketKey,selection_key:input.selectionKey,
       decimal_odds:input.odds,virtual_stake:input.stake,model_probability:input.modelProbability,
@@ -1291,7 +1293,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
   }
   async listPaperDailySettlements(limit=900):Promise<DailyPaperSettlement[]>{
     type Row={pick_id:string;event_id:string;result:"WIN"|"LOSS";home_goals:number;
-      away_goals:number;provider:"api-football";final_at:string;settled_at:string};
+      away_goals:number;provider:"api-football"|"the-odds-api";final_at:string;settled_at:string};
     const query=new URLSearchParams({select:"*",order:"settled_at.desc",
       limit:String(Math.min(1000,Math.max(1,limit)))});
     const rows=await this.request<Row[]>(this.tablePath("paper_daily_settlements",query.toString()),

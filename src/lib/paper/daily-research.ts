@@ -5,6 +5,7 @@
 import type {PersistedEvent,PersistedEventStateRecord,PersistedMarketQuoteRecord,PersistedPredictionSnapshotRecord} from "@/lib/persistence/contracts";
 import type {LiveEventSummary,LiveQuotePreview} from "@/lib/live/types";
 import {paperContractFromQuote,paperContractWins,certifyStoredPaperFinal,type PaperContract} from "@/lib/paper/paper-verification";
+import {certifyPersistedOddsScore} from "@/lib/paper/odds-score-certification";
 export const DAILY_PROTOCOL="veto.paper.forward-observed.v1" as const;
 export const INITIAL_PAPER_BANK=200;
 export const DAILY_PAPER_STAKE=4;
@@ -18,7 +19,7 @@ export type DailyPaperPick={
  lane?:"LIVE_OBSERVED"|"PREMATCH_ODDS_CONTROL";
 };
 export type DailyPaperSettlement={pickId:string;eventId:string;result:"WIN"|"LOSS";
- score:{home:number;away:number};provider:"api-football";finalAt:string;settledAt:string};
+ score:{home:number;away:number};provider:"api-football"|"the-odds-api";finalAt:string;settledAt:string};
 export type DailyPaperTicket=DailyPaperPick&{settlement:DailyPaperSettlement|null};
 export type DailyPaperAccount={
  protocol:typeof DAILY_PROTOCOL;mode:"LIVE_FORWARD_PAPER";sharedResearchAccount:true;moneyIsVirtual:true;
@@ -228,7 +229,7 @@ export const paperSettlement=(pick:DailyPaperPick,score:{home:number;away:number
  score,provider:"api-football",finalAt,settledAt,
 });
 export function accountFromPaper(picks:DailyPaperPick[],settlements:DailyPaperSettlement[]):DailyPaperAccount{
- const verified=new Map(settlements.filter(x=>x.provider==="api-football").map(x=>[x.pickId,x]));
+ const verified=new Map(settlements.filter(x=>x.provider==="api-football"||x.provider==="the-odds-api").map(x=>[x.pickId,x]));
  const tickets=picks.filter(x=>x.protocol===DAILY_PROTOCOL).map(x=>({...x,settlement:verified.get(x.id)??null}));
  const resolved=tickets.filter(x=>x.settlement!==null).sort((a,b)=>
   ms(a.settlement!.settledAt)-ms(b.settlement!.settledAt)||a.id.localeCompare(b.id));
@@ -264,6 +265,14 @@ export function accountFromPaper(picks:DailyPaperPick[],settlements:DailyPaperSe
 export function confirmForwardPaper(pick:DailyPaperPick,event:PersistedEvent|null,
  states:PersistedEventStateRecord[],asOf:string):DailyPaperSettlement|null{
  if(!event||event.id!==pick.eventId||!Number.isFinite(ms(pick.pickedAt)))return null;
+ if(pick.lane==="PREMATCH_ODDS_CONTROL"){
+  if(pick.quoteProvider!=="the-odds-api"||pick.modelVersion!=="ODDS_PREMATCH_DEVIG_CONTROL_V1"||
+     ms(pick.pickedAt)>=ms(pick.eventStartsAt))return null;
+  const score=certifyPersistedOddsScore(event,states,asOf);
+  if(!score||ms(pick.pickedAt)>=ms(score.capturedAt)||ms(pick.quoteAt)>ms(pick.pickedAt))
+   return null;
+  return {...paperSettlement(pick,score.score,score.capturedAt,asOf),provider:"the-odds-api"};
+ }
  const final=certifyStoredPaperFinal(event,states,asOf);
  if(!final||ms(pick.pickedAt)>=ms(final.capturedAt)||ms(pick.quoteAt)>ms(pick.pickedAt))
   return null;
