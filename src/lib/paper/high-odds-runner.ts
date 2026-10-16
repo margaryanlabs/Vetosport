@@ -45,7 +45,7 @@ export async function runHighOddsTick(input:{
     if(states.length>=500){complete=false;break;}
     const ft=certifyPersistedOddsScore(event,states,input.asOf);
     if(!ft){complete=false;break;}
-    finals.push({eventId:leg.eventId,...ft});
+    finals.push({eventId:leg.eventId,score:ft.score,provider:ft.provider,finalAt:ft.capturedAt});
    }catch{complete=false;report.errors++;break;}
   }
   if(!complete)continue;
