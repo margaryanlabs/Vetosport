@@ -491,3 +491,26 @@ test("Decision inputs and public freshness KPI reject score-after-price leakage"
  assert.match(evidence,/Two independently fresh snapshots are not a causal pair/);
  assert.match(evidence,/Valid ordered score followed by a quote/);
 });
+
+test("Real score-price audit rows show exact causal time and explicitly exclude look-ahead matches",()=>{
+ const builder=read("src/lib/research/historical-observation-ledger.ts");
+ const readiness=read("src/lib/research/evidence-coverage.ts");
+ const page=read("src/app/research/discovery/page.tsx");
+ assert.match(builder,/buildHistoricalObservationLedger/);
+ assert.match(builder,/historicalObservationLedgerSelfcheck/);
+ assert.match(builder,/SCORE_BEFORE_PRICE/);
+ assert.match(builder,/SCORE_AFTER_PRICE/);
+ assert.match(builder,/q\.suspended!==false/);
+ assert.match(builder,/q\.eventId/);
+ assert.match(builder,/sourceClockIndependent:false/);
+ assert.match(builder,/executablePriceVerified:false/);
+ assert.match(builder,/maxShown:12/);
+ assert.match(readiness,/observationLedger:ReturnType<typeof buildHistoricalObservationLedger>/);
+ assert.match(readiness,/const observationLedger=buildHistoricalObservationLedger/);
+ assert.match(readiness,/ledgerSelfcheck\.passed/);
+ assert.match(page,/discoveryObservationLedger/);
+ assert.match(page,/coverage\.observationLedger\.rows\.map/);
+ assert.match(page,/EXCLUDED · FUTURE SCORE/);
+ assert.match(page,/БУКМЕКЕР НЕ УСТАНОВЛЕН/);
+ assert.doesNotMatch(builder,/appendQuotes|appendEventState|appendDecision|appendTruthJournal/);
+});
