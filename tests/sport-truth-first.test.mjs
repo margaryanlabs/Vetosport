@@ -475,3 +475,19 @@ test("In-play market cron is scheduled after live-score ingestion with no extra 
  assert.match(ui,/provider.nearCaptureScoreFixtures/);
  assert.match(report,/asSafeCount\(info.scoreSnapshotsWithin2m\)/);
 });
+
+test("Decision inputs and public freshness KPI reject score-after-price leakage",()=>{
+ const temporal=read("src/lib/live/temporal-data-safety.ts");
+ const evidence=read("src/lib/research/evidence-coverage.ts");
+ assert.match(temporal,/quoteTime>=stateTime/);
+ assert.match(temporal,/input\.state\?\.sourceProvider==="api-football"/);
+ assert.match(temporal,/Date\.parse\(q\.providerLastUpdate!\)>=Date\.parse\(input\.state!\.capturedAt\)/);
+ assert.match(temporal,/Later score cannot authorize a quote/);
+ assert.match(temporal,/Provider's quote source clock cannot be later/);
+ assert.match(temporal,/Untrusted provider score cannot authorize/);
+ assert.match(evidence,/const freshStateTimes=new Map/);
+ assert.match(evidence,/const freshPriceTimes=new Map/);
+ assert.match(evidence,/states\.some\(st=>st<=q&&q-st<=120_000\)/);
+ assert.match(evidence,/Two independently fresh snapshots are not a causal pair/);
+ assert.match(evidence,/Valid ordered score followed by a quote/);
+});
