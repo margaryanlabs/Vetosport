@@ -21,6 +21,14 @@ export type DailyPaperPick={
 export type DailyPaperSettlement={pickId:string;eventId:string;result:"WIN"|"LOSS";
  score:{home:number;away:number};provider:"api-football"|"the-odds-api";finalAt:string;settledAt:string};
 export type DailyPaperTicket=DailyPaperPick&{settlement:DailyPaperSettlement|null};
+export type PaperCohort={
+ id:"VETO_SHADOW"|"LIVE_PRICE_CONTROL"|"PREMATCH_PRICE_CONTROL";
+ label:string;count:number;settled:number;open:number;wins:number;losses:number;
+ net:number;stakeSettled:number;yieldPct:number|null;hitPct:number|null;
+ brier:number|null;wilson95:[number,number]|null;
+ evidenceTier:"PROSPECTIVE_UNCALIBRATED"|"PRICE_DERIVED_CONTROL";
+ minimumSampleReached:boolean;profitabilityValidated:false;
+};
 export type DailyPaperAccount={
  protocol:typeof DAILY_PROTOCOL;mode:"LIVE_FORWARD_PAPER";sharedResearchAccount:true;moneyIsVirtual:true;
  currency:"USD";initialBank:number;stakePerPick:number;dailyCap:number;
@@ -28,7 +36,7 @@ export type DailyPaperAccount={
  net:number;balance:number;reserved:number;available:number;roiPct:number;
  yieldPct:number|null;maxDrawdown:number;daysActive:number;
  points:Array<{at:string;balance:number}>;daily:Array<{day:string;count:number;wins:number;losses:number;pnl:number}>;
- tickets:DailyPaperTicket[];
+ tickets:DailyPaperTicket[];cohorts:PaperCohort[];
 };
 export const paperOutcome=(contract:PaperContract,score:{home:number;away:number}):boolean=>
  paperContractWins(contract,score)===true;
@@ -228,6 +236,48 @@ export const paperSettlement=(pick:DailyPaperPick,score:{home:number;away:number
  result:paperOutcome(pick.contract,score)?"WIN":"LOSS",
  score,provider:"api-football",finalAt,settledAt,
 });
+const paperLane=(p:DailyPaperPick):PaperCohort["id"]=>{
+ if(p.modelVersion==="ODDS_PREMATCH_DEVIG_CONTROL_V1"||p.lane==="PREMATCH_ODDS_CONTROL")
+  return "PREMATCH_PRICE_CONTROL";
+ return p.modelVersion==="QUOTE_IMPLIED_CONTROL_V1"?"LIVE_PRICE_CONTROL":"VETO_SHADOW";
+};
+const cohortLabel=(id:PaperCohort["id"])=>
+ id==="VETO_SHADOW"?"VETO · реальный зафиксированный прогноз":
+ id==="LIVE_PRICE_CONTROL"?"LIVE · контрольная вероятность из котировки":
+ "PRE-MATCH · контрольная вероятность без маржи";
+const wilson=(wins:number,n:number):[number,number]|null=>{
+ if(n===0)return null;
+ const z=1.96,z2=z*z,p=wins/n,den=1+z2/n;
+ const center=(p+z2/(2*n))/den;
+ const delta=z*Math.sqrt((p*(1-p)+z2/(4*n))/n)/den;
+ return [Math.max(0,center-delta),Math.min(1,center+delta)];
+};
+/** Each distinct lane stays separate: market-implied baselines must not
+ * masquerade as an uncorrelated machine model or a statistically proven edge.
+ * Capital remains shared (these are diagnostic subcohorts, not 3 wallets).
+ */
+export function paperCohorts(tickets:DailyPaperTicket[]):PaperCohort[]{
+ const ids=["VETO_SHADOW","LIVE_PRICE_CONTROL","PREMATCH_PRICE_CONTROL"] as const;
+ return ids.map(id=>{
+  const rows=tickets.filter(t=>paperLane(t)===id);
+  const settled=rows.filter(t=>t.settlement!==null);
+  const wins=settled.filter(t=>t.settlement?.result==="WIN").length;
+  const pnl=settled.reduce((n,t)=>n+(
+   t.settlement?.result==="WIN"?t.stake*(t.odds-1):-t.stake),0);
+  const stake=settled.reduce((n,t)=>n+t.stake,0);
+  const valid=settled.filter(t=>Number.isFinite(t.modelProbability)&&t.modelProbability>=0&&t.modelProbability<=1);
+  const brier=valid.length?valid.reduce((n,t)=>n+
+   (t.modelProbability-(t.settlement?.result==="WIN"?1:0))**2,0)/valid.length:null;
+  return{id,label:cohortLabel(id),count:rows.length,settled:settled.length,
+   open:rows.length-settled.length,wins,losses:settled.length-wins,net:pnl,
+   stakeSettled:stake,yieldPct:stake?100*pnl/stake:null,
+   hitPct:settled.length?100*wins/settled.length:null,brier,
+   wilson95:wilson(wins,settled.length),
+   evidenceTier:id==="VETO_SHADOW"?"PROSPECTIVE_UNCALIBRATED":"PRICE_DERIVED_CONTROL",
+   minimumSampleReached:settled.length>=30,profitabilityValidated:false};
+ });
+}
+
 export function accountFromPaper(picks:DailyPaperPick[],settlements:DailyPaperSettlement[]):DailyPaperAccount{
  const verified=new Map(settlements.filter(x=>x.provider==="api-football"||x.provider==="the-odds-api").map(x=>[x.pickId,x]));
  const tickets=picks.filter(x=>x.protocol===DAILY_PROTOCOL).map(x=>({...x,settlement:verified.get(x.id)??null}));
@@ -259,7 +309,7 @@ export function accountFromPaper(picks:DailyPaperPick[],settlements:DailyPaperSe
   net,balance,reserved,available:Math.max(0,balance-reserved),
   roiPct:100*net/INITIAL_PAPER_BANK,yieldPct:stakeSum?100*net/stakeSum:null,
   maxDrawdown,daysActive:dates.length,points:points.slice(-300),daily:daily.slice(0,31),
-  tickets:tickets.sort((a,b)=>ms(b.pickedAt)-ms(a.pickedAt)).slice(0,120)};
+  cohorts:paperCohorts(tickets),tickets:tickets.sort((a,b)=>ms(b.pickedAt)-ms(a.pickedAt)).slice(0,120)};
 }
 /** Certificates must come from exact-ID provider FT states already persisted. */
 export function confirmForwardPaper(pick:DailyPaperPick,event:PersistedEvent|null,
@@ -307,6 +357,13 @@ export function dailyPaperSelfcheck(){
   {name:"Future-forward quote/model/state yields exact paper contract",pass:candidate?.contract==="FT_HOME"},
   {name:"Canonical shadow model maps to bookmaker h2h",pass:candidate?.modelVersion==="football.goal-state.v1"},
   {name:"Shared virtual bankroll starts at 200",pass:accountFromPaper([],[]).balance===200},
+  {name:"Control and shadow research never blended into one edge claim",pass:(()=>{
+   const report=accountFromPaper([pick,{...pick,id:"market",modelVersion:"QUOTE_IMPLIED_CONTROL_V1",
+    lane:"LIVE_OBSERVED"}],[ft!,{...ft!,pickId:"market",result:"LOSS"}]);
+   return report.cohorts.find(c=>c.id==="VETO_SHADOW")?.wins===1&&
+    report.cohorts.find(c=>c.id==="LIVE_PRICE_CONTROL")?.losses===1&&
+    report.cohorts.every(c=>!c.profitabilityValidated);
+  })()},
   {name:"Provider FT changes 200 by stake-times-price, NOT real money",pass:bank.balance===204&&bank.reserved===0&&bank.net===4},
   {name:"Before FT, exposure is locked but earnings are absent",pass:accountFromPaper([pick],[]).balance===200&&accountFromPaper([pick],[]).available===196},
   {name:"Unknown suspension rejected",pass:proposeForwardPaper({...args,quotes:[{...quote,suspended:undefined}]})===null},
