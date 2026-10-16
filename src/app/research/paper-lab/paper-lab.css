@@ -103,3 +103,26 @@ html[data-veto-sport-appearance="light"] .paperDailySourceStatus article.blocked
 html[data-veto-sport-appearance="light"] .paperDailySourceStatus :is(strong,small,span),
 html[data-veto-sport-appearance="light"] .paperDailyBlocked :is(strong,span){color:#2b3a4e!important}
 html[data-veto-sport-appearance="light"] .paperDailyBlocked>div span{background:#f5f7fa!important}
+
+/* Research tracks are diagnostic cohorts of ONE shared $200 virtual account. */
+.paperDailyCohorts{margin:18px 0 16px}
+.paperDailyCohorts>header{margin-bottom:15px}
+.paperDailyCohorts>header>span{font-size:10px;color:#a7abb5;letter-spacing:.11em;font-weight:700}
+.paperDailyCohorts>header h4{font-size:20px;color:#f4f4f6;margin:10px 0}
+.paperDailyCohorts>header p{font-size:11px;color:#afb2bb;line-height:1.6;max-width:920px}
+.paperDailyCohortGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.paperDailyCohortGrid article{border:1px solid rgba(255,255,255,.14);background:#18181b;border-radius:11px;padding:17px;display:grid;gap:8px;min-width:0}
+.paperDailyCohortGrid article>small{color:#c8a4ab;font-size:9px;letter-spacing:.08em}
+.paperDailyCohortGrid h5{margin:0 0 4px;font-size:13px;color:#eef0f2;line-height:1.45}
+.paperDailyCohortGrid article>strong{font:760 27px/1.4 var(--font-veto-tech),monospace;color:#f2f2f4}
+.paperDailyCohortGrid article>div{display:flex;justify-content:space-between;gap:10px;border-top:1px solid rgba(255,255,255,.07);padding-top:9px}
+.paperDailyCohortGrid article>div span{font-size:10px;color:#aeb2bc;line-height:1.6}
+.paperDailyCohortGrid article>div b{font-size:11px;color:#f2f3f5;text-align:right;white-space:nowrap}
+.paperDailyCohortGrid article>footer{font-size:10px;color:#bca9ad;line-height:1.5;margin-top:5px}
+@media(max-width:960px){.paperDailyCohortGrid{grid-template-columns:1fr}}
+html[data-veto-sport-appearance="light"] .paperDailyCohorts>header h4,
+html[data-veto-sport-appearance="light"] .paperDailyCohortGrid :is(h5,strong,b){color:#263648!important}
+html[data-veto-sport-appearance="light"] .paperDailyCohortGrid article{background:#fff!important;border-color:#d3dbe4!important}
+html[data-veto-sport-appearance="light"] .paperDailyCohorts :is(p,span,small,footer){color:#566679!important}
+html[data-veto-sport-appearance="light"] .paperDailyCohortGrid article>strong.positive{color:#16794b!important}
+html[data-veto-sport-appearance="light"] .paperDailyCohortGrid article>strong.negative{color:#b12743!important}
