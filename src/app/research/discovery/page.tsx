@@ -135,6 +135,44 @@ export default function DiscoveryPage(){
              <span><b>03 / ИСПОЛНЕНИЕ</b> Ни один интервал не удостоверяет доступность цены, прибыльность или результат матча.</span>
            </div>
          </section>
+         <section className="discoveryObservationLedger" aria-label="Исторический журнал доказательств счёт и цена">
+           <div className="discoveryObservationIntro">
+             <div>
+               <span className="discoveryLagEyebrow">04 / HISTORICAL SOURCE AUDIT</span>
+               <h3>Каждая цена имеет время.<br/><em>Каждый счёт — своё.</em></h3>
+               <p>Примеры из реально сохранённой истории. Сопоставляем только один канонический матч и разницу времени не более 120 секунд. Отмечаем, когда счёт был записан позже цены — такая пара не годится для ретроспективного прогноза.</p>
+             </div>
+             <div className="discoveryObservationStats">
+               <div><small>ОТ НАБЛЮДЕНИЯ К ЦЕНЕ</small><strong>{coverage.observationLedger?.causalExamples??0}</strong></div>
+               <div><small>ИСКЛЮЧЕНЫ: БУДУЩИЙ СЧЁТ</small><strong>{coverage.observationLedger?.lookaheadExamples??0}</strong></div>
+             </div>
+           </div>
+           {!coverage.observationLedger?.rows.length?
+             <p className="discoveryEvidenceEmpty">В прочитанной выборке пока нет подходящих примеров. Мы не добавляем синтетические матчи и цены.</p>:
+             <div className="discoveryObservationGrid">
+               {coverage.observationLedger.rows.map(item=><article className={"discoveryObservationCard "+(item.status==="SCORE_AFTER_PRICE"?"excluded":"causal")} key={item.eventId}>
+                 <header>
+                   <span>{item.status==="SCORE_BEFORE_PRICE"?"RECORDED SCORE → PRICE":"EXCLUDED · FUTURE SCORE"}</span>
+                   <b>{item.deltaSeconds} сек</b>
+                 </header>
+                 <small>{item.competition}</small>
+                 <h4>{item.matchLabel}</h4>
+                 <div className="discoveryObservationEvidence">
+                   <div><span>СЧЁТ · API-FOOTBALL</span><strong>{item.score.home} : {item.score.away}</strong>
+                     <small>{new Date(item.scoreAt).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit",timeZone:"UTC"})} UTC</small></div>
+                   <span className="discoveryObservationArrow">{item.status==="SCORE_BEFORE_PRICE"?"→":"←"}</span>
+                   <div><span>ЗАПИСАННАЯ ЦЕНА</span><strong>{item.decimalOdds.toFixed(2)}</strong>
+                     <small>{new Date(item.quoteAt).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit",timeZone:"UTC"})} UTC</small></div>
+                 </div>
+                 <footer>
+                   <span>{item.selectionLabel} · {item.marketKey}</span>
+                   <small>{item.bookmakerIdentified?"Букмекер назван источником":"БУКМЕКЕР НЕ УСТАНОВЛЕН"} · {item.priceSource}</small>
+                   {item.providerUpdateAfterScore===false&&<small>ВНИМАНИЕ: время обновления цены старше снимка счёта</small>}
+                 </footer>
+               </article>)}
+             </div>}
+           <p className="discoveryObservationCaveat">Показаны максимум {coverage.observationLedger?.maxShown??12} примеров, не все матчи. Время — момент записи шлюзом, независимая синхронизация источников не удостоверена. Ни одна котировка не подтверждена как доступная к исполнению; историческая близость не доказывает точность или доходность.</p>
+         </section>
          <div className="discoveryGates" aria-label="Этапы готовности спортивных данных">
            {coverage.gates.map((gate,i)=><article key={gate.id} className={"discoveryGate discoveryGate-"+gate.stage}>
              <div className="discoveryGateHead"><span>{String(i+1).padStart(2,"0")}</span><h3>{gate.label}</h3><b>{gate.stage==="blocked"?"НЕ ГОТОВО":gate.stage==="partial"?"ЧАСТИЧНО":"ГОТОВО"}</b></div>
