@@ -40,6 +40,7 @@ export async function GET(req:Request){
    reason:"NO_UNVERIFIED_NATIVE_EPL_GAMES",quotaCharged:0},{headers});
   const url=new URL("https://api.the-odds-api.com/v4/sports/soccer_epl/scores");
   url.searchParams.set("daysFrom","3");
+  url.searchParams.set("eventIds",candidates.slice(0,30).map(e=>e.providerRefs!["the-odds-api"]).join(","));
   url.searchParams.set("apiKey",process.env.THE_ODDS_API_KEY);
   const response=await fetch(url.toString(),{cache:"no-store",
    signal:AbortSignal.timeout(14_000)});
