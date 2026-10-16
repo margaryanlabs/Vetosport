@@ -20,27 +20,49 @@ export async function GET(req:Request){
    reason:"OPERATOR_OPT_IN_OR_KEY_REQUIRED",quotaCharged:0},{headers});
  const store=getPersistence(),now=new Date(),asOf=now.toISOString();
  try{
-  const recent=await store.listRecentProviderHealth({providerId:"the-odds-api-scores",limit:1});
-  if(recent[0]?.quotaRemaining!==undefined&&recent[0].quotaRemaining!==null&&
-     recent[0].quotaRemaining<=30)
-   return NextResponse.json({ok:true,skipped:true,reason:"SCORE_QUOTA_RESERVE",quotaCharged:0},{headers});
+  const [paperPicks,paperSettled,quotaHealth]=await Promise.all([
+   store.listPaperDailyPicks(900),store.listPaperDailySettlements(900),
+   store.listRecentProviderHealth({providerId:"the-odds-api",limit:1}),
+  ]);
+  if(paperPicks.length>=900||paperSettled.length>=900)
+   return NextResponse.json({ok:false,skipped:true,reason:"PAPER_HISTORY_CAPPED",
+    quotaCharged:0},{status:503,headers});
+  const settledIds=new Set(paperSettled.map(x=>x.pickId));
   const DAY=86_400_000;
-  const groups=await Promise.all([1,2,3].map(i=>store.listRecentEvents({
-   from:new Date(now.getTime()-i*DAY).toISOString(),
-   to:new Date(now.getTime()-(i-1)*DAY).toISOString(),
-   statuses:["scheduled","live"],limit:100,
-  })));
-  const capped=groups.some(g=>g.length>=100);
-  // No eligible native-ID scheduled EPL games: save the 2-credit call.
-  const candidates=[...new Map(groups.flat().filter(e=>
-    e.event.sport==="football"&&e.canonicalKey.startsWith("football::epl::")&&
+  // Source truth: only previously committed open PREMATCH research, never
+  // unrelated EPL fixtures. No research => zero expensive API requests.
+  const outstanding=paperPicks.filter(p=>
+   p.lane==="PREMATCH_ODDS_CONTROL"&&!settledIds.has(p.id)&&
+   Date.parse(p.eventStartsAt)>=now.getTime()-3*DAY&&
+   Date.parse(p.eventStartsAt)<=now.getTime()-60*60_000).slice(0,30);
+  if(!outstanding.length)return NextResponse.json({ok:true,skipped:true,
+   reason:"NO_DUE_PAPER_FT_CERTIFICATES",quotaCharged:0},{headers});
+  // Consult the existing EPL odds quota budget. Missing/stale remaining-credit
+  // proof fails closed: no silent spending on an unfunded provider.
+  const quota=quotaHealth[0];
+  if(!quota||!Number.isInteger(quota.quotaRemaining)||
+     quota.quotaRemaining!<=40||
+     Date.parse(quota.checkedAt)<now.getTime()-6*3600_000)
+   return NextResponse.json({ok:true,skipped:true,reason:"SOURCE_QUOTA_NOT_PROVEN_SAFE",
+    quotaCharged:0},{headers});
+  const fetched=await Promise.all(outstanding.map(p=>store.getEventById(p.eventId)));
+  const candidates=[...new Map(fetched.filter((e):e is NonNullable<typeof e>=>
+    !!e&&e.event.status!=="finished"&&e.event.sport==="football"&&
+    e.canonicalKey.startsWith("football::epl::")&&
     /^[a-f0-9]{32}$/i.test(e.providerRefs?.["the-odds-api"]??"")&&
-    Date.parse(e.event.startsAt)<=now.getTime()-60*60_000).map(e=>[e.id,e])).values()];
-  if(!candidates.length)return NextResponse.json({ok:true,skipped:true,
-   reason:"NO_UNVERIFIED_NATIVE_EPL_GAMES",quotaCharged:0},{headers});
+    Date.parse(e.event.startsAt)<=now.getTime()-60*60_000)
+    .map(e=>[e.id,e])).values()];
+  const ownership=new Map<string,number>();
+  for(const e of candidates){
+   const id=e.providerRefs!["the-odds-api"];
+   ownership.set(id,(ownership.get(id)??0)+1);
+  }
+  const safeCandidates=candidates.filter(e=>ownership.get(e.providerRefs!["the-odds-api"])===1);
+  if(!safeCandidates.length)return NextResponse.json({ok:true,skipped:true,
+   reason:"PAPER_FT_SOURCE_ID_UNAVAILABLE_OR_AMBIGUOUS",quotaCharged:0},{headers});
   const url=new URL("https://api.the-odds-api.com/v4/sports/soccer_epl/scores");
   url.searchParams.set("daysFrom","3");
-  url.searchParams.set("eventIds",candidates.slice(0,30).map(e=>e.providerRefs!["the-odds-api"]).join(","));
+  url.searchParams.set("eventIds",safeCandidates.slice(0,30).map(e=>e.providerRefs!["the-odds-api"]).join(","));
   url.searchParams.set("apiKey",process.env.THE_ODDS_API_KEY);
   const response=await fetch(url.toString(),{cache:"no-store",
    signal:AbortSignal.timeout(14_000)});
@@ -60,7 +82,7 @@ export async function GET(req:Request){
   }
   for(const [id,items] of uniqueById)if(items.length>1)duplicateSourceIds.add(id);
   let certified=0,failures=0,unmatched=0;
-  for(const e of candidates){
+  for(const e of safeCandidates){
    const id=e.providerRefs?.["the-odds-api"];
    if(!id||duplicateSourceIds.has(id)){unmatched++;continue;}
    const scores=uniqueById.get(id);
@@ -88,12 +110,12 @@ export async function GET(req:Request){
    status:failures?"degraded":"healthy",checkedAt:asOf,
    quotaRemaining,message:failures?"Some exact EPL FT writes failed.":"Exact provider-ID EPL FT lookup finished.",
    metadata:{provider:"the-odds-api",sportKey:"soccer_epl",costCredits:2,
-    candidates:candidates.length,certified,unmatched,failures,
-    droppedDuplicateIds:duplicateSourceIds.size,windowMayBeCapped:capped},
+    candidates:safeCandidates.length,certified,unmatched,failures,
+    droppedDuplicateIds:duplicateSourceIds.size,windowMayBeCapped:false},
   });
   return NextResponse.json({ok:failures===0,source:"the-odds-api.scores",
    researchOnly:true,providerCalls:1,nominalCredits:2,
-   candidateGames:candidates.length,certified,unmatched,failures,capped},
+   candidateGames:safeCandidates.length,certified,unmatched,failures,capped:false},
    {status:failures?503:200,headers});
  }catch{
   return NextResponse.json({ok:false,error:"ODDS_SCORES_SOURCE_UNAVAILABLE",
