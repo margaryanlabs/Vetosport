@@ -14,7 +14,8 @@ export type DailyPaperPick={
  match:string;competition:string;contract:PaperContract;marketKey:string;selectionKey:string;
  odds:number;stake:number;modelProbability:number;modelVersion:string;
  quoteProvider:string;bookmaker:string;quoteAt:string;providerUpdatedAt:string;
- stateAt:string;modelAt:string;pickedAt:string;
+ stateAt:string|null;modelAt:string|null;pickedAt:string;
+ lane?:"LIVE_OBSERVED"|"PREMATCH_ODDS_CONTROL";
 };
 export type DailyPaperSettlement={pickId:string;eventId:string;result:"WIN"|"LOSS";
  score:{home:number;away:number};provider:"api-football";finalAt:string;settledAt:string};
@@ -153,6 +154,73 @@ export function explainPaperBlock(input:Parameters<typeof proposeForwardPaper>[0
  return "TIMESTAMP_OR_MODEL_PROOF_INCOMPLETE";
 }
 
+/** True prospective pre-kickoff scientific CONTROL: the existing bookmaker
+ * 1X2 price is the baseline; we do not invent missing predictive models.
+ * The quoted bookmaker does not provide a reliable suspended flag, so this
+ * is intentionally an indicative-price PAPER observation, NOT executable.
+ * Full three-way 1X2 of ONE bookmaker + observation is required for de-vig.
+ */
+export function proposePrematchPaper(input:{
+ event:PersistedEvent;quotes:PersistedMarketQuoteRecord[];asOf:string;
+}):PaperProposal|null{
+ const {event}=input,now=ms(input.asOf),starts=ms(event.event.startsAt);
+ const home=event.event.home?.name,away=event.event.away?.name;
+ if(!Number.isFinite(now)||!Number.isFinite(starts)||
+  event.event.sport!=="football"||event.event.status!=="scheduled"||
+  !event.canonicalKey.startsWith("football::epl::")||
+  !/^[a-f0-9]{32}$/i.test(event.providerRefs?.["the-odds-api"]??"")||
+  starts-now<30*60_000||starts-now>48*3_600_000||
+  !home||!away||home.trim().toLowerCase()===away.trim().toLowerCase())return null;
+ const candidate=input.quotes.filter(q=>q.eventId===event.id&&q.provider==="the-odds-api"&&
+  q.marketKey==="soccer_epl.h2h"&&q.suspended!==true&&
+  ageValid(q.capturedAt,now,4*3_600_000)&&
+  ageValid(q.providerLastUpdate??"",now,4*3_600_000)&&
+  ms(q.providerLastUpdate!)<=ms(q.capturedAt)&&ms(q.capturedAt)<starts&&
+  q.decimalOdds>1.01&&q.decimalOdds<=20&&Number.isFinite(q.decimalOdds)&&
+  q.bookmaker.trim().length>1);
+ const groups=new Map<string,PersistedMarketQuoteRecord[]>();
+ for(const quote of candidate){
+  const id=quote.bookmaker+"|"+quote.capturedAt;
+  const entries=groups.get(id)??[];entries.push(quote);groups.set(id,entries);
+ }
+ // A declared preference for a reference bookmaker makes provider selection
+ // repeatable; other bookmakers are deterministic fallbacks, not best-price
+ // mining across the same match.
+ const grouped=[...groups.entries()].sort((a,b)=>{
+  const x=a[1][0],y=b[1][0];
+  const pb=(q:PersistedMarketQuoteRecord)=>q.bookmaker.toLowerCase()==="pinnacle"?0:1;
+  return pb(x)-pb(y)||x.bookmaker.localeCompare(y.bookmaker)||
+   ms(y.capturedAt)-ms(x.capturedAt);
+ });
+ const norm=(v:string)=>v.trim().replace(/\s+/g," ").toLowerCase();
+ for(const [,quotes] of grouped){
+  // Exact sportsbook trio, no mixed quote timestamps/bookmakers.
+  const homeQuote=quotes.filter(q=>norm(q.selectionLabel)===norm(home));
+  const awayQuote=quotes.filter(q=>norm(q.selectionLabel)===norm(away));
+  const drawQuote=quotes.filter(q=>norm(q.selectionLabel)==="draw");
+  if(homeQuote.length!==1||awayQuote.length!==1||drawQuote.length!==1)continue;
+  const [h,a,d]=[homeQuote[0],awayQuote[0],drawQuote[0]];
+  if([h,a,d].some(q=>q.suspended===true))continue;
+  const inverse=[1/h.decimalOdds,1/a.decimalOdds,1/d.decimalOdds],sum=inverse.reduce((p,q)=>p+q,0);
+  // Incomplete, anomalous or incompatible books should not be interpreted
+  // as fair three-way prices. A moderate overround is allowed.
+  if(!Number.isFinite(sum)||sum<1||sum>1.4)continue;
+  const chosen=h.decimalOdds<=a.decimalOdds?h:a;
+  const p=(chosen===h?inverse[0]:inverse[1])/sum;
+  if(p<=0||p>=1)continue;
+  return{protocol:DAILY_PROTOCOL,eventId:event.id,eventStartsAt:event.event.startsAt,
+   dayUTC:paperDay(input.asOf),match:`${home} — ${away}`,competition:event.event.competition,
+   contract:chosen===h?"FT_HOME":"FT_AWAY",
+   marketKey:chosen.marketKey,selectionKey:chosen.selectionKey,
+   odds:chosen.decimalOdds,stake:DAILY_PAPER_STAKE,
+   modelProbability:p,modelVersion:"ODDS_PREMATCH_DEVIG_CONTROL_V1",
+   quoteProvider:"the-odds-api",bookmaker:chosen.bookmaker,
+   quoteAt:chosen.capturedAt,providerUpdatedAt:chosen.providerLastUpdate!,
+   stateAt:null,modelAt:null,pickedAt:input.asOf,lane:"PREMATCH_ODDS_CONTROL"};
+ }
+ return null;
+}
+
 export const paperSettlement=(pick:DailyPaperPick,score:{home:number;away:number},
  finalAt:string,settledAt:string):DailyPaperSettlement=>({
  pickId:pick.id,eventId:pick.eventId,
@@ -242,6 +310,24 @@ export function dailyPaperSelfcheck(){
   {name:"Unverified generic final cannot auto-settle",pass:confirmForwardPaper(pick,
    {...event,event:{...event.event,status:"finished"}},[state],"2026-10-15T15:00:00Z")===null},
   {name:"No guessed results for unsettled selection",pass:accountFromPaper([pick],[]).settled===0},
+  {name:"Pre-match paper selects a complete single-bookmaker three-way market, not best retrospective price",pass:(()=>{
+   const e={...event,providerRefs:{"the-odds-api":"a".repeat(32)},canonicalKey:"football::epl::test",
+    event:{...event.event,status:"scheduled" as const,startsAt:"2026-10-15T15:00:00Z"}};
+   const quotes=[{...quote,provider:"the-odds-api",marketKey:"soccer_epl.h2h",
+    capturedAt:"2026-10-15T12:59:00Z",providerLastUpdate:"2026-10-15T12:58:00Z",
+    suspended:undefined,selectionKey:"a",selectionLabel:"Alpha",decimalOdds:1.8},
+    {...quote,provider:"the-odds-api",marketKey:"soccer_epl.h2h",
+    capturedAt:"2026-10-15T12:59:00Z",providerLastUpdate:"2026-10-15T12:58:00Z",
+    suspended:undefined,selectionKey:"b",selectionLabel:"Beta",decimalOdds:4.5},
+    {...quote,provider:"the-odds-api",marketKey:"soccer_epl.h2h",
+    capturedAt:"2026-10-15T12:59:00Z",providerLastUpdate:"2026-10-15T12:58:00Z",
+    suspended:undefined,selectionKey:"draw",selectionLabel:"Draw",decimalOdds:3.5}];
+   const attempt=proposePrematchPaper({event:e,quotes,asOf:"2026-10-15T13:04:00Z"});
+   return attempt?.lane==="PREMATCH_ODDS_CONTROL"&&
+     attempt.modelVersion==="ODDS_PREMATCH_DEVIG_CONTROL_V1"&&
+     attempt.contract==="FT_HOME"&&attempt.stateAt===null&&
+     proposePrematchPaper({event:e,quotes:quotes.slice(0,2),asOf:"2026-10-15T13:04:00Z"})===null;
+  })()},
   {name:"Provider 59 FT result is accepted; provider 35 second-half rejected",pass:(()=>{
    const q={...quote,provider:"api-football-live-odds",marketKey:"api-football.live.59",
     selectionKey:"home",selectionLabel:"Home"};
