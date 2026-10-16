@@ -174,12 +174,13 @@ export class SupabaseRestPersistence implements VetoPersistence {
     query.append("starts_at", `lte.${to}`);
     query.set(
       "select",
-      "id,canonical_key,sport,competition_name,starts_at,status,home_participant_id,home_participant_name,away_participant_id,away_participant_name",
+      "id,canonical_key,sport,competition_name,starts_at,status,home_participant_id,home_participant_name,away_participant_id,away_participant_name,provider_refs",
     );
 
     const rows = await this.request<Array<{
       id: string;
       canonical_key: string;
+      provider_refs?: Record<string,string>|null;
       sport: SportEvent["sport"];
       competition_name: string;
       starts_at: string;
@@ -196,6 +197,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
     return rows.map((row) => ({
       id: row.id,
       canonicalKey: row.canonical_key,
+      providerRefs:row.provider_refs??undefined,
       event: {
         id: row.id,
         sport: row.sport,
@@ -234,12 +236,13 @@ export class SupabaseRestPersistence implements VetoPersistence {
     query.set("limit", String(Math.min(100, Math.max(1, input.limit ?? 30))));
     query.set(
       "select",
-      "id,canonical_key,sport,competition_name,starts_at,status,home_participant_id,home_participant_name,away_participant_id,away_participant_name",
+      "id,canonical_key,sport,competition_name,starts_at,status,home_participant_id,home_participant_name,away_participant_id,away_participant_name,provider_refs",
     );
 
     const rows = await this.request<Array<{
       id: string;
       canonical_key: string;
+      provider_refs?: Record<string,string>|null;
       sport: SportEvent["sport"];
       competition_name: string;
       starts_at: string;
@@ -253,6 +256,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
     return rows.map((row) => ({
       id: row.id,
       canonicalKey: row.canonical_key,
+      providerRefs:row.provider_refs??undefined,
       event: {
         id: row.id,
         sport: row.sport,
@@ -281,12 +285,13 @@ export class SupabaseRestPersistence implements VetoPersistence {
     query.set("limit", "1");
     query.set(
       "select",
-      "id,canonical_key,sport,competition_name,starts_at,status,home_participant_id,home_participant_name,away_participant_id,away_participant_name",
+      "id,canonical_key,sport,competition_name,starts_at,status,home_participant_id,home_participant_name,away_participant_id,away_participant_name,provider_refs",
     );
 
     const rows = await this.request<Array<{
       id: string;
       canonical_key: string;
+      provider_refs?: Record<string,string>|null;
       sport: SportEvent["sport"];
       competition_name: string;
       starts_at: string;
@@ -303,6 +308,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
     return {
       id: row.id,
       canonicalKey: row.canonical_key,
+      providerRefs:row.provider_refs??undefined,
       event: {
         id: row.id,
         sport: row.sport,
