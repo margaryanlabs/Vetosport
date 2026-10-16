@@ -78,7 +78,9 @@ export async function runDailyPaperTick(input:{
  for(const event of events){
   try{
    if(event.event.status==="scheduled"){
-    const quote=await store.listRecentQuotesForEvents({eventIds:[event.id],limit:500});
+    const quote=await store.listRecentQuotesForEvents({eventIds:[event.id],limit:500,
+      provider:"the-odds-api",marketKey:"soccer_epl.h2h",
+      capturedSince:new Date(Date.parse(input.asOf)-4*3_600_000).toISOString()});
     if(quote.length>=500){report.blockedBy.PREMATCH_QUOTES_CAPPED=(report.blockedBy.PREMATCH_QUOTES_CAPPED??0)+1;continue;}
     const proposal=proposePrematchPaper({event,quotes:quote,asOf:input.asOf});
     if(proposal)proposals.push(proposal);
