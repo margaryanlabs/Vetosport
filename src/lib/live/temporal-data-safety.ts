@@ -34,7 +34,8 @@ export function temporalDataSafety(input:{
  const started=Date.parse(input.event.event.startsAt);
  const kickoffAge=Number.isFinite(now)&&Number.isFinite(started)?now-started:NaN;
  const contextReady=input.event.event.sport==="football"&&
-  input.event.event.status==="live"&&input.state?.state.status==="live"&&
+  input.event.event.status==="live"&&input.state?.eventId===input.event.id&&
+  input.state?.sourceProvider==="api-football"&&input.state?.state.status==="live"&&
   Number.isFinite(kickoffAge)&&kickoffAge>=0&&kickoffAge<=4*3600000;
  const scoreAgeSeconds=input.state?age(input.state.capturedAt,now):null;
  const shadowStateReady=contextReady&&scoreAgeSeconds!==null&&scoreAgeSeconds<=45*60;
@@ -47,20 +48,29 @@ export function temporalDataSafety(input:{
   const quoteTime=Date.parse(q.capturedAt);
   const stateTime=input.state?Date.parse(input.state.capturedAt):NaN;
   const quoteAge=age(q.capturedAt,now);
-  return quoteAge!==null&&quoteAge<=seconds&&
-   Number.isFinite(stateTime)&&Math.abs(quoteTime-stateTime)<=seconds*1000;
+  // Always use information available when the market was observed. The
+  // previous symmetric absolute difference allowed a score fetched AFTER a
+  // quote to authorize a retrospective model decision (look-ahead bias).
+  // Gateway timestamps still do not certify independent source clocks.
+  const upstream=q.providerLastUpdate?Date.parse(q.providerLastUpdate):NaN;
+  return quoteAge!==null&&quoteAge<=seconds&&Number.isFinite(stateTime)&&
+   quoteTime>=stateTime&&quoteTime-stateTime<=seconds*1000&&
+   (!q.providerLastUpdate||(Number.isFinite(upstream)&&upstream<=quoteTime));
  };
  const eligibleShadowQuotes=shadowStateReady?
    prices.filter(q=>aligned(q,45*60)):[];
  const eligibleLiveQuotes=liveStateReady?prices.filter(q=>
   aligned(q,120)&&hasBookmaker(q)&&
-  age(q.providerLastUpdate,now)!==null&&age(q.providerLastUpdate,now)!<=120):[];
+  age(q.providerLastUpdate,now)!==null&&age(q.providerLastUpdate,now)!<=120&&
+  // A price last changed before the score was observed cannot certify that
+  // the bookmaker has incorporated the newly observed game state.
+  Date.parse(q.providerLastUpdate!)>=Date.parse(input.state!.capturedAt)):[];
  const blockers=[
   ...(!contextReady?["Live status, realistic kickoff age or current regulation play not confirmed."]:[]),
-  ...(!shadowStateReady?["No usable game-state snapshot within 45 minutes."]:[]),
-  ...(eligibleShadowQuotes.length===0?["No temporally aligned and active quote within 45 minutes for shadow research."]:[]),
+  ...(!shadowStateReady?["No trusted live game-state snapshot within 45 minutes."]:[]),
+  ...(eligibleShadowQuotes.length===0?["No causal score-before-price observation within 45 minutes for shadow research."]:[]),
   ...(!liveStateReady?["No verified game-state capture within two minutes."]:[]),
-  ...(eligibleLiveQuotes.length===0?["No two-minute provider-timestamped bookmaker quote from The Odds API for the same event."]:[]),
+  ...(eligibleLiveQuotes.length===0?["No source-timestamped identifiable bookmaker price newer than its linked score within two minutes."]:[]),
  ];
  return{shadowObservationReady:shadowStateReady&&eligibleShadowQuotes.length>0,
   liveExecutionInputsReady:liveStateReady&&eligibleLiveQuotes.length>0,
@@ -105,6 +115,26 @@ export function temporalDataSafetySelfcheck(){
     !temporalDataSafety({event,quotes:[quote],at:now}).shadowObservationReady},
   {name:"Known bookmaker cannot compensate for missing upstream timestamp",passed:
     !gate(state,[{...quote,providerLastUpdate:undefined}]).liveExecutionInputsReady},
+  {name:"Later score cannot authorize a quote observed before it",
+   passed:(()=>{
+    const futureScore={...state,capturedAt:"2026-10-14T11:59:50Z"};
+    const result=gate(futureScore);
+    return !result.shadowObservationReady&&!result.liveExecutionInputsReady&&
+      result.eligibleShadowQuotes.length===0;
+   })()},
+  {name:"Foreign game-state source cannot authorize another event",
+   passed:!gate({...state,eventId:"foreign-fixture"}).shadowObservationReady},
+  {name:"Untrusted provider score cannot authorize the quote",
+   passed:!gate({...state,sourceProvider:"other"}).shadowObservationReady},
+  {name:"Provider's quote source clock cannot be later than the capture",
+   passed:!gate(state,[{...quote,providerLastUpdate:"2026-10-14T11:59:55Z"}]).shadowObservationReady},
+  {name:"Bookmaker quote not updated since score cannot authorize live execution",
+   passed:!gate(state,[{...quote,providerLastUpdate:"2026-10-14T11:59:20Z"}]).liveExecutionInputsReady},
+  {name:"Price captured after a trusted score can be research evidence only",
+   passed:gate(state,[{...quote,provider:"api-football-live-odds",bookmaker:"unknown",providerLastUpdate:undefined}])
+    .shadowObservationReady&&
+    !gate(state,[{...quote,provider:"api-football-live-odds",bookmaker:"unknown",providerLastUpdate:undefined}])
+      .liveExecutionInputsReady},
  ];
  return{passed:tests.every(t=>t.passed),tests};
 }
