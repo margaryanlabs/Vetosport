@@ -233,7 +233,35 @@ export function highOddsSelfcheck(){
  const finals=t.legs.map(l=>({eventId:l.eventId,score:{home:1,away:1},
   provider:"the-odds-api" as const,finalAt:"2026-10-17T20:00:00Z"}));
  const settled=settleHighOddsSlip(t,finals,"2026-10-17T22:00:00Z");
+ const event:PersistedEvent={
+  id:"event-99",canonicalKey:"football::epl::fixture",
+  providerRefs:{"the-odds-api":"a".repeat(32)},
+  event:{id:"99",sport:"football",competition:"Premier League",
+   startsAt:"2026-10-17T16:30:00Z",status:"scheduled",
+   home:{id:"a",name:"Alpha"},away:{id:"b",name:"Beta"}},
+ };
+ const baseQuote:PersistedMarketQuoteRecord={
+  eventId:"event-99",provider:"the-odds-api",bookmaker:"Pinnacle",
+  marketKey:"soccer_epl.h2h",selectionKey:"Alpha",selectionLabel:"Alpha",
+  decimalOdds:2.2,capturedAt:"2026-10-16T11:45:00Z",
+  providerLastUpdate:"2026-10-16T11:44:00Z",suspended:undefined,
+ };
+ const trio=[baseQuote,{...baseQuote,selectionKey:"Draw",selectionLabel:"Draw",decimalOdds:3.4},
+  {...baseQuote,selectionKey:"Beta",selectionLabel:"Beta",decimalOdds:3.8}];
  const tests=[
+  {name:"Native bookmaker three-way market produces only forward indicative leg",
+   pass:highOddsLegFromEvidence({event,quotes:trio,asOf})?.contract==="FT_DRAW"},
+  {name:"Two-way incomplete quote is not a bookmaker-confirmed three-way source",
+   pass:highOddsLegFromEvidence({event,quotes:trio.slice(0,2),asOf})===null},
+  {name:"Stale source price cannot become a paper ticket",
+   pass:highOddsLegFromEvidence({event,quotes:trio.map(q=>({...q,
+    providerLastUpdate:"2026-10-15T00:00:00Z"})),asOf})===null},
+  {name:"Ineligible event with already-finished status is never paper-planned",
+   pass:highOddsLegFromEvidence({event:{...event,event:{...event.event,status:"finished"}},
+    quotes:trio,asOf})===null},
+  {name:"Same fixture twice within one combo is rejected rather than using multiplied correlated odds",
+   pass:settleHighOddsSlip({...t,legs:[t.legs[0],t.legs[0]]},finals,
+    "2026-10-17T22:00:00Z")===null},
   {name:"High-odds bands may include distinct scenarios sharing fixtures across tickets",
    pass:selected.length>=2&&selected.every(x=>new Set(x.legs.map(l=>l.eventId)).size===x.legs.length)},
   {name:"No unlimited correlated fixture exposure",pass:(()=>{
