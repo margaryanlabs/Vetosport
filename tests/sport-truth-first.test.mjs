@@ -632,3 +632,15 @@ test("Dedicated half-hour paper cron runs independently of model inference, sele
  assert.match(schedules,/\/api\/cron\/paper-research/);
  assert.doesNotMatch(cron,/THE_ODDS_API_KEY|API_FOOTBALL_KEY|placeWager|executeBet/);
 });
+
+test("Virtual paper bankroll separates uncalibrated VETO research from price-derived control baselines",()=>{
+ const engine=read("src/lib/paper/daily-research.ts");
+ const panel=read("src/components/DailyPaperResearchPanel.tsx");
+ assert.match(engine,/paperCohorts/);
+ assert.match(engine,/minimumSampleReached:settled.length>=30/);
+ assert.match(engine,/profitabilityValidated:false/);
+ assert.match(engine,/wilson\(/);
+ assert.match(panel,/SCIENTIFIC SCOREBOARD/);
+ assert.match(panel,/95% Wilson win-rate/);
+ assert.match(panel,/cohort.minimumSampleReached/);
+});
