@@ -61,6 +61,7 @@ const target=(market:PaperContract):{marketKey:string;selectionKey:string}=>{
   case "FT_BTTS_YES":return {marketKey:"football.btts",selectionKey:"yes"};
   case "FT_BTTS_NO":return {marketKey:"football.btts",selectionKey:"no"};
  }
+ throw new Error("UNRECOGNIZED_FULL_TIME_CONTRACT");
 };
 export type PaperProposal=Omit<DailyPaperPick,"id"|"dailySlot">;
 /** Timestamp gate against post-hoc bets. The CURRENT cron time—not a historical
