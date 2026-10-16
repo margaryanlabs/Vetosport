@@ -15,6 +15,7 @@ import type {
 export interface PersistedEvent {
   id: string;
   canonicalKey: string;
+  providerRefs?: Record<string,string>;
   event: SportEvent;
 }
 
