@@ -13,7 +13,8 @@ const dt=(ts:string)=>new Date(ts).toLocaleString("ru-RU",{day:"2-digit",month:"
 const label=(contract:string)=>({
  FT_HOME:"Победа хозяев",FT_AWAY:"Победа гостей",FT_DRAW:"Ничья",
  FT_BTTS_YES:"Обе забьют · Да",FT_BTTS_NO:"Обе забьют · Нет",
-}[contract]??contract);
+}[contract]??contract.replace(/^FT_TOTAL_(OVER|UNDER)_([1-4])_5$/,(_raw,side:string,line:string)=>
+ `Тотал ${side==="OVER"?"Больше":"Меньше"} ${line}.5`));
 function Curve({account}:{account:DailyPaperAccount}){
  const series=account.points;
  if(series.length<2)return <div className="paperDailyNoChart">

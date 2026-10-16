@@ -4,7 +4,7 @@
  */
 import type {PersistedEvent,PersistedEventStateRecord,PersistedMarketQuoteRecord,PersistedPredictionSnapshotRecord} from "@/lib/persistence/contracts";
 import type {LiveEventSummary,LiveQuotePreview} from "@/lib/live/types";
-import {paperContractFromQuote,certifyStoredPaperFinal} from "@/lib/paper/paper-verification";
+import {paperContractFromQuote,paperContractWins,certifyStoredPaperFinal} from "@/lib/paper/paper-verification";
 
 export const REPLAY_PROTOCOL="veto.paper.replay.first-eligible-v1" as const;
 const MAX_AGE_MS=120_000;
@@ -121,16 +121,7 @@ export function replayPersistedPaper(input:{
    const modelEV=prediction.fairProbability*quote.decimalOdds-1;
    if(modelEV<MIN_MODEL_EV)continue;
    // Never retrospectively choose the best P&L; first eligible co-capture wins.
-   const winner=final?(()=>{
-    const {home,away}=final.score;
-    switch(info.contract){
-     case "FT_HOME":return home>away;
-     case "FT_DRAW":return home===away;
-     case "FT_AWAY":return away>home;
-     case "FT_BTTS_YES":return home>0&&away>0;
-     case "FT_BTTS_NO":return home===0||away===0;
-    }
-   })():null;
+   const winner=final?paperContractWins(info.contract,final.score):null;
    const status=winner===null?"UNSETTLED":winner?"PROVIDER_WIN":"PROVIDER_LOSS";
    chosen={eventId:event.id,match:`${event.event.home?.name} — ${event.event.away?.name}`,
     competition:event.event.competition,contract:info.contract,

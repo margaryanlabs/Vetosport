@@ -4,7 +4,7 @@
  */
 import type {PersistedEvent,PersistedEventStateRecord,PersistedMarketQuoteRecord,PersistedPredictionSnapshotRecord} from "@/lib/persistence/contracts";
 import type {LiveEventSummary,LiveQuotePreview} from "@/lib/live/types";
-import {paperContractFromQuote,certifyStoredPaperFinal,type PaperContract} from "@/lib/paper/paper-verification";
+import {paperContractFromQuote,paperContractWins,certifyStoredPaperFinal,type PaperContract} from "@/lib/paper/paper-verification";
 export const DAILY_PROTOCOL="veto.paper.forward-observed.v1" as const;
 export const INITIAL_PAPER_BANK=200;
 export const DAILY_PAPER_STAKE=4;
@@ -28,16 +28,8 @@ export type DailyPaperAccount={
  points:Array<{at:string;balance:number}>;daily:Array<{day:string;count:number;wins:number;losses:number;pnl:number}>;
  tickets:DailyPaperTicket[];
 };
-export const paperOutcome=(contract:PaperContract,score:{home:number;away:number}):boolean=>{
- const {home,away}=score;
- switch(contract){
-  case "FT_HOME":return home>away;
-  case "FT_AWAY":return away>home;
-  case "FT_DRAW":return home===away;
-  case "FT_BTTS_YES":return home>0&&away>0;
-  case "FT_BTTS_NO":return home===0||away===0;
- }
-};
+export const paperOutcome=(contract:PaperContract,score:{home:number;away:number}):boolean=>
+ paperContractWins(contract,score)===true;
 export const paperDay=(time:string)=>time.slice(0,10); // UTC only
 const ms=(s:string)=>Date.parse(s);
 const ageValid=(captured:string,now:number,limit=120_000)=>{
@@ -58,7 +50,10 @@ const label=(event:PersistedEvent):LiveEventSummary=>({
  homeCode:"H",awayCode:"A",homeScore:"—",awayScore:"—",clock:"—",
  period:"—",pulse:"quiet",markets:0,repriced:0,intelligenceReady:false,
 });
-const target=(market:PaperContract)=>{
+const target=(market:PaperContract):{marketKey:string;selectionKey:string}=>{
+ const total=market.match(/^FT_TOTAL_(OVER|UNDER)_([1-4])_5$/);
+ if(total)return{marketKey:"football.total_goals",
+  selectionKey:`${total[1].toLowerCase()}-${total[2]}.5`};
  switch(market){
   case "FT_HOME":return {marketKey:"football.1x2",selectionKey:"home"};
   case "FT_AWAY":return {marketKey:"football.1x2",selectionKey:"away"};
@@ -222,6 +217,20 @@ export function dailyPaperSelfcheck(){
   {name:"Unverified generic final cannot auto-settle",pass:confirmForwardPaper(pick,
    {...event,event:{...event.event,status:"finished"}},[state],"2026-10-15T15:00:00Z")===null},
   {name:"No guessed results for unsettled selection",pass:accountFromPaper([pick],[]).settled===0},
+  {name:"Provider 59 FT result is accepted; provider 35 second-half rejected",pass:(()=>{
+   const q={...quote,provider:"api-football-live-odds",marketKey:"api-football.live.59",
+    selectionKey:"home",selectionLabel:"Home"};
+   return proposeForwardPaper({...args,quotes:[q]})?.contract==="FT_HOME"&&
+    proposeForwardPaper({...args,quotes:[{...q,marketKey:"api-football.live.35"}]})===null;
+  })()},
+  {name:"Provider Match Goals 25 is safe 2.5 fulltime total",pass:(()=>{
+   const q={...quote,provider:"api-football-live-odds",marketKey:"api-football.live.25",
+    selectionKey:"over:2.5",selectionLabel:"Over · 2.5"};
+   const expected={...model,marketKey:"football.total_goals",selectionKey:"over-2.5"};
+   const next=proposeForwardPaper({...args,quotes:[q],predictions:[expected]});
+   return next?.contract==="FT_TOTAL_OVER_2_5"&&next?.modelVersion==="football.goal-state.v1"&&
+    paperOutcome(next.contract,{home:2,away:1})===true;
+  })()},
  ];
  return{passed:tests.every(x=>x.pass),tests};
 }

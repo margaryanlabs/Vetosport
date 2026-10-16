@@ -1,11 +1,13 @@
-/** Deterministic paper-only settlement, deliberately limited to unambiguous
- * full-time 1X2 and BTTS markets. No sportsbook execution or model edge claim.
+/** Deterministic paper-only settlement limited to unambiguous
+ * full-time 1X2, BTTS and integer-safe half-goal TOTAL markets. No sportsbook execution or model edge claim.
  */
 import type {LiveEventSummary,LiveQuotePreview} from "@/lib/live/types";
 import type {PersistedEvent,PersistedEventStateRecord} from "@/lib/persistence/contracts";
 import type {PaperEntry,PaperStatus} from "@/lib/paper/paper-ledger";
 
-export type PaperContract="FT_HOME"|"FT_DRAW"|"FT_AWAY"|"FT_BTTS_YES"|"FT_BTTS_NO";
+type HalfGoal="1_5"|"2_5"|"3_5"|"4_5";
+export type PaperContract="FT_HOME"|"FT_DRAW"|"FT_AWAY"|"FT_BTTS_YES"|"FT_BTTS_NO"|
+ `FT_TOTAL_OVER_${HalfGoal}`|`FT_TOTAL_UNDER_${HalfGoal}`;
 export interface CertifiedPaperFinal {
  eventId:string;
  score:{home:number;away:number};
@@ -19,6 +21,21 @@ export function paperContractFromQuote(event:LiveEventSummary,quote:LiveQuotePre
  if(event.source!=="persisted"||event.sport!=="football"||quote.suspended)return null;
  const market=quote.marketKey.toLowerCase();
  const outcome=norm(quote.selectionLabel);
+ // Persisted raw provider marketName for ID 59 is "Fulltime Result";
+ // ID 35 is "To Win 2nd Half" and must NEVER be mapped to FT 1X2.
+ if(quote.provider==="api-football-live-odds"&&market==="api-football.live.59"){
+  const choices:{[key:string]:PaperContract}={home:"FT_HOME",away:"FT_AWAY",draw:"FT_DRAW"};
+  if((outcome==="home"||outcome==="away"||outcome==="draw")&&
+     norm(quote.selectionKey)===outcome)return choices[outcome];
+  return null;
+ }
+ // Persisted market ID 25 = "Match Goals" (full-time, half-goal lines).
+ // 36 "Over/Under Line" and 35 "To Win 2nd Half" are purposefully excluded.
+ if(quote.provider==="api-football-live-odds"&&market==="api-football.live.25"){
+  const selection=norm(quote.selectionKey).match(/^(over|under):([1-4])\.5$/);
+  if(!selection||outcome!==`${selection[1]} · ${selection[2]}.5`)return null;
+  return `FT_TOTAL_${selection[1].toUpperCase()}_${selection[2]}_5` as PaperContract;
+ }
  if(market==="h2h"||market.endsWith(".h2h")||market==="football.1x2"){
   if(outcome===norm(event.homeName)&&norm(event.homeName)!==norm(event.awayName))return "FT_HOME";
   if(outcome===norm(event.awayName)&&norm(event.homeName)!==norm(event.awayName))return "FT_AWAY";
@@ -29,6 +46,20 @@ export function paperContractFromQuote(event:LiveEventSummary,quote:LiveQuotePre
   if(outcome==="no"||outcome==="нет")return "FT_BTTS_NO";
  }
  return null;
+}
+export function paperContractWins(contract:PaperContract,score:{home:number;away:number}):boolean|null{
+ const {home,away}=score;
+ switch(contract){
+  case "FT_HOME":return home>away;
+  case "FT_DRAW":return home===away;
+  case "FT_AWAY":return away>home;
+  case "FT_BTTS_YES":return home>0&&away>0;
+  case "FT_BTTS_NO":return home===0||away===0;
+ }
+ const total=contract.match(/^FT_TOTAL_(OVER|UNDER)_([1-4])_5$/);
+ if(!total)return null;
+ const line=Number(total[2])+.5,goals=home+away;
+ return total[1]==="OVER"?goals>line:goals<line;
 }
 const scoreOk=(score:unknown):score is {home:number;away:number}=>{
  if(!score||typeof score!=="object"||Array.isArray(score))return false;
@@ -76,16 +107,8 @@ export function reconcilePaperEntry(entry:PaperEntry,final:CertifiedPaperFinal):
   Date.parse(entry.quoteCapturedAt)>=Date.parse(final.capturedAt)||
   !scoreOk(final.score)||final.source!=="api-football.fixtures.results"||
   final.provider!=="api-football"||final.regulationTimeOnly!==true)return null;
- const {home,away}=final.score;
- let win:boolean;
- switch(entry.marketContract){
-  case "FT_HOME":win=home>away;break;
-  case "FT_DRAW":win=home===away;break;
-  case "FT_AWAY":win=away>home;break;
-  case "FT_BTTS_YES":win=home>0&&away>0;break;
-  case "FT_BTTS_NO":win=home===0||away===0;break;
-  default:return null;
- }
+ const win=paperContractWins(entry.marketContract,final.score);
+ if(win===null)return null;
  const status:PaperStatus=win?"PROVIDER_WIN":"PROVIDER_LOSS";
  return {...entry,status,settledAt:final.capturedAt,
   verifiedAt:new Date().toISOString(),verifiedProvider:"api-football",
@@ -123,6 +146,23 @@ export function paperFinalVerificationSelfcheck(){
   {name:"Contract uses exact team orientation",pass:paperContractFromQuote(live,quoted)==="FT_HOME"&&
    paperContractFromQuote(live,{...quoted,selectionLabel:"Gamma"})===null},
   {name:"Unmapped ambiguous market rejected",pass:paperContractFromQuote(live,{...quoted,marketKey:"live.any"})===null},
+  {name:"Real provider market 59 uniquely means full-time result",pass:
+    paperContractFromQuote(live,{...quoted,provider:"api-football-live-odds",
+     marketKey:"api-football.live.59",selectionKey:"home",selectionLabel:"Home"})==="FT_HOME"},
+  {name:"Second-half result market ID 35 must not settle as FT",pass:
+    paperContractFromQuote(live,{...quoted,provider:"api-football-live-odds",
+     marketKey:"api-football.live.35",selectionKey:"home",selectionLabel:"Home"})===null},
+  {name:"Real market 25 half-goal totals settle by certified fulltime score",pass:(()=>{
+    const total=paperContractFromQuote(live,{...quoted,provider:"api-football-live-odds",
+      marketKey:"api-football.live.25",selectionKey:"over:2.5",selectionLabel:"Over · 2.5"});
+    return total==="FT_TOTAL_OVER_2_5"&&paperContractWins(total,{home:2,away:1})===true&&
+      paperContractWins(total,{home:1,away:1})===false;
+   })()},
+  {name:"Non-half-goal or unrelated totals market rejected",pass:
+    paperContractFromQuote(live,{...quoted,provider:"api-football-live-odds",
+      marketKey:"api-football.live.36",selectionKey:"over:2.5",selectionLabel:"Over · 2.5"})===null&&
+    paperContractFromQuote(live,{...quoted,provider:"api-football-live-odds",
+      marketKey:"api-football.live.25",selectionKey:"under:2",selectionLabel:"Under · 2"})===null},
   {name:"Declined sportsbook odds not eligible",pass:paperContractFromQuote(live,{...quoted,suspended:true})===null},
  ];
  return{passed:tests.every(x=>x.pass),tests};
