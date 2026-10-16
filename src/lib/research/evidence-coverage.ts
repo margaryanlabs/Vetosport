@@ -1,4 +1,5 @@
 import {captureLagSpectrum} from "@/lib/research/capture-lag-spectrum";
+import {buildHistoricalObservationLedger,historicalObservationLedgerSelfcheck} from "@/lib/research/historical-observation-ledger";
 import {historicalTimingEvidence,historicalCoCaptureSelfcheck,CO_CAPTURE_WINDOW_SECONDS} from "@/lib/research/historical-co-capture";
 import type {PersistedEvent,PersistedEventStateRecord,PersistedMarketQuoteRecord} from "@/lib/persistence/contracts";
 
@@ -40,6 +41,7 @@ export type EvidenceCoverage={
  historicalLookaheadOnlyEvents:number;
  historicalCausalIsNotExecution:true;
  captureLag:ReturnType<typeof captureLagSpectrum>;
+ observationLedger:ReturnType<typeof buildHistoricalObservationLedger>;
  historicalCoCaptureWindowSeconds:120;
  historicalPairsAreNotLiveSignals:true;
  researchReadyForRealMoney:false;
@@ -105,6 +107,7 @@ export function evidenceCoverage(input:{
  const chronology=historicalTimingEvidence({events:[...events.values()],states:input.states,quotes:input.quotes,asOf:input.at});
  const historicalCoCaptured=chronology.observedWithin2m;
  const captureLag=captureLagSpectrum({events:[...events.values()],states:input.states,quotes:input.quotes,asOf:input.at});
+ const observationLedger=buildHistoricalObservationLedger({events:[...events.values()],states:input.states,quotes:input.quotes,asOf:input.at});
  const count=(n:number)=>n>0?"partial" as const:"blocked" as const;
  const gates:EvidenceCheck[]=[
   {id:"live-scores",label:"Наблюдаемые матчи",
@@ -148,7 +151,7 @@ export function evidenceCoverage(input:{
   historicalCausallyAlignedEvents:chronology.causallyAlignedWithin2m,
   historicalLookaheadOnlyEvents:chronology.lookaheadOnlyWithin2m,
   historicalCausalIsNotExecution:true,
-  captureLag,
+  captureLag,observationLedger,
   historicalCoCaptureWindowSeconds:120,historicalPairsAreNotLiveSignals:true,
   researchReadyForRealMoney:false,externalProviderCalls:0,
   sampleMayBeCapped:Boolean(input.sampleMayBeCapped),
@@ -176,8 +179,10 @@ export function evidenceCoverageSelfcheck(){
  const input={events:[ev("a","live"),ev("b","finished")],states:[live("a"),live("b"),final("b")],quotes:[quote],at};
  const r=evidenceCoverage(input);
  const historicalSelfcheck=historicalCoCaptureSelfcheck();
+ const ledgerSelfcheck=historicalObservationLedgerSelfcheck();
  const checks=[
   {name:"Historical observation tests fail closed",passed:historicalSelfcheck.passed},
+  {name:"Inspectable sample ledger never treats future score as current evidence",passed:ledgerSelfcheck.passed},
   {name:"Co-capture is not promoted to currently fresh evidence",passed:r.historicalScoreAndPriceCoCapturedEvents===1&&r.historicalPairsAreNotLiveSignals===true},
   {name:"Causal observation counts separate from look-ahead-only counts",
    passed:r.historicalCausallyAlignedEvents===1&&r.historicalLookaheadOnlyEvents===0&&
