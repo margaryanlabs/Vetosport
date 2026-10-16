@@ -338,6 +338,13 @@ export class SupabaseRestPersistence implements VetoPersistence {
     if (input.eventIds.length === 0) return [];
     const query = new URLSearchParams();
     query.set("event_id", `in.(${input.eventIds.join(",")})`);
+    if(input.provider)query.set("provider",`eq.${input.provider}`);
+    if(input.marketKey)query.set("market_key",`eq.${input.marketKey}`);
+    if(input.capturedSince){
+      const since=Date.parse(input.capturedSince);
+      if(!Number.isFinite(since))throw new Error("INVALID_QUOTE_TIME_FILTER");
+      query.set("captured_at",`gte.${new Date(since).toISOString()}`);
+    }
     query.set("order", "captured_at.desc");
     query.set(
       "limit",
@@ -370,6 +377,10 @@ export class SupabaseRestPersistence implements VetoPersistence {
   async listRecentQuotesForEvents(input: {
     eventIds: string[];
     limit?: number;
+    /** Optional server-side scope for forward, source-coherent observations. */
+    provider?: string;
+    marketKey?: string;
+    capturedSince?: string;
   }): Promise<PersistedMarketQuoteRecord[]> {
     if (input.eventIds.length === 0) return [];
     const query = new URLSearchParams();
