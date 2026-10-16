@@ -1322,4 +1322,50 @@ export class SupabaseRestPersistence implements VetoPersistence {
       {method:"POST",body:JSON.stringify(payload)},"resolution=ignore-duplicates,return=representation");
     return rows.length>0;
   }
+  /** High Odds — append-only independent VIRTUAL study, never real wagers. */
+  async listHighOddsPaperTickets(limit=850):Promise<import("@/lib/paper/high-odds-research").HighOddsSlip[]>{
+    type Slip=import("@/lib/paper/high-odds-research").HighOddsSlip;
+    const query=new URLSearchParams({select:"*",order:"captured_at.desc",limit:String(Math.min(900,limit))});
+    const rows=await this.request<Array<{id:string;protocol:string;day_utc:string;
+      daily_slot:number;band:Slip["band"];legs:Slip["legs"];
+      synthetic_decimal_odds:number;virtual_stake:number;captured_at:string;pricing:Slip["pricing"]}>>(
+      this.tablePath("paper_high_odds_tickets",query.toString()),{method:"GET"});
+    return rows.map(x=>({id:x.id,protocol:x.protocol,dayUTC:x.day_utc,
+      dailySlot:x.daily_slot,band:x.band,legs:x.legs,
+      syntheticDecimalOdds:Number(x.synthetic_decimal_odds),
+      stake:Number(x.virtual_stake),capturedAt:x.captured_at,pricing:x.pricing}));
+  }
+  async insertHighOddsPaperTicket(
+    slip:import("@/lib/paper/high-odds-research").HighOddsProposal&{dailySlot:number}):
+    Promise<import("@/lib/paper/high-odds-research").HighOddsSlip|null>{
+    const row={protocol:slip.protocol,day_utc:slip.dayUTC,daily_slot:slip.dailySlot,
+      band:slip.band,legs:slip.legs,synthetic_decimal_odds:slip.syntheticDecimalOdds,
+      virtual_stake:slip.stake,captured_at:slip.capturedAt,pricing:slip.pricing};
+    const conflict=new URLSearchParams({on_conflict:"protocol,day_utc,daily_slot"});
+    const rows=await this.request<Array<{id:string}>>(this.tablePath(
+      "paper_high_odds_tickets",conflict.toString()),
+      {method:"POST",body:JSON.stringify(row)},"resolution=ignore-duplicates,return=representation");
+    return rows[0]?{...slip,id:rows[0].id,dailySlot:slip.dailySlot}:null;
+  }
+  async listHighOddsPaperSettlements(limit=850):
+   Promise<import("@/lib/paper/high-odds-research").HighOddsSettlement[]>{
+    type Evidence=import("@/lib/paper/high-odds-research").HighOddsSettlement;
+    const query=new URLSearchParams({select:"*",order:"settled_at.desc",
+      limit:String(Math.min(900,limit))});
+    const rows=await this.request<Array<{ticket_id:string;result:Evidence["result"];
+      proven_outcomes:Evidence["provenOutcomes"];settled_at:string}>>(
+      this.tablePath("paper_high_odds_settlements",query.toString()),{method:"GET"});
+    return rows.map(r=>({ticketId:r.ticket_id,result:r.result,
+      provenOutcomes:r.proven_outcomes,settledAt:r.settled_at}));
+  }
+  async insertHighOddsPaperSettlement(
+    proof:import("@/lib/paper/high-odds-research").HighOddsSettlement):Promise<boolean>{
+    const body={ticket_id:proof.ticketId,result:proof.result,
+      proven_outcomes:proof.provenOutcomes,settled_at:proof.settledAt};
+    const conflict=new URLSearchParams({on_conflict:"ticket_id"});
+    const rows=await this.request<Array<{id:string}>>(
+      this.tablePath("paper_high_odds_settlements",conflict.toString()),
+      {method:"POST",body:JSON.stringify(body)},"resolution=ignore-duplicates,return=representation");
+    return rows.length>0;
+  }
 }
