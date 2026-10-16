@@ -176,7 +176,8 @@ export function DailyPaperResearchPanel(){
      <div><small>ИСХОД / P&L</small><b>{t.settlement?t.settlement.result:"ОЖИДАЕТ FT"}</b>
       <span className={t.settlement?.result==="LOSS"?"negative":"positive"}>{t.settlement?
        signed(t.settlement.result==="WIN"?t.stake*(t.odds-1):-t.stake):"—"}
-       {t.settlement?` · ${t.settlement.score.home}:${t.settlement.score.away}`:""}</span></div>
+       {t.settlement?` · ${t.settlement.score.home}:${t.settlement.score.away}`:""}</span>
+      {t.settlement&&<small>FT: {t.settlement.provider} · exact source ID</small>}</div>
     </article>)}</div>:
      <div className="paperDailyEmpty">{filter==="ALL"?
       "Пока нет подходящих подтверждённых исходных котировок и прогнозов. Принудительно добавлять тесты не будем.":
