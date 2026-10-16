@@ -4,6 +4,7 @@
  * bookmaker settlement or verified betting edge.
  */
 import type {PaperEntry} from "@/lib/paper/paper-ledger";
+import {paperContractWins} from "@/lib/paper/paper-verification";
 
 export type StrategyOutcome="WIN"|"LOSS";
 type Sample={eventId:string;contract:NonNullable<PaperEntry["marketContract"]>;
@@ -84,6 +85,14 @@ function eligible(e:PaperEntry):{sample:Sample|null;reason:"unsettled"|"manual"|
    !Number.isFinite(e.modelProbability)||!Number.isFinite(e.odds)||
    !Number.isFinite(e.stake)||!e.verifiedAt||!e.settledAt)
   return{sample:null,reason:"missingProof"};
+ // Local storage/import is not a source of truth by itself. A signed provider
+ // label contradicting the stored FT score must never contaminate model P&L.
+ const {home,away}=e.verifiedScore;
+ if(![home,away].every(x=>Number.isInteger(x)&&x>=0&&x<=40))
+  return{sample:null,reason:"missingProof"};
+ const contractOutcome=paperContractWins(e.marketContract,e.verifiedScore);
+ if(contractOutcome===null||(contractOutcome?e.status!=="PROVIDER_WIN":e.status!=="PROVIDER_LOSS"))
+  return{sample:null,reason:"missingProof"};
  const p=e.modelProbability!;
  if(p<=0||p>=1||e.odds<=1||e.odds>1000||e.stake<=0)
   return{sample:null,reason:"missingProof"};
@@ -147,12 +156,13 @@ export function strategyValidationSelfcheck(){
   strategyTag:"MODEL_PASS",source:"SOURCE_SNAPSHOT",status,
   settledAt:new Date(Date.UTC(2026,9,1+n,13)).toISOString(),
   verifiedAt:new Date(Date.UTC(2026,9,1+n,13,1)).toISOString(),
-  verifiedProvider:"api-football",verifiedScore:{home:status==="PROVIDER_WIN"?1:0,away:1},
+  verifiedProvider:"api-football",verifiedScore:{home:status==="PROVIDER_WIN"?2:0,away:1},
  });
  const rows=Array.from({length:32},(_,i)=>sample(i,"m1",i%2===0?"PROVIDER_WIN":"PROVIDER_LOSS"));
  const report=validatePaperStrategies(rows);
  const withDuplicates=validatePaperStrategies([...rows,{...rows[0],id:"repeat"}]);
  const invalidTime=validatePaperStrategies([{...rows[0],quoteCapturedAt:"2026-09-01T01:00:00Z"}]);
+ const wrongScore=validatePaperStrategies([{...rows[0],verifiedScore:{home:0,away:1}}]);
  const manual=validatePaperStrategies([{...rows[0],status:"MANUAL_WIN"}]);
  const tiny=validatePaperStrategies(rows.slice(0,5));
  const one=validatePaperStrategies([sample(99)]);
@@ -160,8 +170,10 @@ export function strategyValidationSelfcheck(){
   {name:"No empty fabricated performance",pass:validatePaperStrategies([]).overall===null},
   {name:"Only certified provider results count",pass:manual.eligibleRecords===0&&manual.excluded.manual===1},
   {name:"Retrospective cohorts are never prospective edge",pass:report.cohorts[0]?.status==="RETROSPECTIVE_ONLY"&&report.validatedEdgeCount===0&&!report.prospectiveValidated},
-  {name:"Duplicate fixture and same selection excluded",pass:withDuplicates.excluded.duplicate===2&&withDuplicates.eligibleRecords===30},
+  {name:"Duplicate fixture and same selection excluded",pass:withDuplicates.excluded.duplicate===2&&withDuplicates.eligibleRecords===31},
   {name:"Old quote excluded even when final is certified",pass:invalidTime.excluded.invalidTiming===1},
+  {name:"Contradictory stored FT score cannot create fake verified success",
+   pass:wrongScore.excluded.missingProof===1&&wrongScore.eligibleRecords===0},
   {name:"Minimum 30 unique fixtures before holdout",pass:tiny.overall?.status==="INSUFFICIENT"&&tiny.overall.holdoutCount===0},
   {name:"Brier score and price-implied baseline are separate",pass:Math.abs((one.overall?.brier??0)-.09)<1e-9&&Math.abs((one.overall?.baselineBrier??0)-.25)<1e-9},
   {name:"80/20 is chronological and descriptive only",pass:report.overall?.holdoutCount===7},
