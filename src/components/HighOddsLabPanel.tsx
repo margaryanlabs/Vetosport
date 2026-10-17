@@ -1,6 +1,6 @@
 "use client";
 import {useCallback,useEffect,useMemo,useState} from "react";
-import type {HighOddsAccount,HighOddsSlip} from "@/lib/paper/high-odds-research";
+import type {HighOddsAccount,HighOddsSlip,HighOddsProposal} from "@/lib/paper/high-odds-research";
 
 type Payload={ok:true;generatedAt:string;account:HighOddsAccount;
  observer:{lastHeartbeat:string|null;recent:boolean;coverageNote:string};
@@ -8,6 +8,10 @@ type Payload={ok:true;generatedAt:string;account:HighOddsAccount;
   dailyTicketCap:number;fixtureDailyMaxExposure:number;
   sameEventParlayPriced:false;scientificEdgeProven:false};
  realBetsPlaced:0};
+type CandidateReply={ok:true;source:"PERSISTED_ONLY";mode:"UNCOMMITTED_RESEARCH_PREVIEW";
+ generatedAt:string;scanned:number;usableLegs:number;virtualBankAvailable:number;
+ excluded:{sourceErrors:number;incompleteQuotes:number;noSuitableBook:number};
+ proposals:HighOddsProposal[];warning:string[];committed:0};
 const usd=(v:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",
  maximumFractionDigits:2,minimumFractionDigits:2}).format(v);
 const date=(s:string)=>new Date(s).toLocaleString("ru-RU",
@@ -23,6 +27,9 @@ export function HighOddsLabPanel(){
  const [payload,setPayload]=useState<Payload|null>(null);
  const [busy,setBusy]=useState(true);
  const [fault,setFault]=useState("");
+ const [candidates,setCandidates]=useState<CandidateReply|null>(null);
+ const [candidateBusy,setCandidateBusy]=useState(false);
+ const [candidateError,setCandidateError]=useState("");
  const refresh=useCallback(async()=>{
   setBusy(true);
   try{
@@ -37,6 +44,22 @@ export function HighOddsLabPanel(){
  },[]);
  useEffect(()=>{void refresh();const id=setInterval(()=>void refresh(),60_000);
   return()=>clearInterval(id);},[refresh]);
+ const preview=useCallback(async()=>{
+  if(candidateBusy)return;
+  setCandidateBusy(true);setCandidateError("");
+  try{
+   const resp=await fetch("/api/intelligence/paper-journal/high-odds/candidates",
+    {cache:"no-store"});
+   if(!resp.ok)throw Error("SOURCE_NOT_READY");
+   const result:CandidateReply=await resp.json();
+   if(!result.ok||result.mode!=="UNCOMMITTED_RESEARCH_PREVIEW"||
+    result.source!=="PERSISTED_ONLY"||!Array.isArray(result.proposals))
+    throw Error("BAD_EVIDENCE");
+   setCandidates(result);
+  }catch{
+   setCandidateError("Нет полного доступа к сохранённым котировкам. Не создаём вымышленные предложения.");
+  }finally{setCandidateBusy(false);}
+ },[candidateBusy]);
  const bank=payload?.account;
  const linked=useMemo(()=>{
   const map=new Map<string,{name:string;slips:Set<string>;bookmakers:Set<string>}>();
@@ -94,6 +117,32 @@ export function HighOddsLabPanel(){
      </article>;
     })}
    </div>
+   <section className="hoCandidateDesk">
+    <header><div><span>REAL SOURCE SCAN / ZERO BOOKMAKER API REQUESTS</span>
+     <h3>Кандидаты сейчас</h3>
+     <p>Посмотреть, какие теоретические комбинации допускают реальные сохранённые EPL-котировки. Это предпросмотр, а не зарегистрированные ставки. Для попадания в банк $200 необходим отдельный автоматический снимок до матча.</p></div>
+     <button type="button" disabled={candidateBusy} onClick={()=>void preview()}>
+      {candidateBusy?"Изучаем источник…":"Исследовать текущие коэффициенты ↗"}</button>
+    </header>
+    {candidateError&&<div className="hoFault" role="alert">{candidateError}</div>}
+    {candidates&&<div className="hoCandidates">
+     <div className="hoCandidateCounts"><span>Источников матчей: <strong>{candidates.scanned}</strong></span>
+      <span>Сопоставленных кандидатов на исход: <strong>{candidates.usableLegs}</strong></span>
+      <span>Не было подходящей цены: <strong>{candidates.excluded.noSuitableBook}</strong></span>
+      <span>Записано в банк: <strong>0 из этого просмотра</strong></span></div>
+     {candidates.proposals.length?candidates.proposals.map((x,i)=><article key={x.band+"-"+i}>
+      <header><strong>{tier(x.band)} · {x.syntheticDecimalOdds.toFixed(2)}×</strong>
+       <span>ТОЛЬКО ИССЛЕДОВАНИЕ / {x.legs.length} МАТЧА · НЕ БУКМЕКЕРСКАЯ ЦЕНА</span>
+      </header>
+      {x.legs.map(leg=><div key={leg.eventId}>
+       <span>{leg.home} — {leg.away}</span>
+       <b>{leg.selectionLabel} · {leg.decimalOdds.toFixed(2)}×</b>
+       <small>{leg.bookmaker} · {date(leg.quoteAt)}</small>
+      </div>)}
+     </article>):<p className="hoEmpty">В текущем архиве нет комбинаций, удовлетворяющих установленным условиям. Алгоритм не добавляет фиктивные матчи.</p>}
+     <footer>Источник: только сохранённые котировки The Odds API. Совокупные коэффициенты получены математическим умножением цен на разные события. Положительная ожидаемая доходность не доказана. Кандидаты не считаются размещёнными или исполненными.</footer>
+    </div>}
+   </section>
    <div className="hoGrid">
     <section className="hoLedger"><header><span>01 / MULTI-EVENT EXPERIMENTS</span>
      <h3>Экспресс-лаборатория</h3></header>
