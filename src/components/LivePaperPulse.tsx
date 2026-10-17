@@ -9,7 +9,7 @@ type BaseData={
  ok:boolean;
  generatedAt:string;
  account:{initialBank:number;balance:number;open:number;settled:number;
-  wins:number;losses:number;net:number;};
+  wins:number;losses:number;net:number;tickets?:Array<{eventId:string;match:string}>;};
  scheduler:{lastHeartbeat:string|null;health:string};
  sourceHealth?:{ftProvider?:{subscriptionBlocked:boolean};oddsScores?:{healthy:boolean}};
 };
@@ -17,7 +17,8 @@ type HighData={
  ok:boolean;
  generatedAt:string;
  account:{nominalInitialBank:number;balance:number;open:number;
-  settled:number;wins:number;losses:number;net:number;};
+  settled:number;wins:number;losses:number;net:number;
+  tickets?:Array<{legs:Array<{eventId:string}>}>;};
  observer:{lastHeartbeat:string|null;recent?:boolean};
 };
 type State={base:BaseData|null;high:HighData|null;at:string|null;error:boolean};
@@ -80,6 +81,16 @@ export function LivePaperPulse({events}: {events:LiveEventSummary[]}){
  const highRecent=highAt!==null&&now-Date.parse(highAt)<90*60_000&&now>=Date.parse(highAt);
  const base=data.base?.account;
  const high=data.high?.account;
+ const exposure=new Map<string,{daily:number;longshot:number}>();
+ for(const ticket of base?.tickets??[]){
+  const row=exposure.get(ticket.eventId)??{daily:0,longshot:0};
+  row.daily++;exposure.set(ticket.eventId,row);
+ }
+ for(const ticket of high?.tickets??[])for(const leg of ticket.legs){
+  const row=exposure.get(leg.eventId)??{daily:0,longshot:0};
+  row.longshot++;exposure.set(leg.eventId,row);
+ }
+ const matched=real.filter(e=>exposure.has(e.id)).slice(0,8);
  return <section className="livePaperBridge" aria-label="Состояние live и виртуальных экспериментов">
   <div className="livePaperBridgeTop">
    <div><span className="livePaperEyebrow">VETO / LIVE → RESEARCH → VERIFIED RESULTS</span>
@@ -122,6 +133,19 @@ export function LivePaperPulse({events}: {events:LiveEventSummary[]}){
     <a href="/research/high-odds">Открыть High Odds ↗</a>
    </article>
   </div>
+  {matched.length>0&&<div className="livePaperExposure">
+   <div><strong>Реальные матчи в виртуальных исследованиях</strong>
+    <span>У каждого исследования — исходная цена и время записи. Ссылки ведут к фактическому матчу, а не к покупке ставки.</span></div>
+   <div className="livePaperExposureLinks">
+    {matched.map(e=><a key={e.id} href={`/?view=check&event=${encodeURIComponent(e.id)}`}>
+      <strong>{e.homeName} — {e.awayName}</strong>
+      <span>{exposure.get(e.id)?.daily?"Daily Paper × "+exposure.get(e.id)?.daily:""}
+       {exposure.get(e.id)?.daily&&exposure.get(e.id)?.longshot?" · ":""}
+       {exposure.get(e.id)?.longshot?"High Odds × "+exposure.get(e.id)?.longshot:""}</span>
+      <small>{getObservedFreshness(e,now).label}</small>
+     </a>)}
+   </div>
+  </div>}
   <div className="livePaperBridgeFoot">
    <span className={data.error?"livePaperWarn":""}>{data.error?
     "Не удалось прочитать серверные журналы. Числа скрыты, имитаций нет.":
