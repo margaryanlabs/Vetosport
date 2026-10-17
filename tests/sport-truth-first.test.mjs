@@ -760,7 +760,7 @@ test("Live view distinguishes certified fresh scores, stale decision labels and 
  assert.match(bridge,/baseAt!==null/);
  assert.match(bridge,/highAt!==null/);
  assert.match(bridge,/getObservedFreshness\(e,now\)\.freshLive/);
- assert.match(bridge,/No real/i);
+ assert.match(bridge,/Нет автоматических реальных ставок/);
  assert.match(terminal,/LivePaperPulse events=\{eventSummaries\}/);
  assert.match(terminal,/document\.hidden\|\|inFlight/);
  assert.match(terminal,/visibilitychange/);
