@@ -725,3 +725,19 @@ test("Longshot candidate desk only reads recorded EPL quotes and does NOT book w
  assert.match(panel,/UNCOMMITTED_RESEARCH_PREVIEW/);
  assert.match(panel,/не зарегистрированные ставки/);
 });
+
+test("Paper journals distinguish bridge table allowlist errors from missing API keys",()=>{
+ const route=read("src/app/api/intelligence/paper-journal/readiness/route.ts");
+ const high=read("src/components/HighOddsLabPanel.tsx");
+ const daily=read("src/components/DailyPaperResearchPanel.tsx");
+ assert.match(route,/BRIDGE_RESOURCE_DENIED/);
+ assert.match(route,/STORAGE_AUTH_FAILED/);
+ assert.match(route,/highTickets/);
+ assert.match(route,/ordinaryFinals/);
+ assert.match(route,/highFinals/);
+ assert.match(route,/NO_REAL|PAPER|EXISTING_SERVER_SIDE_BRIDGE/);
+ assert.match(route,/NOT_REQUIRED_FOR_STORED_PAPER_VIEW/);
+ assert.match(high,/paper-journal\/readiness/);
+ assert.match(daily,/paper-journal\/readiness/);
+ assert.doesNotMatch(route,/export async function POST|THE_ODDS_API_KEY|API_FOOTBALL_KEY|serviceRoleKey/);
+});
