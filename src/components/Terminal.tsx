@@ -99,9 +99,15 @@ export function Terminal({
 
   useEffect(() => {
     let active = true;
+    let inFlight = false;
     const controller = new AbortController();
 
     const refreshEvents = () => {
+      // Never overlap expensive source scans or keep polling a background tab.
+      // The original repeated 15-second timer could render older responses
+      // after newer ones if storage was slow.
+      if(!active||document.hidden||inFlight)return;
+      inFlight=true;
       fetch("/api/live/events", {
         cache: "no-store",
         signal: controller.signal,
@@ -139,16 +145,20 @@ export function Terminal({
             }
           },
         )
-        .catch(() => { if(active){setLoadedEvents([]);setLiveSourceMode("storage-unavailable");} });
+        .catch(() => { if(active){setLoadedEvents([]);setLiveSourceMode("storage-unavailable");} })
+        .finally(()=>{inFlight=false;});
     };
 
     refreshEvents();
     const interval = window.setInterval(refreshEvents, 15_000);
+    const onVisibility=()=>{if(!document.hidden)refreshEvents();};
+    document.addEventListener("visibilitychange",onVisibility);
 
     return () => {
       active = false;
       controller.abort();
       window.clearInterval(interval);
+      document.removeEventListener("visibilitychange",onVisibility);
     };
   }, []);
 
@@ -165,9 +175,12 @@ export function Terminal({
 
   useEffect(() => {
     let active = true;
+    let inFlight = false;
     const controller = new AbortController();
 
     const refreshWorkspace = () => {
+      if(!active||document.hidden||inFlight)return;
+      inFlight=true;
       fetch(`/api/live/workspace?id=${encodeURIComponent(selectedEventId)}`, {
         cache: "no-store",
         signal: controller.signal,
@@ -197,7 +210,8 @@ export function Terminal({
         )
         .catch(() => {
           if(active) setWorkspaceStatus("error");
-        });
+        })
+        .finally(()=>{inFlight=false;});
     };
 
     setRemoteWorkspace(null);
@@ -205,11 +219,14 @@ export function Terminal({
     setWorkspaceStatus("loading");
     refreshWorkspace();
     const interval = window.setInterval(refreshWorkspace, 15_000);
+    const onVisibility=()=>{if(!document.hidden)refreshWorkspace();};
+    document.addEventListener("visibilitychange",onVisibility);
 
     return () => {
       active = false;
       controller.abort();
       window.clearInterval(interval);
+      document.removeEventListener("visibilitychange",onVisibility);
     };
   }, [selectedEventId]);
 
