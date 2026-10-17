@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Decision } from "@/lib/domain/types";
 import type { LiveEventSummary } from "@/lib/live/types";
 import { SportGlyph } from "@/components/SportGlyph";
@@ -14,6 +14,13 @@ const pct = (value: number) => `${(value * 100).toFixed(1)}%`;
 const decisionClass = (decision: Decision) =>
   decision === "EDGE" ? "edge" : decision === "WATCH" ? "watch" : "pass";
 
+type LiveFilter="all"|"fresh"|"scheduled"|"delayed";
+const liveCategory=(event:LiveEventSummary):Exclude<LiveFilter,"all">=>{
+ const f=getObservedFreshness(event);
+ if(f.freshLive)return "fresh";
+ if(event.status==="scheduled")return "scheduled";
+ return "delayed";
+};
 const readinessLabel = (status: string | undefined) =>
   status === "DECISION_READY"
     ? "DECISION READY"
@@ -38,6 +45,15 @@ export function LiveCommandCenter({
   onSelectEvent: (id: string) => void;
   onSelectSignal: (eventId: string, selectionId: string) => void;
 }) {
+  const [filter,setFilter]=useState<LiveFilter>("all");
+  const real=events.filter(x=>x.source==="persisted");
+  const counts={
+   all:events.length,
+   fresh:real.filter(e=>liveCategory(e)==="fresh").length,
+   scheduled:real.filter(e=>liveCategory(e)==="scheduled").length,
+   delayed:real.filter(e=>liveCategory(e)==="delayed").length,
+  };
+  const visibleEvents=events.filter(e=>filter==="all"||liveCategory(e)===filter);
   const signals = useMemo(
     () =>
       events
@@ -79,10 +95,25 @@ export function LiveCommandCenter({
         </div>
       </div>
 
+      <div className="liveCommandFilters" role="group" aria-label="Фильтр матчей по доказанной свежести">
+       {([
+        ["all","ВСЕ"],["fresh","LIVE ≤120 С"],
+        ["scheduled","СКОРО"],["delayed","ЗАДЕРЖКА / АРХИВ"]
+       ] as [LiveFilter,string][]).map(([id,label])=>
+        <button type="button" key={id} aria-pressed={filter===id}
+         className={filter===id?"active":""} onClick={()=>setFilter(id)}>
+         {label} <b>{counts[id]}</b>
+        </button>)}
+       <span>Настоящий LIVE = подтверждённый снимок счёта за последние 120 секунд</span>
+      </div>
       <div className="liveCommandBody">
         <div className="liveCommandEvents">
-          {events.map((event) => {
-            const primary = event.primarySignal;
+          {visibleEvents.map((event) => {
+            const isCurrent=getObservedFreshness(event).freshLive;
+            const decisionAt=event.primarySignal?Date.parse(event.primarySignal.capturedAt):NaN;
+            const primary=isCurrent&&Number.isFinite(decisionAt)&&
+              Date.now()>=decisionAt&&Date.now()-decisionAt<=120_000?
+              event.primarySignal:undefined;
             return (
               <button
                 className={`liveCommandEvent ${activeEventId === event.id ? "active" : ""}`}
@@ -152,6 +183,12 @@ export function LiveCommandCenter({
               </button>
             );
           })}
+          {visibleEvents.length===0&&<div className="liveCommandEmptyFiltered">
+           <strong>НЕТ МАТЧЕЙ В ВЫБРАННОЙ КАТЕГОРИИ</strong>
+           <p>{filter==="fresh"?
+            "Сейчас нет источника со свежим подтверждённым счётом. Сохранённые LIVE-флаги не считаем трансляцией.":
+            "Выбери другой фильтр. Матчи и результаты не подставляются искусственно."}</p>
+          </div>}
         </div>
 
         <aside className="signalRadar">
