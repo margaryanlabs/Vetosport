@@ -70,8 +70,18 @@ export function DailyPaperResearchPanel(){
    const result:Reply=await response.json();
    if(!result.ok||result.source!=="SERVER_PERSISTED_FORWARD_ONLY")throw Error("NO_PROOF");
    setData(result);setError("");
-  }catch{setError("Серверный paper-журнал пока недоступен. Проверяем миграцию БД, источник и cron. Результаты не подставляем.");}
-  finally{setLoading(false);}
+  }catch{
+   try{
+    const res=await fetch("/api/intelligence/paper-journal/readiness",{cache:"no-store"});
+    const data:{issues?:Array<{scope:string;reason:string}>}=await res.json();
+    const issues=data.issues?.map(x=>x.scope+": "+x.reason).join("; ");
+    setError(issues?
+      "Ошибка доступа к данным: "+issues+". Подробный статус доступен в диагностике соединения.":
+      "Сервис исследования пока не ответил, но соединение с базой проверено. Проверь журнал работы.");
+   }catch{
+    setError("Preview или API недоступны: проверь авторизацию Vercel. Ключи букмекеров не требуются для чтения архива.");
+   }
+  }finally{setLoading(false);}
  },[]);
  useEffect(()=>{
   void refresh();const timer=setInterval(()=>void refresh(),60_000);
