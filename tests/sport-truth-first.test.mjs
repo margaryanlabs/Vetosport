@@ -710,3 +710,18 @@ test("High odds paper lab keeps same-game combinations unpriced and certifies on
  assert.match(score,/highDue/);
  assert.match(page,/HighOddsLabPanel/);
 });
+
+test("Longshot candidate desk only reads recorded EPL quotes and does NOT book wagers",()=>{
+ const api=read("src/app/api/intelligence/paper-journal/high-odds/candidates/route.ts");
+ const panel=read("src/components/HighOddsLabPanel.tsx");
+ assert.match(api,/source:"PERSISTED_ONLY"/);
+ assert.match(api,/mode:"UNCOMMITTED_RESEARCH_PREVIEW"/);
+ assert.match(api,/listRecentEvents/);
+ assert.match(api,/listRecentQuotesForEvents/);
+ assert.match(api,/proposeHighOddsSlips/);
+ assert.match(api,/committed:0/);
+ assert.doesNotMatch(api,/insertHighOddsPaperTicket|appendDecision|placeWager|createBet|THE_ODDS_API_KEY/);
+ assert.match(panel,/Исследовать текущие коэффициенты/);
+ assert.match(panel,/UNCOMMITTED_RESEARCH_PREVIEW/);
+ assert.match(panel,/не зарегистрированные ставки/);
+});
