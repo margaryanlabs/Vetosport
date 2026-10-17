@@ -5,6 +5,11 @@ import type {DailyPaperAccount,DailyPaperTicket} from "@/lib/paper/daily-researc
 type Reply={ok:true;source:string;generatedAt:string;account:DailyPaperAccount;
  scheduler:{configuredInRepo:boolean;lastHeartbeat:string|null;health:string;note:string;blockedBy:Record<string,number>};
  sourceHealth:{oddsScores:{lastCheckedAt:string|null;healthy:boolean};
+ ftQueue:{openPrematchPicks:number;dueAfterTwoHours:number;
+  nextPlannedScoresCheckUtc:string|null;quotaStatus:string;
+  canRequestIfScheduledNow:boolean;lastProvenQuotaRemaining:number|null;
+  quotaProofAgeHours:number|null;minimumProtectedQuota:number;
+  nominalScoreCreditsPerSuccessfulCall:number;externalRequestsForThisRead:0};
  ftProvider:{status:string;lastCheckedAt:string|null;subscriptionBlocked:boolean};
  model:{recentlyProduced:boolean;lastRecordedAt:string|null}};
  coverage:{historyMayBeCapped:boolean;realBetsPlaced:0;prospectiveProfitabilityProven:false}};
@@ -126,10 +131,19 @@ export function DailyPaperResearchPanel(){
      <strong>{data.sourceHealth.model.recentlyProduced?"SHADOW SNAPSHOTS ОБНАРУЖЕНЫ":"НОВЫХ SHADOW SNAPSHOTS НЕТ"}</strong>
      <span>При отсутствии прогноза VETO возможны только отдельные контрольные наблюдения по реальным котировкам.</span>
     </article>
-    <article>
-     <small>THE ODDS API / INDEPENDENT EPL SCORES</small>
-     <strong>{data.sourceHealth.oddsScores.healthy?"ИСТОЧНИК FT ПОДТВЕРЖДЁН":"FT-СВЕРКА НЕ ЗАПУЩЕНА ИЛИ НЕДОСТУПНА"}</strong>
-     <span>Проверка EPL по точному ID источника; плановая стоимость 2 API-кредита в день. Выключена без явного разрешения оператора.</span>
+    <article className={data.sourceHealth.ftQueue.quotaStatus==="OK"?"":"blocked"}>
+     <small>THE ODDS API / EXACT PROVIDER FT</small>
+     <strong>{data.sourceHealth.oddsScores.healthy?"FT-ПРОВЕРКА ВЫПОЛНЯЛАСЬ":
+      data.sourceHealth.ftQueue.dueAfterTwoHours>0?"МАТЧИ ОЖИДАЮТ FT-СВЕРКУ":
+      "ОЖИДАЕМ ЗАВЕРШЕНИЯ МАТЧЕЙ"}</strong>
+     <span>{data.sourceHealth.ftQueue.openPrematchPicks} открытых pre-match тестов ·
+      {data.sourceHealth.ftQueue.dueAfterTwoHours} готовы к проверке после 120 минут.
+      Плановый запуск: {data.sourceHealth.ftQueue.nextPlannedScoresCheckUtc?
+       dt(data.sourceHealth.ftQueue.nextPlannedScoresCheckUtc)+" (время устройства; расписание 07:00 UTC)":"неизвестен"}.
+      Требуется доказанный запас ≥{data.sourceHealth.ftQueue.minimumProtectedQuota} кредитов.
+      {data.sourceHealth.ftQueue.quotaStatus!=="OK"?
+       " Статус запроса: "+data.sourceHealth.ftQueue.quotaStatus+".":
+       " Источник может быть опрошен по расписанию; FT не гарантирован."}</span>
     </article>
    </div>
    {Object.entries(data.scheduler.blockedBy).length>0&&<div className="paperDailyBlocked">

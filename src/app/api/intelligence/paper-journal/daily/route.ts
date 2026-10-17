@@ -1,6 +1,7 @@
 import {NextResponse} from "next/server";
 import {getPersistence,persistenceConfiguration} from "@/lib/persistence/factory";
 import {accountFromPaper,DAILY_PROTOCOL} from "@/lib/paper/daily-research";
+import {assessFtScoreBudget,nextFtScoreCronUtc} from "@/lib/paper/ft-quota-gate";
 export const dynamic="force-dynamic";
 const headers={"Cache-Control":"no-store, private","X-Robots-Tag":"noindex"};
 export async function GET(){
@@ -9,16 +10,28 @@ export async function GET(){
   noFabricatedReturns:true},{status:503,headers});
  try{
   const store=getPersistence();
-  const [picks,settlements,health,finalsHealth,shadowHealth,oddsScoresHealth]=await Promise.all([
+  const [picks,settlements,health,finalsHealth,shadowHealth,oddsScoresHealth,oddsQuoteHealth]=await Promise.all([
    store.listPaperDailyPicks(900),
    store.listPaperDailySettlements(900),
    store.listRecentProviderHealth({providerId:"veto-paper-forward",limit:1}),
    store.listRecentProviderHealth({providerId:"api-football-finals",limit:1}),
    store.listRecentProviderHealth({providerId:"veto-shadow-football",limit:1}),
    store.listRecentProviderHealth({providerId:"the-odds-api-scores",limit:1}),
+   store.listRecentProviderHealth({providerId:"the-odds-api",limit:1}),
   ]);
   const account=accountFromPaper(picks,settlements);
   const lastHeartbeat=health[0]?.checkedAt??null;
+  const asOf=new Date().toISOString(),now=Date.parse(asOf);
+  const settledSet=new Set(settlements.map(s=>s.pickId));
+  const unresolved=picks.filter(p=>!settledSet.has(p.id));
+  const requireFt=unresolved.filter(p=>p.lane==="PREMATCH_ODDS_CONTROL");
+  const readyByKickoff=requireFt.filter(p=>{
+   const kickoff=Date.parse(p.eventStartsAt);
+   return Number.isFinite(kickoff)&&now>=kickoff+120*60_000&&
+    now-kickoff<=3*86_400_000;
+  });
+  const ftBudget=assessFtScoreBudget({dueFixtures:readyByKickoff.length,asOf,
+   quota:oddsQuoteHealth[0]??null,lastScoresCall:oddsScoresHealth[0]??null});
   const blockedBy=health[0]?.metadata?.blockedBy;
   const safelyBlocked=blockedBy&&typeof blockedBy==="object"&&!Array.isArray(blockedBy)?
     Object.fromEntries(Object.entries(blockedBy).filter(([key,val])=>
@@ -31,6 +44,14 @@ export async function GET(){
    sourceHealth:{
     oddsScores:{lastCheckedAt:oddsScoresHealth[0]?.checkedAt??null,
      healthy:oddsScoresHealth[0]?.status==="healthy"},
+    ftQueue:{openPrematchPicks:requireFt.length,dueAfterTwoHours:readyByKickoff.length,
+     nextPlannedScoresCheckUtc:nextFtScoreCronUtc(asOf),
+     quotaStatus:ftBudget.reason,canRequestIfScheduledNow:ftBudget.allowed,
+     lastProvenQuotaRemaining:ftBudget.quotaRemaining,
+     quotaProofAgeHours:ftBudget.sourceAgeHours,
+     minimumProtectedQuota:ftBudget.minimumProvenCredits,
+     nominalScoreCreditsPerSuccessfulCall:ftBudget.costCredits,
+     externalRequestsForThisRead:0},
     ftProvider:{status:finalsHealth[0]?.status??"unknown",lastCheckedAt:finalsHealth[0]?.checkedAt??null,
      subscriptionBlocked:finalsHealth[0]?.metadata?.failureCode==="UPSTREAM_SUBSCRIPTION"},
     model:{recentlyProduced:shadowHealth[0]?Date.now()-Date.parse(shadowHealth[0].checkedAt)<24*60*60_000:false,

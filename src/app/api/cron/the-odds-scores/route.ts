@@ -2,6 +2,7 @@ import {NextResponse} from "next/server";
 import {getPersistence,persistenceConfiguration} from "@/lib/persistence/factory";
 import {parseOddsApiScore,matchOddsApiScore} from "@/lib/paper/odds-score-certification";
 import {journalizeEventState} from "@/lib/data-plane/journalize";
+import {assessFtScoreBudget,FT_SCORE_COST_CREDITS} from "@/lib/paper/ft-quota-gate";
 export const dynamic="force-dynamic";
 export const maxDuration=30;
 const headers={"Cache-Control":"no-store","X-Robots-Tag":"noindex"};
@@ -20,10 +21,11 @@ export async function GET(req:Request){
    reason:"OPERATOR_OPT_IN_OR_KEY_REQUIRED",quotaCharged:0},{headers});
  const store=getPersistence(),now=new Date(),asOf=now.toISOString();
  try{
-  const [paperPicks,paperSettled,highPicks,highSettled,quotaHealth]=await Promise.all([
+  const [paperPicks,paperSettled,highPicks,highSettled,quotaHealth,scoresHealth]=await Promise.all([
    store.listPaperDailyPicks(900),store.listPaperDailySettlements(900),
    store.listHighOddsPaperTickets(850),store.listHighOddsPaperSettlements(850),
    store.listRecentProviderHealth({providerId:"the-odds-api",limit:1}),
+   store.listRecentProviderHealth({providerId:"the-odds-api-scores",limit:1}),
   ]);
   if(paperPicks.length>=900||paperSettled.length>=900||highPicks.length>=850||highSettled.length>=850)
    return NextResponse.json({ok:false,skipped:true,reason:"PAPER_HISTORY_CAPPED",
@@ -47,14 +49,17 @@ export async function GET(req:Request){
     ...highDue.map(leg=>leg.eventId)])].slice(0,30);
   if(!dueEventIds.length)return NextResponse.json({ok:true,skipped:true,
    reason:"NO_DUE_PAPER_FT_CERTIFICATES",quotaCharged:0},{headers});
-  // Consult the existing EPL odds quota budget. Missing/stale remaining-credit
-  // proof fails closed: no silent spending on an unfunded provider.
-  const quota=quotaHealth[0];
-  if(!quota||!Number.isInteger(quota.quotaRemaining)||
-     quota.quotaRemaining!<=40||
-     Date.parse(quota.checkedAt)<now.getTime()-6*3600_000)
-   return NextResponse.json({ok:true,skipped:true,reason:"SOURCE_QUOTA_NOT_PROVEN_SAFE",
-    quotaCharged:0},{headers});
+  // This cron fires at 07:00 UTC; legitimate last odds observations may
+  // be 23h old. A 6h limit silently prevented EVERY next-day settlement.
+  // Pure source-credit gate: bounded 30h provenance, >=100-credit cushion,
+  // prevent repeat paid scores calls within 20h.
+  const gate=assessFtScoreBudget({dueFixtures:dueEventIds.length,asOf,
+   quota:quotaHealth[0]??null,lastScoresCall:scoresHealth[0]??null});
+  if(!gate.allowed)
+   return NextResponse.json({ok:true,skipped:true,reason:gate.reason,
+    sourceAgeHours:gate.sourceAgeHours,quotaRemaining:gate.quotaRemaining,
+    minimumProvenCredits:gate.minimumProvenCredits,quotaCharged:0,
+    realBetsPlaced:0},{headers});
   const fetched=await Promise.all(dueEventIds.map(id=>store.getEventById(id)));
   const candidates=[...new Map(fetched.filter((e):e is NonNullable<typeof e>=>
     !!e&&e.event.status!=="finished"&&e.event.sport==="football"&&
@@ -119,12 +124,12 @@ export async function GET(req:Request){
   await store.appendProviderHealth({providerId:"the-odds-api-scores",
    status:failures?"degraded":"healthy",checkedAt:asOf,
    quotaRemaining,message:failures?"Some exact EPL FT writes failed.":"Exact provider-ID EPL FT lookup finished.",
-   metadata:{provider:"the-odds-api",sportKey:"soccer_epl",costCredits:2,
+   metadata:{provider:"the-odds-api",sportKey:"soccer_epl",costCredits:FT_SCORE_COST_CREDITS,providerCalls:1,
     candidates:safeCandidates.length,certified,unmatched,failures,
     droppedDuplicateIds:duplicateSourceIds.size,windowMayBeCapped:false},
   });
   return NextResponse.json({ok:failures===0,source:"the-odds-api.scores",
-   researchOnly:true,providerCalls:1,nominalCredits:2,
+   researchOnly:true,providerCalls:1,nominalCredits:FT_SCORE_COST_CREDITS,
    candidateGames:safeCandidates.length,certified,unmatched,failures,capped:false},
    {status:failures?503:200,headers});
  }catch{
