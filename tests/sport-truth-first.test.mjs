@@ -645,7 +645,7 @@ test("Daily paper supports native-ID EPL score reconciling without guessing paid
  assert.match(final,/certifyPersistedOddsScore/);
  assert.match(scoreCron,/VETO_ODDS_SCORES_ENABLED/);
  assert.match(scoreCron,/CRON_SECRET/);
- assert.match(scoreCron,/nominalCredits:2/);
+ assert.match(scoreCron,/nominalCredits:FT_SCORE_COST_CREDITS/);
  assert.match(scoreCron,/appendTruthJournal/);
  assert.match(daily,/proposePrematchPaper/);
  assert.match(daily,/ODDS_PREMATCH_DEVIG_CONTROL_V1/);
