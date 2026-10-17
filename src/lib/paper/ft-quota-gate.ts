@@ -12,8 +12,8 @@ import type {ProviderHealthSample} from "@/lib/persistence/contracts";
  */
 export const FT_SCORE_COST_CREDITS=2 as const;
 export const FT_SCORE_MIN_PROVEN_CREDITS=100 as const;
-export const FT_SCORE_QUOTA_MAX_AGE_MS=30*60*60_000 as const;
-export const FT_SCORE_REPEAT_COOLDOWN_MS=20*60*60_000 as const;
+export const FT_SCORE_QUOTA_MAX_AGE_MS=30*60*60_000;
+export const FT_SCORE_REPEAT_COOLDOWN_MS=20*60*60_000;
 export const FT_SCORE_CRON_UTC_HOUR=7 as const;
 
 export type FtBudgetDecision={
