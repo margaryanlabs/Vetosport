@@ -103,6 +103,8 @@ export function TodayExperience({
               <a className="todayWatchlistAction" href="/research/watchlist">Радар матчей <span>↗</span></a>
               <a className="todayWatchlistAction" href="/research/discovery">Автономные исследования <span>↗</span></a>
               <a className="todayWatchlistAction" href="/research/results">Реальные результаты <span>↗</span></a>
+              <a className="todayWatchlistAction" href="/research/paper-lab">Daily Paper · $200 <span>↗</span></a>
+              <a className="todayWatchlistAction" href="/research/high-odds">High Odds · 10×–50×+ <span>↗</span></a>
             </div>
             <div className="todayDataTruth todayDataTruthInline" aria-label="Состояние данных">
               <i className={liveCount?"available":"awaiting"}/>
