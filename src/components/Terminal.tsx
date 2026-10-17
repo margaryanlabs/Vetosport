@@ -13,6 +13,7 @@ import { AsianLinesBoard } from "@/components/AsianLinesBoard";
 import { BacktestLab } from "@/components/BacktestLab";
 import { ModelGovernancePanel } from "@/components/ModelGovernancePanel";
 import { LiveCommandCenter } from "@/components/LiveCommandCenter";
+import {LivePaperPulse} from "@/components/LivePaperPulse";
 import { ParallaxCore } from "@/components/ParallaxCore";
 import { SpecialistSportSurface } from "@/components/SpecialistSportSurface";
 import { VetoMark, VetoWordmark } from "@/components/VetoMark";
@@ -368,6 +369,7 @@ export function Terminal({
             </small>
           </div>
 
+      <LivePaperPulse events={eventSummaries}/>
       <LiveCommandCenter
         events={eventSummaries}
         activeEventId={selectedEventId}
@@ -439,6 +441,8 @@ export function Terminal({
             <p>Автономный поиск проверяет реальные игровые снимки и публикует гипотезы. Модельные симуляции доступны отдельно, только по явному выбору.</p>
             <a href="/research/discovery">Открыть автономные исследования ↗</a>
             <a href="/research/watchlist">Проверить матчи и котировки ↗</a>
+            <a href="/research/paper-lab">Daily Paper · виртуальные $200 ↗</a>
+            <a href="/research/high-odds">High Odds · экспрессы без реальных ставок ↗</a>
           </div>
         </section>
       )}
