@@ -96,7 +96,7 @@ export function ObservedEventRoom({
       <div className="observedStudioData">
         <ObservedScoreStory points={observation.scoreHistory??[]} home={event.homeName} away={event.awayName}/>
         <ObservedOddsBoard quotes={observation.quotes}/>
-        <PaperResearchTicket event={event} quotes={observation.quotes}/>
+        <PaperResearchTicket event={event} quotes={observation.quotes} modelPredictions={observation.shadowPredictions}/>
       </div>
 
       <div className="observedBody">

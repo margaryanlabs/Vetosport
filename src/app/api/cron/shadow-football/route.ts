@@ -49,6 +49,9 @@ export async function GET(request: Request) {
     }
   }
 
+  // The independent paper cron is responsible for virtual research.
+  // Shadow inference does not depend on paper ledger health.
+
   return NextResponse.json({
     ok: results.every((row) => row.ok !== false),
     generatedAt: new Date().toISOString(),

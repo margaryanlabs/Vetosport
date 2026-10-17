@@ -514,3 +514,230 @@ test("Real score-price audit rows show exact causal time and explicitly exclude 
  assert.match(page,/БУКМЕКЕР НЕ УСТАНОВЛЕН/);
  assert.doesNotMatch(builder,/appendQuotes|appendEventState|appendDecision|appendTruthJournal/);
 });
+
+
+test("Paper FT read API verifies stored source evidence and does not poll paid providers",()=>{
+ const api=read("src/app/api/intelligence/paper-journal/finals/route.ts");
+ const engine=read("src/lib/paper/paper-verification.ts");
+ const ledger=read("src/lib/paper/paper-ledger.ts");
+ const lab=read("src/components/PaperResearchTicket.tsx");
+ assert.match(api,/certifyStoredPaperFinal/);
+ assert.match(api,/eventIds:ids/);
+ assert.match(api,/ids.length<=8/);
+ assert.match(api,/providerCalls:0/);
+ assert.doesNotMatch(api,/API_FOOTBALL_KEY|the-odds-api.com|v3.football.api-sports.io/);
+ assert.match(engine,/api-football\.fixtures\.results/);
+ assert.match(engine,/regulationTimeOnly===true/);
+ assert.match(engine,/event.event.status!=="finished"/);
+ assert.match(engine,/paperContractFromQuote/);
+ assert.match(engine,/entry.marketContract/);
+ assert.match(engine,/Date\.parse\(entry\.recordedAt\)>=Date\.parse\(final\.capturedAt\)/);
+ assert.match(ledger,/PROVIDER_FT_SCORE_VERIFIED_PRICE_NOT_EXECUTED/);
+ assert.match(lab,/Сверить исходы/);
+ assert.match(lab,/checkCertifiedFinals/);
+ assert.match(lab,/не является сигналом к ставке/);
+});
+
+
+test("Strategy validation never presents repeated, post-event or hand-settled tickets as validated edge",()=>{
+ const engine=read("src/lib/paper/strategy-validation.ts");
+ const ui=read("src/components/StrategyValidationPanel.tsx");
+ const journal=read("src/components/PaperResearchTicket.tsx");
+ const selfcheck=read("src/app/api/intelligence/paper-journal/selfcheck/route.ts");
+ assert.match(engine,/validatePaperStrategies/);
+ assert.match(engine,/recorded-quote>120_000/);
+ assert.match(engine,/recorded-model>300_000/);
+ assert.match(engine,/excluded.duplicate/);
+ assert.match(engine,/prospectiveValidated:false/);
+ assert.match(engine,/validatedEdgeCount:0/);
+ assert.match(engine,/strategyValidationSelfcheck/);
+ assert.match(ui,/EDGE НЕ ДОКАЗАН/);
+ assert.match(ui,/CALIBRATION \/ 5 BINS/);
+ assert.match(ui,/Доказательная граница/);
+ assert.match(journal,/StrategyValidationPanel entries=\{entries\}/);
+ assert.match(journal,/verificationCursorRef.current/);
+ assert.match(selfcheck,/strategies.passed/);
+});
+
+
+test("On-demand autonomous paper replay uses exact stored evidence and never places a bet",()=>{
+ const replay=read("src/lib/paper/autonomous-replay.ts");
+ const route=read("src/app/api/intelligence/paper-journal/autonomous/route.ts");
+ const ui=read("src/components/AutonomousReplayPanel.tsx");
+ const research=read("src/components/StrategyValidationPanel.tsx");
+ const self=read("src/app/api/intelligence/paper-journal/selfcheck/route.ts");
+ assert.match(replay,/certifyStoredPaperFinal/);
+ assert.match(replay,/prediction.fairProbability\*quote.decimalOdds-1/);
+ assert.match(replay,/quote.marketKey&&p.selectionKey===quote.selectionKey/);
+ assert.match(replay,/const MAX_AGE_MS=120_000/);
+ assert.match(replay,/if\(chosen\)rows.push\(chosen\)/);
+ assert.match(replay,/validatedEdgeCount:0/);
+ assert.match(replay,/autonomousReplaySelfcheck/);
+ assert.match(route,/listRecentEvents/);
+ assert.match(route,/listRecentQuotesForEvents/);
+ assert.match(route,/listRecentPredictionsForEvents/);
+ assert.match(route,/listRecentEventStates/);
+ assert.match(route,/sourceTruncationPossible:capped/);
+ assert.match(route,/providerCalls:0/);
+ assert.doesNotMatch(route,/appendEvent|appendDecision|settleFootballEvent|API_FOOTBALL_KEY|CRON_SECRET/);
+ assert.match(ui,/Исследовать архив/);
+ assert.match(ui,/КАНДИДАТ|ЗАФИКСИРОВАННЫЕ ПРАВИЛА/);
+ assert.match(research,/AutonomousReplayPanel/);
+ assert.match(self,/autonomous.passed/);
+});
+
+
+test("Forward daily paper lab remains server-only, auditable and bound to real observed data",()=>{
+ const migration=read("database/migrations/011_forward_paper_lab.sql");
+ const engine=read("src/lib/paper/daily-research.ts");
+ const runner=read("src/lib/paper/daily-runner.ts");
+ const cron=read("src/app/api/cron/paper-research/route.ts");
+ const route=read("src/app/api/intelligence/paper-journal/daily/route.ts");
+ const page=read("src/app/research/paper-lab/page.tsx");
+ const self=read("src/app/api/intelligence/paper-journal/selfcheck/route.ts");
+ assert.match(migration,/virtual_stake numeric/);
+ assert.match(migration,/unique \(protocol,day_utc,daily_slot\)/);
+ assert.match(migration,/enable row level security/);
+ assert.match(migration,/from anon, authenticated/);
+ assert.match(migration,/PAPER_PICK_EVIDENCE_STALE/);
+ assert.match(engine,/INITIAL_PAPER_BANK=200/);
+ assert.match(engine,/DAILY_PAPER_STAKE=4/);
+ assert.match(engine,/MAX_PAPER_PICKS_PER_DAY=3/);
+ assert.match(engine,/paperContractFromQuote/);
+ assert.match(engine,/certifyStoredPaperFinal/);
+ assert.match(engine,/v.mode==="SHADOW"/);
+ assert.match(engine,/dailyPaperSelfcheck/);
+ assert.match(runner,/runDailyPaperTick/);
+ assert.match(runner,/input.observedEvents/);
+ assert.match(runner,/LEDGER_HISTORY_WINDOW_EXHAUSTED/);
+ assert.match(cron,/runDailyPaperTick/);
+ assert.match(cron,/Bearer/);
+ assert.match(route,/accountFromPaper/);
+ assert.doesNotMatch(route,/export async function POST|appendDecision|insertPaperDailyPick/);
+ assert.match(page,/DailyPaperResearchPanel/);
+ assert.match(self,/daily.passed/);
+});
+
+test("Paper observer reports source blockers and cannot present missing forecasts or FT as profits",()=>{
+ const engine=read("src/lib/paper/daily-research.ts");
+ const runner=read("src/lib/paper/daily-runner.ts");
+ const readApi=read("src/app/api/intelligence/paper-journal/daily/route.ts");
+ const panel=read("src/components/DailyPaperResearchPanel.tsx");
+ assert.match(engine,/explainPaperBlock/);
+ assert.match(engine,/FRESH_SCORE_MISSING/);
+ assert.match(engine,/FULLTIME_MARKET_NOT_MAPPED/);
+ assert.match(runner,/blockedBy/);
+ assert.match(runner,/explainPaperBlock/);
+ assert.match(readApi,/UPSTREAM_SUBSCRIPTION/);
+ assert.match(readApi,/lastHeartbeat/);
+ assert.match(panel,/ПОЧЕМУ НЕ БЫЛО PAPER-СТАВОК/);
+ assert.match(panel,/ПОДПИСКА API ОГРАНИЧЕНА/);
+});
+
+test("Daily paper supports native-ID EPL score reconciling without guessing paid provider FT",()=>{
+ const final=read("src/lib/paper/odds-score-certification.ts");
+ const scoreCron=read("src/app/api/cron/the-odds-scores/route.ts");
+ const daily=read("src/lib/paper/daily-research.ts");
+ const migration=read("database/migrations/013_prematch_native_odds_and_scores.sql");
+ const schedule=read("vercel.json");
+ assert.match(final,/parseOddsApiScore/);
+ assert.match(final,/matchOddsApiScore/);
+ assert.match(final,/certifyPersistedOddsScore/);
+ assert.match(scoreCron,/VETO_ODDS_SCORES_ENABLED/);
+ assert.match(scoreCron,/CRON_SECRET/);
+ assert.match(scoreCron,/nominalCredits:2/);
+ assert.match(scoreCron,/appendTruthJournal/);
+ assert.match(daily,/proposePrematchPaper/);
+ assert.match(daily,/ODDS_PREMATCH_DEVIG_CONTROL_V1/);
+ assert.match(daily,/certifyPersistedOddsScore/);
+ assert.match(migration,/PREMATCH_ODDS_CONTROL/);
+ assert.match(migration,/PAPER_PREMATCH_NATIVE_SOURCE_NOT_VALID/);
+ assert.match(schedule,/\/api\/cron\/the-odds-scores/);
+});
+
+test("Dedicated half-hour paper cron runs independently of model inference, selects scoped EPL odds",()=>{
+ const cron=read("src/app/api/cron/paper-research/route.ts");
+ const shadow=read("src/app/api/cron/shadow-football/route.ts");
+ const runner=read("src/lib/paper/daily-runner.ts");
+ const storage=read("src/lib/persistence/supabase-rest.ts");
+ const schedules=read("vercel.json");
+ assert.match(cron,/runDailyPaperTick/);
+ assert.match(cron,/CRON_SECRET/);
+ assert.match(cron,/appendProviderHealth/);
+ assert.doesNotMatch(shadow,/runDailyPaperTick/);
+ assert.match(runner,/marketKey:"soccer_epl.h2h"/);
+ assert.match(runner,/capturedSince:/);
+ assert.match(storage,/input.capturedSince/);
+ assert.match(schedules,/\/api\/cron\/paper-research/);
+ assert.doesNotMatch(cron,/THE_ODDS_API_KEY|API_FOOTBALL_KEY|placeWager|executeBet/);
+});
+
+test("Virtual paper bankroll separates uncalibrated VETO research from price-derived control baselines",()=>{
+ const engine=read("src/lib/paper/daily-research.ts");
+ const panel=read("src/components/DailyPaperResearchPanel.tsx");
+ assert.match(engine,/paperCohorts/);
+ assert.match(engine,/minimumSampleReached:settled.length>=30/);
+ assert.match(engine,/profitabilityValidated:false/);
+ assert.match(engine,/wilson\(/);
+ assert.match(panel,/SCIENTIFIC SCOREBOARD/);
+ assert.match(panel,/95% Wilson win-rate/);
+ assert.match(panel,/cohort.minimumSampleReached/);
+});
+
+test("High odds paper lab keeps same-game combinations unpriced and certifies only stored FT",()=>{
+ const research=read("src/lib/paper/high-odds-research.ts");
+ const runner=read("src/lib/paper/high-odds-runner.ts");
+ const cron=read("src/app/api/cron/paper-research/route.ts");
+ const api=read("src/app/api/intelligence/paper-journal/high-odds/route.ts");
+ const migration=read("database/migrations/014_paper_high_odds_lab.sql");
+ const score=read("src/app/api/cron/the-odds-scores/route.ts");
+ const page=read("src/app/research/high-odds/page.tsx");
+ assert.match(research,/HIGH_ODDS_INITIAL_BANK=200/);
+ assert.match(research,/HIGH_ODDS_STAKE=1/);
+ assert.match(research,/HIGH_ODDS_MAX_LEG_EXPOSURE_PER_DAY=2/);
+ assert.match(research,/PRODUCT_OF_SINGLE_MARKET_PRICES_NOT_EXECUTABLE/);
+ assert.match(research,/new Set\(slip.legs.map\(x=>x.eventId\)\)/);
+ assert.match(research,/settleHighOddsSlip/);
+ assert.match(research,/highOddsSelfcheck/);
+ assert.match(runner,/runHighOddsTick/);
+ assert.match(cron,/runHighOddsTick/);
+ assert.match(api,/highOddsAccount/);
+ assert.doesNotMatch(api,/export async function POST|createWager|insertHighOddsPaperTicket/);
+ assert.match(migration,/HIGH_ODDS_SAME_EVENT_COMBO_HAS_NO_BOOK_PRICE/);
+ assert.match(migration,/HIGH_ODDS_SOURCE_QUOTE_NOT_FOUND/);
+ assert.match(migration,/HIGH_ODDS_FIXTURE_EXPOSURE_LIMIT/);
+ assert.match(migration,/HIGH_ODDS_PROVIDER_CERTIFICATE_NOT_FOUND/);
+ assert.match(score,/highDue/);
+ assert.match(page,/HighOddsLabPanel/);
+});
+
+test("Longshot candidate desk only reads recorded EPL quotes and does NOT book wagers",()=>{
+ const api=read("src/app/api/intelligence/paper-journal/high-odds/candidates/route.ts");
+ const panel=read("src/components/HighOddsLabPanel.tsx");
+ assert.match(api,/source:"PERSISTED_ONLY"/);
+ assert.match(api,/mode:"UNCOMMITTED_RESEARCH_PREVIEW"/);
+ assert.match(api,/listRecentEvents/);
+ assert.match(api,/listRecentQuotesForEvents/);
+ assert.match(api,/proposeHighOddsSlips/);
+ assert.match(api,/committed:0/);
+ assert.doesNotMatch(api,/insertHighOddsPaperTicket|appendDecision|placeWager|createBet|THE_ODDS_API_KEY/);
+ assert.match(panel,/Исследовать текущие коэффициенты/);
+ assert.match(panel,/UNCOMMITTED_RESEARCH_PREVIEW/);
+ assert.match(panel,/не зарегистрированные ставки/);
+});
+
+test("Paper journals distinguish bridge table allowlist errors from missing API keys",()=>{
+ const route=read("src/app/api/intelligence/paper-journal/readiness/route.ts");
+ const high=read("src/components/HighOddsLabPanel.tsx");
+ const daily=read("src/components/DailyPaperResearchPanel.tsx");
+ assert.match(route,/BRIDGE_RESOURCE_DENIED/);
+ assert.match(route,/STORAGE_AUTH_FAILED/);
+ assert.match(route,/highTickets/);
+ assert.match(route,/ordinaryFinals/);
+ assert.match(route,/highFinals/);
+ assert.match(route,/NO_REAL|PAPER|EXISTING_SERVER_SIDE_BRIDGE/);
+ assert.match(route,/NOT_REQUIRED_FOR_STORED_PAPER_VIEW/);
+ assert.match(high,/paper-journal\/readiness/);
+ assert.match(daily,/paper-journal\/readiness/);
+ assert.doesNotMatch(route,/export async function POST|THE_ODDS_API_KEY|API_FOOTBALL_KEY|serviceRoleKey/);
+});

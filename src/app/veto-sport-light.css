@@ -570,3 +570,78 @@ html[data-veto-sport-appearance="light"] :is(
 html[data-veto-sport-appearance="light"] :is(
   .paperPerformance strong.negative,.paperOutcomeNet.negative
 ) {color:#b52f40 !important}
+
+
+/* Paper research upgrade: new elements inherit accessible light appearance. */
+html[data-veto-sport-appearance="light"] .paperLedger.paperStudio,
+html[data-veto-sport-appearance="light"] .paperLedger .paperTicketEditor,
+html[data-veto-sport-appearance="light"] .paperLedger .paperTicketHistory,
+html[data-veto-sport-appearance="light"] .paperLedger .paperPerformance article,
+html[data-veto-sport-appearance="light"] .paperLedger .paperEquityWrap,
+html[data-veto-sport-appearance="light"] .paperLedger .paperResearchPulse>div,
+html[data-veto-sport-appearance="light"] .paperLedger .paperSubjectiveEdge {
+ background:#fff!important;border-color:rgba(28,45,61,.16)!important;box-shadow:none;color:#16212e!important;
+}
+html[data-veto-sport-appearance="light"] .paperLedger .paperResearchPulse>div,
+html[data-veto-sport-appearance="light"] .paperLedger .paperSubjectiveEdge,
+html[data-veto-sport-appearance="light"] .paperLedger .paperHistoryFilters button {
+ background:#f5f7fa!important;
+}
+html[data-veto-sport-appearance="light"] .paperLedger :is(.paperResearchPulse b,.paperSubjectiveEdge strong){color:#182330!important}
+html[data-veto-sport-appearance="light"] .paperLedger :is(.paperResearchPulse small,.paperSubjectiveEdge span,.paperSubjectiveEdge small,.paperTicketHistory article>div:first-child small){color:#536173!important}
+html[data-veto-sport-appearance="light"] .paperLedger .paperHistoryFilters button{color:#415064!important;border-color:rgba(28,45,61,.22)!important}
+html[data-veto-sport-appearance="light"] .paperLedger .paperHistoryFilters button.active{background:#fbe9eb!important;color:#9d2434!important;border-color:#bf4050!important}
+html[data-veto-sport-appearance="light"] .paperLedger .paperResearchInput input::placeholder{color:#6a7788!important}
+html[data-veto-sport-appearance="light"] .paperLedger .paperTicketEditor :is(input,select),
+html[data-veto-sport-appearance="light"] .paperLedger .paperControlBar select,
+html[data-veto-sport-appearance="light"] .paperLedger .paperOutcomeControls :is(select,button){background:#fff!important;color:#1a2b3e!important}
+
+
+/* Certified FT verification notice stays legible on the light canvas. */
+html[data-veto-sport-appearance="light"] .paperLedger .paperFinalVerification{background:#fff4f5!important;border-color:rgba(154,45,62,.25)!important}
+html[data-veto-sport-appearance="light"] .paperLedger .paperFinalVerification strong{color:#263446!important}
+html[data-veto-sport-appearance="light"] .paperLedger .paperFinalVerification p,
+html[data-veto-sport-appearance="light"] .paperLedger .paperFinalVerification small{color:#506072!important}
+html[data-veto-sport-appearance="light"] .paperLedger .paperFinalVerification>button{background:#202b3c!important;color:#fff!important;border-color:#202b3c!important}
+
+
+html[data-veto-sport-appearance="light"] .paperLedger :is(.paperModelScore,.paperModelSnapshot){background:#fff!important;border-color:rgba(28,45,61,.16)!important}
+html[data-veto-sport-appearance="light"] .paperLedger :is(.paperModelScore strong,.paperModelSnapshot strong){color:#1e2b39!important}
+html[data-veto-sport-appearance="light"] .paperLedger :is(.paperModelScore span,.paperModelSnapshot span,.paperModelScore small,.paperModelScore p,.paperModelSnapshot small){color:#536173!important}
+
+
+/* Strategy Validation: no invisible statistics in the white appearance. */
+html[data-veto-sport-appearance="light"] .paperValidation{background:#fff!important;color:#1c2938!important;border-color:rgba(28,45,61,.16)!important}
+html[data-veto-sport-appearance="light"] .paperValidation :is(.paperValidationKpis article,.paperValidationMetrics article,.paperCalibration,.paperValidationEvidence,.paperValidationState,.paperValidation footer){background:#f7f8fa!important;color:#233245!important;border-color:rgba(28,45,61,.14)!important}
+html[data-veto-sport-appearance="light"] .paperValidation :is(h3,.paperCalibration header b,.paperValidationEvidence header b,.paperValidationKpis article strong,.paperValidationMetrics article strong,.paperValidationEvidence div strong){color:#192638!important}
+html[data-veto-sport-appearance="light"] .paperValidation :is(.paperValidationHead>div>span,.paperValidationHead p,.paperValidationKpis article span,.paperValidationKpis article small,.paperValidationMetrics article small,.paperValidationMetrics article span,.paperCalibration header span,.paperCalibrationRow>span,.paperCalibrationRow>b,.paperCalibration>small,.paperValidationEvidence header span,.paperValidationEvidence div small,.paperValidationEvidence p,.paperValidationState span,.paperValidation footer span,.paperCalibrationLegend){color:#536276!important}
+html[data-veto-sport-appearance="light"] .paperValidation :is(.paperValidationState b,.paperValidationEvidence>p b,.paperValidation footer>b){color:#9f2c3e!important}
+html[data-veto-sport-appearance="light"] .paperValidationBadge{color:#9f2c3e!important;background:#fce8ec!important;border-color:rgba(159,44,62,.25)!important}
+html[data-veto-sport-appearance="light"] .paperValidationSelector label{color:#304358!important}
+html[data-veto-sport-appearance="light"] .paperValidationSelector select{color:#192638!important;background:#fff!important;border-color:#9eaaba!important}
+html[data-veto-sport-appearance="light"] .paperCalibrationTracks>div{background:#e4e7ed!important}
+html[data-veto-sport-appearance="light"] .paperCalibrationTracks>div>i{background:#6c7b8e!important}
+html[data-veto-sport-appearance="light"] .paperCalibrationTracks>div:nth-child(2)>i{background:#be384a!important}
+html[data-veto-sport-appearance="light"] .paperCalibrationLegend i:first-of-type{background:#6c7b8e!important}
+html[data-veto-sport-appearance="light"] .paperCalibrationLegend i:nth-of-type(2){background:#be384a!important}
+
+
+/* White appearance: research narrative, provenance and values stay fully legible. */
+html[data-veto-sport-appearance="light"] .paperAutoReplay{background:#fff!important;border-color:#d5d9e0!important;color:#172535!important}
+html[data-veto-sport-appearance="light"] .paperAutoHeader h3,
+html[data-veto-sport-appearance="light"] .paperAutoCases h4,
+html[data-veto-sport-appearance="light"] .paperAutoMetrics strong,
+html[data-veto-sport-appearance="light"] .paperAutoCaseList b,
+html[data-veto-sport-appearance="light"] .paperAutoAudit b{color:#1b2939!important}
+html[data-veto-sport-appearance="light"] .paperAutoHeader :is(span,p),
+html[data-veto-sport-appearance="light"] .paperAutoMetrics :is(small,span),
+html[data-veto-sport-appearance="light"] .paperAutoCaseList :is(small,span),
+html[data-veto-sport-appearance="light"] .paperAutoResult>footer{color:#526276!important}
+html[data-veto-sport-appearance="light"] .paperAutoPolicy{background:#fff5f6!important;border-color:#eac1c7!important}
+html[data-veto-sport-appearance="light"] .paperAutoPolicy strong{color:#982c3e!important}
+html[data-veto-sport-appearance="light"] .paperAutoPolicy :is(span,small){color:#576173!important}
+html[data-veto-sport-appearance="light"] .paperAutoMetrics article,
+html[data-veto-sport-appearance="light"] .paperAutoCaseList article,
+html[data-veto-sport-appearance="light"] .paperAutoAudit span{background:#f6f7f9!important;border-color:#d7dce4!important;color:#536074!important}
+html[data-veto-sport-appearance="light"] .paperAutoEmpty{color:#536276!important;border-color:#c7cdd8!important}
+html[data-veto-sport-appearance="light"] .paperAutoWarning{color:#9e2a40!important;background:#fff0f2!important;border-color:#e8b6c2!important}

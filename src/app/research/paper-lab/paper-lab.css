@@ -1,0 +1,128 @@
+.paperLabPage{min-height:100vh;background:#09090b;color:#f2f2f5;padding-bottom:45px}
+.paperLabNav,.paperLabHero,.paperLabContent,.paperLabFooter{width:min(1440px,calc(100% - 48px));margin-left:auto;margin-right:auto}
+.paperLabNav{display:flex;align-items:center;gap:22px;justify-content:space-between;padding:24px 0;border-bottom:1px solid rgba(255,255,255,.14)}
+.paperLabBrand{text-decoration:none;color:#f4f4f6;font-size:15px;font-weight:850;letter-spacing:.13em;display:flex;align-items:center;gap:9px}
+.paperLabBrand em{font-style:normal;color:#e65363;font-size:13px}.paperLabNav>div{display:flex;align-items:center;gap:13px;color:#92949f;font-size:10px;letter-spacing:.09em}
+.paperLabNav a:not(.paperLabBrand){color:#e4e4e7;text-decoration:none;padding:10px 13px;border:1px solid rgba(255,255,255,.16);border-radius:9px}
+.paperLabHero{padding:73px 0 57px;display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:50px;align-items:end}
+.paperLabHero>div>small{font-size:10px;letter-spacing:.17em;color:#b6b6c0;font-weight:790}
+.paperLabHero h1{font-size:clamp(40px,6.4vw,90px);line-height:1.02;letter-spacing:-.076em;margin:20px 0 25px;color:#f9f9fa}
+.paperLabHero h1 em{font-style:normal;color:#9da0a9}.paperLabHero p{font-size:15px;color:#acadb7;max-width:750px;line-height:1.7}
+.paperLabHero aside{padding:24px;border:1px solid rgba(255,255,255,.19);border-radius:13px;background:linear-gradient(150deg,#222225,#141417)}
+.paperLabHero aside>span{display:block;font-size:10px;color:#c4c5ca;letter-spacing:.1em}
+.paperLabHero aside strong{display:block;font:730 54px/1.5 var(--font-veto-tech),monospace;color:#fff;letter-spacing:-.07em}
+.paperLabHero aside strong span{color:#a8aab2}.paperLabHero aside small{line-height:1.6;font-size:11px;color:#b3b4bd}
+.paperLabContent{display:grid;gap:20px}
+.paperDaily,.paperAutoReplay{margin:0!important}
+.paperDaily{border:1px solid rgba(255,255,255,.14);border-radius:15px;background:radial-gradient(circle at 90% 0%,rgba(194,42,62,.065),transparent 30%),#101013;padding:27px}
+.paperDailyTop{display:flex;justify-content:space-between;align-items:flex-start;gap:22px}.paperDailyTop>div:first-child{max-width:750px}
+.paperDailyEyebrow{color:#adb0bc;font-size:10px;font-weight:800;letter-spacing:.14em}
+.paperDailyTop h3{font-size:clamp(25px,3vw,37px);letter-spacing:-.05em;color:#f7f7f9;margin:9px 0}
+.paperDailyTop p{color:#b9bbc4;font-size:12px;line-height:1.7;margin:0}
+.paperDailyTools{display:grid;justify-items:end;gap:12px}.paperDailyTools button,.paperDailyTickets header>button{padding:11px 17px;background:#26262b;border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#f4f4f6;font-size:11px;font-weight:760;cursor:pointer}
+.paperDailyTools button:disabled,.paperDailyTickets button:disabled{opacity:.45;cursor:default}
+.paperDailyState{font-size:10px;letter-spacing:.06em;font-weight:740;border-radius:20px;padding:9px 12px;color:#e9b7bb;background:#462025}
+.paperDailyState.running{color:#addeb9;background:#1c3a28}
+.paperDailyRules{display:grid;gap:8px;margin-top:23px;padding:17px 20px;border:1px solid rgba(232,85,98,.28);border-radius:10px;background:rgba(232,85,98,.055)}
+.paperDailyRules strong{font-size:10px;letter-spacing:.11em;color:#f2bac0}.paperDailyRules span{font-size:12px;line-height:1.6;color:#e6dee1}.paperDailyRules small{font-size:11px;color:#bbb8c0;line-height:1.6}
+.paperDailyKpis{display:grid;grid-template-columns:1.3fr repeat(4,1fr);gap:8px;margin:18px 0}
+.paperDailyKpis article{display:grid;gap:10px;align-content:center;border-radius:10px;padding:19px 15px;min-width:0;background:#1b1b1e;border:1px solid rgba(255,255,255,.12)}
+.paperDailyKpis article.main{background:#29282c;border-color:rgba(255,255,255,.22)}
+.paperDailyKpis small,.paperDailyKpis span{font-size:10px;color:#afb1bf;line-height:1.5}.paperDailyKpis small{font-weight:790;letter-spacing:.06em}
+.paperDailyKpis strong{font:760 clamp(21px,2.35vw,32px)/1.05 var(--font-veto-tech),monospace;color:#f7f7f9;letter-spacing:-.04em}
+.paperDaily .negative{color:#f29fa8!important}.paperDaily .positive{color:#b4dfc0!important}
+.paperDailySecondary{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}
+.paperDailyEquity,.paperDailyHistory{border:1px solid rgba(255,255,255,.12);background:#171719;border-radius:11px;padding:18px;min-width:0}
+.paperDailySecondary header{display:grid;gap:8px;margin-bottom:16px}.paperDailySecondary header span,.paperDailyTickets header span{font-size:10px;color:#a4a6b2;letter-spacing:.11em}
+.paperDailySecondary header b{font-size:17px;color:#f5f5f6}.paperDailyEquity svg{display:block;width:100%;height:auto;color:#b6bac2}.paperDailyEquity>small{font-size:10px;color:#adb0bb;line-height:1.6}
+.paperDailyNoChart,.paperDailyEmpty{padding:28px 17px;line-height:1.7;color:#b6b8c1;font-size:12px;background:#1a1a1d;border:1px dashed rgba(255,255,255,.16);border-radius:9px}
+.paperDailyHistory>div:not(header){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:10px;padding:14px 0;border-top:1px solid rgba(255,255,255,.09);align-items:center}
+.paperDailyHistory>div span,.paperDailyHistory>div small{font-size:10px;color:#a8adb8}.paperDailyHistory>div strong{font-size:12px;color:#efeff0}
+.paperDailyHistory p{font-size:12px;color:#adaeb6;line-height:1.7}
+.paperDailyTickets{margin-top:20px;border:1px solid rgba(255,255,255,.12);background:#17171a;border-radius:11px;padding:18px}
+.paperDailyTickets header{display:flex;align-items:center;gap:15px;justify-content:space-between}.paperDailyTickets h4{color:#f1f1f4;font-size:17px;margin:7px 0 0}
+.paperDailyFilters{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 12px}.paperDailyFilters button{cursor:pointer;border:1px solid rgba(255,255,255,.17);background:#232327;color:#bdbdc7;border-radius:7px;padding:8px 12px;font-size:11px}
+.paperDailyFilters button[aria-pressed=true]{background:#e85162;color:#fff;border-color:#e85162}
+.paperDailyRows{display:grid;gap:6px}.paperDailyRows article{padding:14px 15px;border-radius:8px;background:#202024;border:1px solid rgba(255,255,255,.1);display:grid;grid-template-columns:1.4fr .7fr .9fr .9fr;gap:12px}
+.paperDailyRows article>div{min-width:0;display:grid;gap:6px;align-content:center}
+.paperDailyRows article span,.paperDailyRows article small{font-size:10px;color:#b3b6c0;line-height:1.5;overflow-wrap:anywhere}
+.paperDailyRows article b{font-size:12px;color:#f5f5f7;line-height:1.4;overflow-wrap:anywhere}
+.paperDailyData>footer{margin-top:17px;display:grid;gap:9px;padding:16px;background:#212125;border-radius:10px}
+.paperDailyData>footer b{font-size:10px;letter-spacing:.1em;color:#ecc3c9}.paperDailyData>footer span{font-size:11px;line-height:1.7;color:#bfc0c9}
+.paperDailyError{margin:14px 0;padding:14px 16px;background:#442228;border:1px solid #76404a;border-radius:9px;color:#f1b3bc;font-size:12px;line-height:1.7}
+.paperLabFooter{display:flex;justify-content:space-between;gap:18px;color:#a2a7b1;font-size:11px;padding:30px 0}
+.paperLabFooter a{text-decoration:none;color:#f2f2f5}
+@media(max-width:1200px){.paperDailyKpis{grid-template-columns:repeat(3,minmax(0,1fr))}.paperDailySecondary{grid-template-columns:1fr}.paperDailyRows article{grid-template-columns:1.2fr 1fr 1fr 1fr}}
+@media(max-width:790px){.paperLabNav,.paperLabHero,.paperLabContent,.paperLabFooter{width:calc(100% - 26px)}.paperLabNav>div>span{display:none}.paperLabHero{grid-template-columns:1fr;gap:14px;padding:40px 0 28px}.paperLabHero aside{max-width:340px}.paperDaily{padding:15px}.paperDailyTop{display:grid}.paperDailyTools{justify-items:start}.paperDailyKpis{grid-template-columns:repeat(2,minmax(0,1fr))}.paperDailyRows article{grid-template-columns:repeat(2,minmax(0,1fr))}.paperDailyHistory>div:not(header){grid-template-columns:1fr 1fr auto}}
+@media(max-width:470px){.paperDailyKpis{grid-template-columns:1fr 1fr}.paperDailyKpis article{padding:13px}.paperDailyKpis article.main{grid-column:1/-1}.paperDailyRows article{grid-template-columns:1fr 1fr}.paperDailyRows article>div:first-child{grid-column:1/-1}.paperLabHero h1{font-size:44px}.paperDailyHistory>div:not(header){grid-template-columns:1fr auto}.paperDailyHistory>div small{display:none}.paperLabFooter{display:grid}}
+html[data-veto-sport-appearance="light"] .paperLabPage{background:#f4f6f9!important;color:#1d2b3a}
+html[data-veto-sport-appearance="light"] .paperLabNav{border-color:#d5dce3}
+html[data-veto-sport-appearance="light"] .paperLabBrand,
+html[data-veto-sport-appearance="light"] .paperLabNav a:not(.paperLabBrand),
+html[data-veto-sport-appearance="light"] .paperLabHero h1,
+html[data-veto-sport-appearance="light"] .paperDaily h3,
+html[data-veto-sport-appearance="light"] .paperDailyTickets h4,
+html[data-veto-sport-appearance="light"] .paperDailySecondary header b,
+html[data-veto-sport-appearance="light"] .paperDailyRows article b,
+html[data-veto-sport-appearance="light"] .paperDailyKpis article strong,
+html[data-veto-sport-appearance="light"] .paperDailyHistory strong{color:#1f2c3d!important}
+html[data-veto-sport-appearance="light"] .paperLabHero h1 em,
+html[data-veto-sport-appearance="light"] .paperLabHero p,
+html[data-veto-sport-appearance="light"] .paperDaily :is(p,small,span),
+html[data-veto-sport-appearance="light"] .paperDailySecondary :is(small,span),
+html[data-veto-sport-appearance="light"] .paperDailyRows article small{color:#526175!important}
+html[data-veto-sport-appearance="light"] .paperDaily,
+html[data-veto-sport-appearance="light"] .paperDaily :is(.paperDailyKpis article,.paperDailyEquity,.paperDailyHistory,.paperDailyTickets,.paperDailyRows article,.paperDailyData>footer),
+html[data-veto-sport-appearance="light"] .paperLabHero aside{background:#fff!important;border-color:#d6dce4!important;color:#1c293a!important}
+html[data-veto-sport-appearance="light"] .paperDailyRules{background:#fff4f6!important;border-color:#ebbec5!important}
+html[data-veto-sport-appearance="light"] .paperDailyRules strong{color:#a12e41!important}
+html[data-veto-sport-appearance="light"] .paperDailyTools button,
+html[data-veto-sport-appearance="light"] .paperDailyTickets header>button,
+html[data-veto-sport-appearance="light"] .paperDailyFilters button{color:#223448!important;background:#f7f8fa!important;border-color:#ccd2db!important}
+html[data-veto-sport-appearance="light"] .paperDailyFilters button[aria-pressed=true]{background:#ad3042!important;color:#fff!important}
+html[data-veto-sport-appearance="light"] .paperDaily .negative{color:#b12743!important}
+html[data-veto-sport-appearance="light"] .paperDaily .positive{color:#16794b!important}
+html[data-veto-sport-appearance="light"] .paperDaily :is(.paperDailyError,.paperDailyEmpty,.paperDailyNoChart){background:#fff7f9!important;color:#8a2e41!important}
+html[data-veto-sport-appearance="light"] .paperLabFooter a{color:#283c4e!important}
+
+.paperDailySourceStatus{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:17px 0}
+.paperDailySourceStatus article{background:#181b1b;border:1px solid rgba(132,198,143,.17);border-radius:10px;padding:15px;display:grid;gap:7px}
+.paperDailySourceStatus article.blocked{background:#281d20;border-color:rgba(231,93,114,.27)}
+.paperDailySourceStatus small{font-size:10px;color:#b8bbc3;letter-spacing:.09em}
+.paperDailySourceStatus strong{font-size:13px;color:#f4f4f6}
+.paperDailySourceStatus span{font-size:11px;color:#adb1b9;line-height:1.6}
+.paperDailyBlocked{background:#1d1d21;border:1px solid rgba(255,255,255,.11);padding:15px;border-radius:9px;margin:10px 0 17px}
+.paperDailyBlocked>strong{font-size:10px;letter-spacing:.08em;color:#d6c7cb}
+.paperDailyBlocked>div{display:flex;flex-wrap:wrap;gap:9px;margin-top:11px}
+.paperDailyBlocked>div span{background:#303035;padding:8px 11px;border-radius:7px;color:#d4d4dc;font-size:11px}
+.paperDailyBlocked b{color:#fff}
+@media(max-width:630px){.paperDailySourceStatus{grid-template-columns:1fr}}
+html[data-veto-sport-appearance="light"] .paperDailySourceStatus article,
+html[data-veto-sport-appearance="light"] .paperDailyBlocked{background:#fff!important;border-color:#d7dce4!important}
+html[data-veto-sport-appearance="light"] .paperDailySourceStatus article.blocked{background:#fff6f6!important;border-color:#edc9cc!important}
+html[data-veto-sport-appearance="light"] .paperDailySourceStatus :is(strong,small,span),
+html[data-veto-sport-appearance="light"] .paperDailyBlocked :is(strong,span){color:#2b3a4e!important}
+html[data-veto-sport-appearance="light"] .paperDailyBlocked>div span{background:#f5f7fa!important}
+
+/* Research tracks are diagnostic cohorts of ONE shared $200 virtual account. */
+.paperDailyCohorts{margin:18px 0 16px}
+.paperDailyCohorts>header{margin-bottom:15px}
+.paperDailyCohorts>header>span{font-size:10px;color:#a7abb5;letter-spacing:.11em;font-weight:700}
+.paperDailyCohorts>header h4{font-size:20px;color:#f4f4f6;margin:10px 0}
+.paperDailyCohorts>header p{font-size:11px;color:#afb2bb;line-height:1.6;max-width:920px}
+.paperDailyCohortGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.paperDailyCohortGrid article{border:1px solid rgba(255,255,255,.14);background:#18181b;border-radius:11px;padding:17px;display:grid;gap:8px;min-width:0}
+.paperDailyCohortGrid article>small{color:#c8a4ab;font-size:9px;letter-spacing:.08em}
+.paperDailyCohortGrid h5{margin:0 0 4px;font-size:13px;color:#eef0f2;line-height:1.45}
+.paperDailyCohortGrid article>strong{font:760 27px/1.4 var(--font-veto-tech),monospace;color:#f2f2f4}
+.paperDailyCohortGrid article>div{display:flex;justify-content:space-between;gap:10px;border-top:1px solid rgba(255,255,255,.07);padding-top:9px}
+.paperDailyCohortGrid article>div span{font-size:10px;color:#aeb2bc;line-height:1.6}
+.paperDailyCohortGrid article>div b{font-size:11px;color:#f2f3f5;text-align:right;white-space:nowrap}
+.paperDailyCohortGrid article>footer{font-size:10px;color:#bca9ad;line-height:1.5;margin-top:5px}
+@media(max-width:960px){.paperDailyCohortGrid{grid-template-columns:1fr}}
+html[data-veto-sport-appearance="light"] .paperDailyCohorts>header h4,
+html[data-veto-sport-appearance="light"] .paperDailyCohortGrid :is(h5,strong,b){color:#263648!important}
+html[data-veto-sport-appearance="light"] .paperDailyCohortGrid article{background:#fff!important;border-color:#d3dbe4!important}
+html[data-veto-sport-appearance="light"] .paperDailyCohorts :is(p,span,small,footer){color:#566679!important}
+html[data-veto-sport-appearance="light"] .paperDailyCohortGrid article>strong.positive{color:#16794b!important}
+html[data-veto-sport-appearance="light"] .paperDailyCohortGrid article>strong.negative{color:#b12743!important}

@@ -1,0 +1,112 @@
+.highOddsPage{background:radial-gradient(circle at 72% 5%,rgba(147,49,65,.10),transparent 35%),#09090b}
+.hoResearch{display:grid;gap:18px;padding:44px 0 20px;color:#efeff3}
+.hoHero{display:grid;grid-template-columns:minmax(0,1fr) 305px;gap:34px;align-items:end}
+.hoKicker{font-size:10px;font-weight:780;color:#e28b96;letter-spacing:.18em}
+.hoHero h2{font-size:clamp(50px,6.4vw,91px);line-height:.98;letter-spacing:-.075em;color:#f7f7f7;margin:19px 0 23px}
+.hoHero h2 em{font-style:normal;color:#a1a3ab}
+.hoHero p{font-size:13px;color:#adafb9;line-height:1.75;max-width:750px}
+.hoHero aside{border-radius:13px;background:#1c1b1e;border:1px solid rgba(255,255,255,.17);padding:24px;display:grid;gap:13px}
+.hoHero aside small{font-size:10px;letter-spacing:.12em;color:#b2b5bd}
+.hoHero aside strong{font:730 48px/1 var(--font-veto-tech),monospace;color:#fff;letter-spacing:-.06em}
+.hoHero aside>span{font-size:11px;line-height:1.65;color:#b9b9c3}
+.hoHero aside b{font-size:10px;letter-spacing:.12em;color:#b4d4c2;border:1px solid rgba(123,209,164,.25);padding:8px 10px;border-radius:8px;width:fit-content}
+.hoDisclaimer{background:linear-gradient(103deg,rgba(218,63,90,.13),rgba(255,255,255,.02));border:1px solid rgba(233,90,112,.27);border-radius:12px;display:grid;gap:8px;padding:17px 20px}
+.hoDisclaimer b{font-size:10px;color:#f4abb5;letter-spacing:.12em}
+.hoDisclaimer span{font-size:11px;color:#c9bec2;line-height:1.8}
+.hoStatus{display:flex;flex-wrap:wrap;align-items:center;gap:13px;color:#b8bac3;font-size:11px}
+.hoStatus span:first-child{color:#f0b1b8}.hoStatus span.ok:first-child{color:#b1e7c5}
+.hoStatus button{margin-left:auto;border:1px solid rgba(255,255,255,.15);border-radius:8px;background:#222228;color:#f0f1f4;font-size:11px;font-weight:760;padding:10px 15px;cursor:pointer}
+.hoStatus button:disabled{opacity:.5}
+.hoFault{background:#42202a;color:#f6bdc7;padding:13px 16px;border-radius:10px;font-size:12px}
+.hoKPIs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.hoKPIs>div{display:grid;align-content:center;gap:12px;background:#1c1c20;border-radius:11px;border:1px solid rgba(255,255,255,.12);padding:19px;min-width:0}
+.hoKPIs small,.hoKPIs span{font-size:10px;color:#afb2bf;line-height:1.4}.hoKPIs small{letter-spacing:.11em;font-weight:760}
+.hoKPIs strong{font:730 clamp(21px,3vw,34px)/1 var(--font-veto-tech),monospace;color:#f8f8f9;letter-spacing:-.045em}
+.hoTracks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.hoTracks article{background:#17171a;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px;display:grid;gap:13px}
+.hoTracks article>span{font-size:10px;letter-spacing:.12em;color:#c0a1a9}
+.hoTracks article>strong{font-size:clamp(24px,3vw,34px);letter-spacing:-.055em;color:#f0f0f3}
+.hoTracks article>div{display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,.11);padding-top:12px;font-size:11px;color:#b5b7c1}
+.hoTracks article>div b{color:#f6f6f7}
+.hoTracks article>small{font-size:10px;line-height:1.6;color:#abaeb7}
+.hoGrid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,.8fr);gap:13px}
+.hoLedger,.hoSameEvent{background:#151518;border:1px solid rgba(255,255,255,.12);border-radius:13px;padding:22px;min-width:0}
+.hoLedger>header span,.hoSameEvent>span{font-size:10px;letter-spacing:.13em;color:#bda4ab}
+.hoLedger>header h3,.hoSameEvent h3{font-size:22px;color:#f3f3f6;margin:12px 0 22px}
+.hoEmpty{border:1px dashed rgba(255,255,255,.18);border-radius:9px;padding:20px;color:#aaadb6;font-size:12px;line-height:1.75}
+.hoTicket{margin:10px 0;padding:15px;border-radius:10px;background:#212126;border:1px solid rgba(255,255,255,.13)}
+.hoTicket>header{display:flex;gap:14px;align-items:flex-start;justify-content:space-between}
+.hoTicket header span,.hoTicket header small{color:#b9bac4;font-size:10px;line-height:1.7}
+.hoTicket header h4{margin:6px 0 0;font-size:16px;color:#f4f4f5}
+.hoTicket header h4 sup{color:#f4adba;font-size:8px;letter-spacing:.08em}
+.hoTicket header>div:last-child{text-align:right;display:grid;gap:5px}
+.hoTicket header>div:last-child b{font-size:10px;color:#debec6}
+.hoLegs{display:grid;gap:6px;margin:14px 0}
+.hoLegs>div{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);column-gap:12px;row-gap:4px;border-top:1px solid rgba(255,255,255,.08);padding-top:9px}
+.hoLegs span{font-size:11px;color:#dee0e5;overflow-wrap:anywhere}
+.hoLegs strong{font-size:11px;color:#f6f6f8;text-align:right;overflow-wrap:anywhere}
+.hoLegs small{grid-column:1/-1;font-size:10px;color:#abacb9}
+.hoTicket>footer{display:flex;justify-content:space-between;gap:8px;font-size:10px;border-top:1px solid rgba(255,255,255,.09);padding-top:12px;color:#aeafbb}
+.hoTicket>footer b{color:#f2f2f5;text-align:right}
+.hoSameEvent p{font-size:12px;line-height:1.8;color:#b7b9c4}.hoSameEvent p strong{color:#f0d4d9}
+.hoCluster{display:grid;gap:7px;padding:12px;margin:7px 0;border:1px solid rgba(255,255,255,.12);border-radius:9px}
+.hoCluster b{font-size:12px;color:#f3f4f5}.hoCluster span{font-size:10px;color:#b0b2bb}
+.hoUnquoted{margin-top:25px;background:#292023;border:1px solid rgba(222,117,133,.22);padding:17px;border-radius:11px}
+.hoUnquoted strong{color:#ffb7c0;font-size:10px;letter-spacing:.1em}
+.hoFooter{display:grid;gap:10px;background:#151518;border:1px solid rgba(255,255,255,.1);padding:16px;border-radius:10px}
+.hoFooter b{color:#ecbec5;letter-spacing:.1em;font-size:10px}
+.hoFooter span{font-size:11px;line-height:1.7;color:#a9acb7}
+@media(max-width:960px){.hoHero{grid-template-columns:1fr}.hoHero aside{max-width:460px}.hoGrid{grid-template-columns:1fr}.hoKPIs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){.hoResearch{padding:25px 0}.hoHero h2{font-size:48px}.hoTracks{grid-template-columns:1fr}.hoKPIs>div{padding:15px}.hoStatus button{margin-left:0}.hoLedger,.hoSameEvent{padding:14px}.hoLegs>div{grid-template-columns:1fr}.hoLegs strong{text-align:left}}
+html[data-veto-sport-appearance="light"] .highOddsPage{background:#f5f7fa!important}
+html[data-veto-sport-appearance="light"] .hoResearch{color:#223147!important}
+html[data-veto-sport-appearance="light"] .hoHero h2,
+html[data-veto-sport-appearance="light"] .hoHero aside strong,
+html[data-veto-sport-appearance="light"] .hoKPIs strong,
+html[data-veto-sport-appearance="light"] .hoTracks article>strong,
+html[data-veto-sport-appearance="light"] .hoTracks article b,
+html[data-veto-sport-appearance="light"] .hoLedger h3,
+html[data-veto-sport-appearance="light"] .hoSameEvent h3,
+html[data-veto-sport-appearance="light"] .hoLegs :is(span,strong),
+html[data-veto-sport-appearance="light"] .hoTicket :is(h4,b),
+html[data-veto-sport-appearance="light"] .hoCluster b{color:#223147!important}
+html[data-veto-sport-appearance="light"] .hoResearch :is(p,small,span){color:#54647a!important}
+html[data-veto-sport-appearance="light"] .hoResearch :is(.hoHero aside,.hoKPIs>div,.hoTracks article,.hoLedger,.hoSameEvent,.hoTicket,.hoFooter,.hoCluster){background:#fff!important;border-color:#d5dce5!important}
+html[data-veto-sport-appearance="light"] .hoDisclaimer,
+html[data-veto-sport-appearance="light"] .hoUnquoted{background:#fff4f5!important;border-color:#e7bcc3!important}
+html[data-veto-sport-appearance="light"] .hoDisclaimer b,
+html[data-veto-sport-appearance="light"] .hoUnquoted strong{color:#a72b42!important}
+html[data-veto-sport-appearance="light"] .hoStatus button{background:#fff!important;color:#223147!important;border-color:#c9d2dc!important}
+
+
+/* High Odds / archived-source inspect-before-committing desk */
+.hoCandidateDesk{border:1px solid rgba(246,139,152,.2);background:linear-gradient(120deg,#251a1e,#141416 60%);border-radius:13px;padding:22px}
+.hoCandidateDesk>header{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.hoCandidateDesk>header>div{max-width:850px}
+.hoCandidateDesk>header span{color:#d9a4ae;font-size:10px;letter-spacing:.12em}
+.hoCandidateDesk h3{font-size:21px;margin:9px 0;color:#f4f4f6}
+.hoCandidateDesk p{font-size:12px;line-height:1.7;color:#b5b6c3}
+.hoCandidateDesk>header button{flex:0 0 auto;padding:13px 17px;border-radius:8px;
+ background:#ce4f61;color:#fff;border:1px solid #e37789;font-size:12px;font-weight:760;cursor:pointer}
+.hoCandidateDesk button:disabled{opacity:.65}
+.hoCandidates{margin-top:16px;display:grid;gap:10px}
+.hoCandidateCounts{display:flex;flex-wrap:wrap;gap:8px}
+.hoCandidateCounts span{font-size:10px;padding:8px 11px;background:#282428;border:1px solid rgba(255,255,255,.09);border-radius:7px;color:#b6b8c2}
+.hoCandidateCounts strong{color:#f5f5f7}
+.hoCandidates>article{padding:17px 19px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:#1d1b20}
+.hoCandidates>article header{display:flex;align-items:center;flex-wrap:wrap;justify-content:space-between;gap:13px;border-bottom:1px solid rgba(255,255,255,.10);padding-bottom:13px}
+.hoCandidates>article header strong{color:#f0f0f3;font-size:20px}
+.hoCandidates>article header span{color:#bdb0b8;font-size:10px}
+.hoCandidates>article>div{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr) minmax(0,.8fr);gap:10px;border-top:1px solid rgba(255,255,255,.06);padding:10px 0;color:#d4d5db;font-size:11px}
+.hoCandidates>article>div b{text-align:right;font-size:11px;color:#f6f6f6}
+.hoCandidates>article>div small{text-align:right;font-size:10px;color:#afb2bd}
+.hoCandidates>footer{font-size:11px;line-height:1.6;color:#c1b0b7}
+@media(max-width:720px){.hoCandidateDesk{padding:15px}.hoCandidateDesk>header{display:grid}.hoCandidateDesk>header button{width:100%}.hoCandidates>article>div{grid-template-columns:1fr 1fr}.hoCandidates>article>div small{grid-column:1/-1;text-align:left}}
+html[data-veto-sport-appearance="light"] .hoCandidateDesk,
+html[data-veto-sport-appearance="light"] .hoCandidates>article{background:#fff!important;border-color:#e1ccd3!important}
+html[data-veto-sport-appearance="light"] .hoCandidateDesk h3,
+html[data-veto-sport-appearance="light"] .hoCandidates :is(strong,b){color:#253449!important}
+html[data-veto-sport-appearance="light"] .hoCandidateDesk :is(p,span,small),
+html[data-veto-sport-appearance="light"] .hoCandidates :is(span,small,footer){color:#546175!important}
+html[data-veto-sport-appearance="light"] .hoCandidateCounts span{background:#f5f6f9!important;border-color:#d6dde4!important}
+html[data-veto-sport-appearance="light"] .hoCandidateDesk>header button{background:#a72e45!important;color:#fff!important}

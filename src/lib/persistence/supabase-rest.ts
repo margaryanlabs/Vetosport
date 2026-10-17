@@ -27,6 +27,7 @@ import type {
   UnsettledDecision,
   VetoPersistence,
 } from "./contracts";
+import type {DailyPaperPick,PaperProposal,DailyPaperSettlement} from "@/lib/paper/daily-research";
 
 interface SupabaseRestOptions {
   url?: string;
@@ -173,12 +174,13 @@ export class SupabaseRestPersistence implements VetoPersistence {
     query.append("starts_at", `lte.${to}`);
     query.set(
       "select",
-      "id,canonical_key,sport,competition_name,starts_at,status,home_participant_id,home_participant_name,away_participant_id,away_participant_name",
+      "id,canonical_key,sport,competition_name,starts_at,status,home_participant_id,home_participant_name,away_participant_id,away_participant_name,provider_refs",
     );
 
     const rows = await this.request<Array<{
       id: string;
       canonical_key: string;
+      provider_refs?: Record<string,string>|null;
       sport: SportEvent["sport"];
       competition_name: string;
       starts_at: string;
@@ -195,6 +197,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
     return rows.map((row) => ({
       id: row.id,
       canonicalKey: row.canonical_key,
+      providerRefs:row.provider_refs??undefined,
       event: {
         id: row.id,
         sport: row.sport,
@@ -222,6 +225,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
     to: string;
     statuses?: SportEvent["status"][];
     limit?: number;
+    canonicalKeyPrefix?: string;
   }): Promise<PersistedEvent[]> {
     const query = new URLSearchParams();
     query.set("starts_at", `gte.${new Date(input.from).toISOString()}`);
@@ -229,16 +233,23 @@ export class SupabaseRestPersistence implements VetoPersistence {
     if (input.statuses?.length) {
       query.set("status", `in.(${input.statuses.join(",")})`);
     }
+    if(input.canonicalKeyPrefix){
+      if(!/^[a-z0-9:._-]{1,80}$/.test(input.canonicalKeyPrefix))
+       throw new Error("UNSAFE_CANONICAL_FILTER");
+      // PostgREST star in LIKE is an SQL % wildcard.
+      query.set("canonical_key",`like.${input.canonicalKeyPrefix}*`);
+    }
     query.set("order", "starts_at.asc");
     query.set("limit", String(Math.min(100, Math.max(1, input.limit ?? 30))));
     query.set(
       "select",
-      "id,canonical_key,sport,competition_name,starts_at,status,home_participant_id,home_participant_name,away_participant_id,away_participant_name",
+      "id,canonical_key,sport,competition_name,starts_at,status,home_participant_id,home_participant_name,away_participant_id,away_participant_name,provider_refs",
     );
 
     const rows = await this.request<Array<{
       id: string;
       canonical_key: string;
+      provider_refs?: Record<string,string>|null;
       sport: SportEvent["sport"];
       competition_name: string;
       starts_at: string;
@@ -252,6 +263,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
     return rows.map((row) => ({
       id: row.id,
       canonicalKey: row.canonical_key,
+      providerRefs:row.provider_refs??undefined,
       event: {
         id: row.id,
         sport: row.sport,
@@ -280,12 +292,13 @@ export class SupabaseRestPersistence implements VetoPersistence {
     query.set("limit", "1");
     query.set(
       "select",
-      "id,canonical_key,sport,competition_name,starts_at,status,home_participant_id,home_participant_name,away_participant_id,away_participant_name",
+      "id,canonical_key,sport,competition_name,starts_at,status,home_participant_id,home_participant_name,away_participant_id,away_participant_name,provider_refs",
     );
 
     const rows = await this.request<Array<{
       id: string;
       canonical_key: string;
+      provider_refs?: Record<string,string>|null;
       sport: SportEvent["sport"];
       competition_name: string;
       starts_at: string;
@@ -302,6 +315,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
     return {
       id: row.id,
       canonicalKey: row.canonical_key,
+      providerRefs:row.provider_refs??undefined,
       event: {
         id: row.id,
         sport: row.sport,
@@ -363,10 +377,21 @@ export class SupabaseRestPersistence implements VetoPersistence {
   async listRecentQuotesForEvents(input: {
     eventIds: string[];
     limit?: number;
+    /** Optional server-side scope for forward, source-coherent observations. */
+    provider?: string;
+    marketKey?: string;
+    capturedSince?: string;
   }): Promise<PersistedMarketQuoteRecord[]> {
     if (input.eventIds.length === 0) return [];
     const query = new URLSearchParams();
     query.set("event_id", `in.(${input.eventIds.join(",")})`);
+    if(input.provider)query.set("provider",`eq.${input.provider}`);
+    if(input.marketKey)query.set("market_key",`eq.${input.marketKey}`);
+    if(input.capturedSince){
+      const since=Date.parse(input.capturedSince);
+      if(!Number.isFinite(since))throw new Error("INVALID_QUOTE_TIME_FILTER");
+      query.set("captured_at",`gte.${new Date(since).toISOString()}`);
+    }
     query.set("order", "captured_at.desc");
     query.set("limit", String(Math.min(5000, Math.max(1, input.limit ?? 2000))));
     query.set(
@@ -1247,5 +1272,107 @@ export class SupabaseRestPersistence implements VetoPersistence {
       },
       "return=minimal",
     );
+  }
+
+  /** Server-only virtual paper research. Tables require migration 011.
+   * Never expose INSERT methods through user-facing HTTP endpoints.
+   */
+  async listPaperDailyPicks(limit=900):Promise<DailyPaperPick[]>{
+    const query=new URLSearchParams({select:"*",order:"picked_at.desc",
+      limit:String(Math.min(1000,Math.max(1,limit)))});
+    type Row={id:string;protocol:string;event_id:string;event_starts_at:string;
+      day_utc:string;daily_slot:number;match:string;competition:string;contract:DailyPaperPick["contract"];
+      lane?:"LIVE_OBSERVED"|"PREMATCH_ODDS_CONTROL";
+      market_key:string;selection_key:string;decimal_odds:number;virtual_stake:number;
+      model_probability:number;model_version:string;quote_provider:string;bookmaker:string;
+      quote_at:string;provider_updated_at:string;state_at:string|null;model_at:string|null;picked_at:string};
+    const rows=await this.request<Row[]>(this.tablePath("paper_daily_picks",query.toString()),{method:"GET"});
+    return rows.map(r=>({id:r.id,protocol:r.protocol,eventId:r.event_id,eventStartsAt:r.event_starts_at,
+      dayUTC:r.day_utc,dailySlot:r.daily_slot,match:r.match,competition:r.competition,contract:r.contract,
+      lane:r.lane??"LIVE_OBSERVED",
+      marketKey:r.market_key,selectionKey:r.selection_key,odds:Number(r.decimal_odds),
+      stake:Number(r.virtual_stake),modelProbability:Number(r.model_probability),
+      modelVersion:r.model_version,quoteProvider:r.quote_provider,bookmaker:r.bookmaker,
+      quoteAt:r.quote_at,providerUpdatedAt:r.provider_updated_at,stateAt:r.state_at,modelAt:r.model_at,
+      pickedAt:r.picked_at}));
+  }
+  async insertPaperDailyPick(input:PaperProposal&{dailySlot:number}):Promise<DailyPaperPick|null>{
+    const row={protocol:input.protocol,lane:input.lane??"LIVE_OBSERVED",event_id:input.eventId,event_starts_at:input.eventStartsAt,
+      day_utc:input.dayUTC,daily_slot:input.dailySlot,match:input.match,competition:input.competition,
+      contract:input.contract,market_key:input.marketKey,selection_key:input.selectionKey,
+      decimal_odds:input.odds,virtual_stake:input.stake,model_probability:input.modelProbability,
+      model_version:input.modelVersion,quote_provider:input.quoteProvider,bookmaker:input.bookmaker,
+      quote_at:input.quoteAt,provider_updated_at:input.providerUpdatedAt,state_at:input.stateAt,
+      model_at:input.modelAt,picked_at:input.pickedAt};
+    const qs=new URLSearchParams({on_conflict:"protocol,event_id"});
+    const result=await this.request<Array<{id:string}>>(this.tablePath("paper_daily_picks",qs.toString()),
+      {method:"POST",body:JSON.stringify(row)},"resolution=ignore-duplicates,return=representation");
+    return result.length?{...input,id:result[0].id,dailySlot:input.dailySlot}:null;
+  }
+  async listPaperDailySettlements(limit=900):Promise<DailyPaperSettlement[]>{
+    type Row={pick_id:string;event_id:string;result:"WIN"|"LOSS";home_goals:number;
+      away_goals:number;provider:"api-football"|"the-odds-api";final_at:string;settled_at:string};
+    const query=new URLSearchParams({select:"*",order:"settled_at.desc",
+      limit:String(Math.min(1000,Math.max(1,limit)))});
+    const rows=await this.request<Row[]>(this.tablePath("paper_daily_settlements",query.toString()),
+      {method:"GET"});
+    return rows.map(r=>({pickId:r.pick_id,eventId:r.event_id,result:r.result,
+      score:{home:Number(r.home_goals),away:Number(r.away_goals)},
+      provider:r.provider,finalAt:r.final_at,settledAt:r.settled_at}));
+  }
+  async insertPaperDailySettlement(entry:DailyPaperSettlement):Promise<boolean>{
+    const payload={pick_id:entry.pickId,event_id:entry.eventId,result:entry.result,
+      home_goals:entry.score.home,away_goals:entry.score.away,provider:entry.provider,
+      final_at:entry.finalAt,settled_at:entry.settledAt};
+    const qs=new URLSearchParams({on_conflict:"pick_id"});
+    const rows=await this.request<Array<{id:string}>>(this.tablePath("paper_daily_settlements",qs.toString()),
+      {method:"POST",body:JSON.stringify(payload)},"resolution=ignore-duplicates,return=representation");
+    return rows.length>0;
+  }
+  /** High Odds — append-only independent VIRTUAL study, never real wagers. */
+  async listHighOddsPaperTickets(limit=850):Promise<import("@/lib/paper/high-odds-research").HighOddsSlip[]>{
+    type Slip=import("@/lib/paper/high-odds-research").HighOddsSlip;
+    const query=new URLSearchParams({select:"*",order:"captured_at.desc",limit:String(Math.min(900,limit))});
+    const rows=await this.request<Array<{id:string;protocol:string;day_utc:string;
+      daily_slot:number;band:Slip["band"];legs:Slip["legs"];
+      synthetic_decimal_odds:number;virtual_stake:number;captured_at:string;pricing:Slip["pricing"]}>>(
+      this.tablePath("paper_high_odds_tickets",query.toString()),{method:"GET"});
+    return rows.map(x=>({id:x.id,protocol:x.protocol,dayUTC:x.day_utc,
+      dailySlot:x.daily_slot,band:x.band,legs:x.legs,
+      syntheticDecimalOdds:Number(x.synthetic_decimal_odds),
+      stake:Number(x.virtual_stake),capturedAt:x.captured_at,pricing:x.pricing}));
+  }
+  async insertHighOddsPaperTicket(
+    slip:import("@/lib/paper/high-odds-research").HighOddsProposal&{dailySlot:number}):
+    Promise<import("@/lib/paper/high-odds-research").HighOddsSlip|null>{
+    const row={protocol:slip.protocol,day_utc:slip.dayUTC,daily_slot:slip.dailySlot,
+      band:slip.band,legs:slip.legs,synthetic_decimal_odds:slip.syntheticDecimalOdds,
+      virtual_stake:slip.stake,captured_at:slip.capturedAt,pricing:slip.pricing};
+    const conflict=new URLSearchParams({on_conflict:"protocol,day_utc,daily_slot"});
+    const rows=await this.request<Array<{id:string}>>(this.tablePath(
+      "paper_high_odds_tickets",conflict.toString()),
+      {method:"POST",body:JSON.stringify(row)},"resolution=ignore-duplicates,return=representation");
+    return rows[0]?{...slip,id:rows[0].id,dailySlot:slip.dailySlot}:null;
+  }
+  async listHighOddsPaperSettlements(limit=850):
+   Promise<import("@/lib/paper/high-odds-research").HighOddsSettlement[]>{
+    type Evidence=import("@/lib/paper/high-odds-research").HighOddsSettlement;
+    const query=new URLSearchParams({select:"*",order:"settled_at.desc",
+      limit:String(Math.min(900,limit))});
+    const rows=await this.request<Array<{ticket_id:string;result:Evidence["result"];
+      proven_outcomes:Evidence["provenOutcomes"];settled_at:string}>>(
+      this.tablePath("paper_high_odds_settlements",query.toString()),{method:"GET"});
+    return rows.map(r=>({ticketId:r.ticket_id,result:r.result,
+      provenOutcomes:r.proven_outcomes,settledAt:r.settled_at}));
+  }
+  async insertHighOddsPaperSettlement(
+    proof:import("@/lib/paper/high-odds-research").HighOddsSettlement):Promise<boolean>{
+    const body={ticket_id:proof.ticketId,result:proof.result,
+      proven_outcomes:proof.provenOutcomes,settled_at:proof.settledAt};
+    const conflict=new URLSearchParams({on_conflict:"ticket_id"});
+    const rows=await this.request<Array<{id:string}>>(
+      this.tablePath("paper_high_odds_settlements",conflict.toString()),
+      {method:"POST",body:JSON.stringify(body)},"resolution=ignore-duplicates,return=representation");
+    return rows.length>0;
   }
 }

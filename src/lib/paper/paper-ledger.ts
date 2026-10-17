@@ -1,16 +1,28 @@
 /** A deliberately local, MANUALLY settled, virtual paper journal.
  * It never infers football outcomes or sportsbook execution from snapshots.
  */
-export type PaperStatus="UNSETTLED"|"MANUAL_WIN"|"MANUAL_LOSS"|"MANUAL_VOID";
+export type PaperStatus="UNSETTLED"|"MANUAL_WIN"|"MANUAL_LOSS"|"MANUAL_VOID"|
+ "PROVIDER_WIN"|"PROVIDER_LOSS"|"PROVIDER_VOID";
 export type PaperSource="SOURCE_SNAPSHOT"|"HYPOTHETICAL_MANUAL";
 export interface PaperEntry {
  id:string;eventId:string;match:string;scenario:string;odds:number;stake:number;
  recordedAt:string;source:PaperSource;quoteCapturedAt?:string;
+ /** User-entered research context. Never claimed to be verified by VETO. */
+ hypothesis?:string;estimatedProbability?:number;
+ /** Optional user-authored cohort label, never a preregistered strategy rulebook. */
+ strategyTag?:string;
+ /** Locked at recording time. Old records never gain guessed market semantics. */
+ marketContract?:import("@/lib/paper/paper-verification").PaperContract;
+ selectionMarketKey?:string;selectionKey?:string;
+ /** Immutable optional MODEL snapshot observed before paper entry (not user-entered). */
+ modelProbability?:number;modelVersion?:string;modelCapturedAt?:string;
+ verifiedProvider?:"api-football";verifiedAt?:string;
+ verifiedScore?:{home:number;away:number};
  status:PaperStatus;settledAt?:string;
 }
 export const PAPER_STORAGE_KEY="veto-sport-paper-research-v1";
 export const PAPER_BANK_KEY="veto-sport-paper-bank-v1";
-export const MAX_ENTRIES=150;
+export const MAX_ENTRIES=1000;
 export const PAPER_RISK_FRACTION=.02;
 export function parsePaperEntries(value:unknown):PaperEntry[]{
  if(!Array.isArray(value))return[];
@@ -23,23 +35,56 @@ export function parsePaperEntries(value:unknown):PaperEntry[]{
    typeof r.stake==="number"&&Number.isFinite(r.stake)&&r.stake>0&&r.stake<=100_000&&
    typeof r.recordedAt==="string"&&Number.isFinite(Date.parse(r.recordedAt))&&
    (r.source==="SOURCE_SNAPSHOT"||r.source==="HYPOTHETICAL_MANUAL")&&
-   (r.status==="UNSETTLED"||r.status==="MANUAL_WIN"||r.status==="MANUAL_LOSS"||r.status==="MANUAL_VOID")&&
+   (r.hypothesis===undefined||(typeof r.hypothesis==="string"&&r.hypothesis.length<=300))&&
+   (r.strategyTag===undefined||(typeof r.strategyTag==="string"&&r.strategyTag.length<=48))&&
+   (r.estimatedProbability===undefined||(typeof r.estimatedProbability==="number"&&Number.isFinite(r.estimatedProbability)&&r.estimatedProbability>0&&r.estimatedProbability<1))&&
+   (r.marketContract===undefined||/^(FT_(HOME|DRAW|AWAY|BTTS_(YES|NO))|FT_TOTAL_(OVER|UNDER)_[1-4]_5)$/.test(r.marketContract))&&
+   (r.selectionMarketKey===undefined||(typeof r.selectionMarketKey==="string"&&r.selectionMarketKey.length<=150))&&
+   (r.selectionKey===undefined||(typeof r.selectionKey==="string"&&r.selectionKey.length<=150))&&
+   (r.modelProbability===undefined||(typeof r.modelProbability==="number"&&Number.isFinite(r.modelProbability)&&r.modelProbability>0&&r.modelProbability<1))&&
+   (r.modelVersion===undefined||(typeof r.modelVersion==="string"&&r.modelVersion.length<=100))&&
+   (r.modelCapturedAt===undefined||(typeof r.modelCapturedAt==="string"&&Number.isFinite(Date.parse(r.modelCapturedAt))))&&
+   (r.modelProbability===undefined||(!!r.modelVersion&&!!r.modelCapturedAt))&&
+   (r.verifiedProvider===undefined||r.verifiedProvider==="api-football")&&
+   (r.verifiedAt===undefined||(typeof r.verifiedAt==="string"&&Number.isFinite(Date.parse(r.verifiedAt))))&&
+   (r.verifiedScore===undefined||(r.verifiedScore!==null&&typeof r.verifiedScore==="object"&&!Array.isArray(r.verifiedScore)&&typeof r.verifiedScore.home==="number"&&typeof r.verifiedScore.away==="number"&&
+      Number.isInteger(r.verifiedScore.home)&&Number.isInteger(r.verifiedScore.away)&&
+      r.verifiedScore.home>=0&&r.verifiedScore.away>=0&&r.verifiedScore.home<=40&&r.verifiedScore.away<=40))&&
+   (r.status==="UNSETTLED"||r.status==="MANUAL_WIN"||r.status==="MANUAL_LOSS"||
+     r.status==="MANUAL_VOID"||r.status==="PROVIDER_WIN"||r.status==="PROVIDER_LOSS"||r.status==="PROVIDER_VOID")&&
+   (!r.status?.startsWith("PROVIDER_")||(r.verifiedProvider==="api-football"&&r.verifiedAt!==undefined&&r.verifiedScore!==undefined))&&
    (r.status==="UNSETTLED"||typeof r.settledAt==="string"&&Number.isFinite(Date.parse(r.settledAt)));
  }).slice(-MAX_ENTRIES);
 }
 export function paperProfit(entry:PaperEntry):number|null{
  switch(entry.status){
-  case "MANUAL_WIN":return entry.stake*(entry.odds-1);
-  case "MANUAL_LOSS":return -entry.stake;
-  case "MANUAL_VOID":return 0;
+  case "MANUAL_WIN":
+  case "PROVIDER_WIN":return entry.stake*(entry.odds-1);
+  case "MANUAL_LOSS":
+  case "PROVIDER_LOSS":return -entry.stake;
+  case "MANUAL_VOID":
+  case "PROVIDER_VOID":return 0;
   case "UNSETTLED":return null;
  }
+}
+/** Subjective expectation ONLY: p is entered by the user, not inferred by the product. */
+export function paperExpectedValue(stake:number,odds:number,p:number):number|null{
+ if(!Number.isFinite(stake)||stake<=0||!Number.isFinite(odds)||odds<=1||
+    !Number.isFinite(p)||p<=0||p>=1)return null;
+ return stake*(p*odds-1);
 }
 export function paperJournalStats(entries:PaperEntry[],initialBankroll:number){
  const bankroll=Number.isFinite(initialBankroll)&&initialBankroll>=100&&initialBankroll<=100_000?initialBankroll:1000;
  const settled=entries.filter(x=>x.status!=="UNSETTLED").sort((a,b)=>Date.parse(a.settledAt||a.recordedAt)-Date.parse(b.settledAt||b.recordedAt));
  const open=entries.filter(x=>x.status==="UNSETTLED");
  const stakeSum=settled.reduce((sum,x)=>sum+x.stake,0);
+ const modelVerified=settled.filter(x=>x.status==="PROVIDER_WIN"||x.status==="PROVIDER_LOSS")
+  .filter(x=>x.modelProbability!==undefined&&x.modelVersion&&x.modelCapturedAt&&
+   Date.parse(x.modelCapturedAt)<=Date.parse(x.recordedAt)&&
+   Date.parse(x.modelCapturedAt)>=Date.parse(x.recordedAt)-300_000);
+ const modelBrier=modelVerified.length?
+  modelVerified.reduce((sum,x)=>sum+((x.modelProbability??0)-
+   (x.status==="PROVIDER_WIN"?1:0))**2,0)/modelVerified.length:null;
  const net=settled.reduce((sum,x)=>sum+(paperProfit(x)??0),0);
  let cumulative=0,peak=bankroll,maxDrawdown=0;
  const equityPoints=[{at:"",equity:bankroll}];
@@ -57,26 +102,41 @@ export function paperJournalStats(entries:PaperEntry[],initialBankroll:number){
   bankroll,
   settled: settled.length,
   unsettled:open.length,
-  wins:settled.filter(x=>x.status==="MANUAL_WIN").length,
-  losses:settled.filter(x=>x.status==="MANUAL_LOSS").length,
-  voids:settled.filter(x=>x.status==="MANUAL_VOID").length,
-  net,roi:stakeSum>0?net/stakeSum*100:0,maxDrawdown,stakeSum,
+  wins:settled.filter(x=>x.status==="MANUAL_WIN"||x.status==="PROVIDER_WIN").length,
+  losses:settled.filter(x=>x.status==="MANUAL_LOSS"||x.status==="PROVIDER_LOSS").length,
+  voids:settled.filter(x=>x.status==="MANUAL_VOID"||x.status==="PROVIDER_VOID").length,
+  modelSnapshotSamples:modelVerified.length,
+  modelBrier,
+  providerSettled:settled.filter(x=>x.status.startsWith("PROVIDER_")).length,
+  manualSettled:settled.filter(x=>x.status.startsWith("MANUAL_")).length,
+  net,roi:stakeSum>0?net/stakeSum*100:0,
+  bankrollReturnPct:bankroll>0?net/bankroll*100:0,
+  hitRate: settled.some(x=>x.status.endsWith("_WIN")||x.status.endsWith("_LOSS"))
+   ?settled.filter(x=>x.status.endsWith("_WIN")).length/
+    settled.filter(x=>x.status.endsWith("_WIN")||x.status.endsWith("_LOSS")).length*100:0,
+  maxDrawdown,stakeSum,
   exposure,available,maxNewStake,
   equity:bankroll+net,
   equityPoints:equityPoints.slice(-80),
-  manualOnly:true as const,
+  manualOnly:settled.every(x=>x.status.startsWith("MANUAL_")),
  };
 }
 // CSV formulas can execute when a sheet opens. Prefix dangerous cells.
 export function paperCsv(entries:PaperEntry[]):string{
- const cols=["id","eventId","match","scenario","odds","stake","recordedAt","source","quoteCapturedAt","status","settledAt","manualProfit","verification"];
+ const cols=["id","eventId","match","scenario","odds","stake","recordedAt","source","quoteCapturedAt","status","settledAt","manualProfit","verification","hypothesis","userEstimatedProbability",
+  "marketContract","selectionMarketKey","selectionKey","verifiedProvider","verifiedAt","verifiedScore",
+  "modelProbability","modelVersion","modelCapturedAt","strategyTag"];
  const safe=(v:unknown)=>{
   const raw=String(v??"");
   const inert=/^[\s\uFEFF\u200B]*[=+\-@]/.test(raw)?"'"+raw:raw;
   return '"'+inert.replace(/"/g,'""')+'"';
  };
  const rows=entries.map(e=>[e.id,e.eventId,e.match,e.scenario,e.odds,e.stake,e.recordedAt,e.source,
-   e.quoteCapturedAt||"",e.status,e.settledAt||"",paperProfit(e)??"","MANUAL_UNVERIFIED"].map(safe).join(","));
+   e.quoteCapturedAt||"",e.status,e.settledAt||"",paperProfit(e)??"",e.status.startsWith("PROVIDER_")?"PROVIDER_FT_SCORE_VERIFIED_PRICE_NOT_EXECUTED":"MANUAL_UNVERIFIED",
+   e.hypothesis||"",e.estimatedProbability??"",e.marketContract??"",e.selectionMarketKey??"",
+   e.selectionKey??"",e.verifiedProvider??"",e.verifiedAt??"",
+   e.verifiedScore?`${e.verifiedScore.home}:${e.verifiedScore.away}`:"",e.modelProbability??"",
+   e.modelVersion??"",e.modelCapturedAt??"",e.strategyTag??""].map(safe).join(","));
  return [cols.map(safe).join(","),...rows].join("\r\n")+"\r\n";
 }
 export function paperJournalSelfcheck(){
@@ -91,13 +151,30 @@ export function paperJournalSelfcheck(){
   {name:"Manual win uses net decimal profit",pass:paperProfit(win)===5},
   {name:"Manual loss loses stake",pass:paperProfit(loss)===-10},
   {name:"Void returns stake",pass:paperProfit(voided)===0},
+  {name:"Provider-verified calculation remains paper-only",pass:paperProfit({...win,status:"PROVIDER_WIN"})===5},
+  {name:"Provider status without evidence rejected at parse",pass:parsePaperEntries([{...win,status:"PROVIDER_WIN"}]).length===0},
+  {name:"Corrupted null FT score does not crash journal recovery",pass:parsePaperEntries([{...win,verifiedScore:null}]).length===0},
   {name:"Unverified manually-entered outcomes labeled",pass:stats.manualOnly===true},
+  {name:"Subjective EV calculated without claiming model prediction",pass:Math.abs((paperExpectedValue(10,2,0.6)??0)-2)<1e-9&&paperExpectedValue(10,2,2)===null},
+  {name:"Hypothesis and subjective probability retained",pass:parsePaperEntries([{...base,hypothesis:"Late goal",estimatedProbability:0.55}]).length===1},
+  {name:"Out-of-range probability rejected",pass:parsePaperEntries([{...base,estimatedProbability:1.25}]).length===0},
+  {name:"Strategy tag survives browser storage parser and export",pass:parsePaperEntries([{...base,strategyTag:"Test"}]).length===1&&paperCsv([{...base,strategyTag:"Test"}]).includes("Test")},
+  {name:"Bankroll ROI separated from yield",pass:stats.bankrollReturnPct===-0.5&&stats.hitRate===50},
+  {name:"Brier requires provider-resolved model snapshot, not manual results",pass:stats.modelSnapshotSamples===0&&stats.modelBrier===null},
+  {name:"One verified and contemporaneous model snapshot computes selection Brier",pass:(()=>{
+    const snap={...win,status:"PROVIDER_WIN" as const,verifiedProvider:"api-football" as const,
+      verifiedAt:"2026-10-12T11:00:00Z",verifiedScore:{home:1,away:0},
+      modelProbability:0.7,modelVersion:"v1",modelCapturedAt:"2026-10-12T09:59:00Z"};
+    const r=paperJournalStats([snap],1000);
+    return r.modelSnapshotSamples===1&&Math.abs((r.modelBrier??-1)-0.09)<1e-9;
+   })()},
   {name:"Net and ROI use settled stake only",pass:stats.net===-5&&Math.abs(stats.roi+16.6666667)<.001},
   {name:"Drawdown detects loss after win",pass:stats.maxDrawdown===10},
   {name:"Open exposure and 2% cap",pass:stats.exposure===10&&stats.maxNewStake===20},
   {name:"Invalid records discarded, older records kept",pass:parsePaperEntries([{},base,win]).length===2},
   {name:"Formula injection disabled in export",pass:paperCsv([{...base,match:"=SUM(A1:A2)"}]).includes("'=SUM(A1:A2)")},
   {name:"No entries means no made-up results",pass:paperJournalStats([],1000).roi===0&&paperJournalStats([],1000).settled===0},
+  {name:"Journal supports a thousand local records without arbitrary smaller truncation",pass:MAX_ENTRIES===1000&&parsePaperEntries(Array.from({length:1001},(_,i)=>({...base,id:String(i)}))).length===1000},
  ];
  return{passed:tests.every(x=>x.pass),tests};
 }
