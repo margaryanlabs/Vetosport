@@ -165,13 +165,15 @@ export function LiveCommandCenter({
                     <div>
                       <span>VETO STATUS</span>
                       <strong>
-                        {event.shadowPredictionCount
-                          ? "SHADOW READY"
-                          : readinessLabel(event.decisionReadiness?.status)}
+                        {!isCurrent && event.status==="live"
+                          ? "LIVE-СТАТУС УСТАРЕЛ · НЕ СИГНАЛ"
+                          : event.shadowPredictionCount
+                            ? "SHADOW RESEARCH"
+                            : readinessLabel(event.decisionReadiness?.status)}
                       </strong>
                     </div>
                     <div>
-                      <b>{event.shadowPredictionCount ? "RESEARCH" : "OBSERVED"}</b>
+                      <b>{!isCurrent&&event.status==="live"?"STALE":event.shadowPredictionCount ? "RESEARCH" : "OBSERVED"}</b>
                       <em>
                         {event.shadowPredictionCount
                           ? `${event.shadowPredictionCount} shadow lines`
