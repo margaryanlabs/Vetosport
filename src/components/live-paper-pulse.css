@@ -50,3 +50,17 @@ html[data-veto-sport-appearance="light"] .liveCommandFilters>span,
 html[data-veto-sport-appearance="light"] .liveCommandEmptyFiltered :is(strong,p){color:#43546c!important}
 html[data-veto-sport-appearance="light"] .liveCommandEmptyFiltered{border-color:#cfd8e1!important}
 @media(max-width:760px){.liveCommandFilters>span{margin-left:0;text-align:left;max-width:100%;width:100%}.liveCommandFilters button{font-size:9px;padding:9px 10px}}
+
+.livePaperExposure{border-top:1px solid rgba(255,255,255,.1);padding-top:17px;display:grid;gap:12px}
+.livePaperExposure>div:first-child{display:grid;gap:6px}
+.livePaperExposure>div:first-child strong{font-size:13px;color:#ecf3f6}
+.livePaperExposure>div:first-child span{font-size:10px;color:#aab4bd;line-height:1.55}
+.livePaperExposureLinks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.livePaperExposureLinks a{display:grid;gap:6px;padding:12px 13px;border:1px solid rgba(255,255,255,.12);background:#181d23;border-radius:8px;text-decoration:none;min-width:0}
+.livePaperExposureLinks a strong{font-size:12px;color:#f0f4f8}
+.livePaperExposureLinks a span{font-size:10px;color:#bbccd6}
+.livePaperExposureLinks a small{font-size:10px;color:#a5b4c3}
+html[data-veto-sport-appearance="light"] .livePaperExposureLinks a{background:#f3f7fa!important;border-color:#d9e0e7!important}
+html[data-veto-sport-appearance="light"] .livePaperExposureLinks a strong{color:#1c3348!important}
+html[data-veto-sport-appearance="light"] .livePaperExposure>div:first-child strong{color:#1d3448!important}
+@media(max-width:630px){.livePaperExposureLinks{grid-template-columns:1fr}}
