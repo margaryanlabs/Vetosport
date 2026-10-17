@@ -59,7 +59,7 @@ export async function GET(request:Request){
     scheduledWindowMayBeCapped:results[1].length>=100,
     recorded:run?.recorded??0,settled:run?.settled??0,eligible:run?.eligible??0,
     scanned:run?.scanned??0,blockedBy:run?.blockedBy??{},
-    reason:run?.skipped??"BASE_UNAVAILABLE",errors:run?.errors??1,
+    reason:run?.ok?(run.skipped??null):(run?.skipped??"BASE_UNAVAILABLE"),errors:run?.errors??1,
     realBetsPlaced:0,externalProviderCalls:0},
   });
   await store.appendProviderHealth({
@@ -70,7 +70,7 @@ export async function GET(request:Request){
    metadata:{paperOnly:true,realBetsPlaced:0,
     scanned:highOdds?.scanned??0,candidates:highOdds?.candidates??0,
     recorded:highOdds?.recorded??0,settled:highOdds?.settled??0,
-    skipped:highOdds?.skipped??"HIGH_ODDS_UNAVAILABLE",
+    skipped:highOdds?.ok?(highOdds.skipped??null):(highOdds?.skipped??"HIGH_ODDS_UNAVAILABLE"),
     errors:highOdds?.errors??1,reasons:highOdds?.reasons??{}},
   }).catch(()=>undefined);
   return NextResponse.json({

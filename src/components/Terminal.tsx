@@ -13,6 +13,7 @@ import { AsianLinesBoard } from "@/components/AsianLinesBoard";
 import { BacktestLab } from "@/components/BacktestLab";
 import { ModelGovernancePanel } from "@/components/ModelGovernancePanel";
 import { LiveCommandCenter } from "@/components/LiveCommandCenter";
+import {LivePaperPulse} from "@/components/LivePaperPulse";
 import { ParallaxCore } from "@/components/ParallaxCore";
 import { SpecialistSportSurface } from "@/components/SpecialistSportSurface";
 import { VetoMark, VetoWordmark } from "@/components/VetoMark";
@@ -98,9 +99,15 @@ export function Terminal({
 
   useEffect(() => {
     let active = true;
+    let inFlight = false;
     const controller = new AbortController();
 
     const refreshEvents = () => {
+      // Never overlap expensive source scans or keep polling a background tab.
+      // The original repeated 15-second timer could render older responses
+      // after newer ones if storage was slow.
+      if(!active||document.hidden||inFlight)return;
+      inFlight=true;
       fetch("/api/live/events", {
         cache: "no-store",
         signal: controller.signal,
@@ -138,16 +145,20 @@ export function Terminal({
             }
           },
         )
-        .catch(() => { if(active){setLoadedEvents([]);setLiveSourceMode("storage-unavailable");} });
+        .catch(() => { if(active){setLoadedEvents([]);setLiveSourceMode("storage-unavailable");} })
+        .finally(()=>{inFlight=false;});
     };
 
     refreshEvents();
     const interval = window.setInterval(refreshEvents, 15_000);
+    const onVisibility=()=>{if(!document.hidden)refreshEvents();};
+    document.addEventListener("visibilitychange",onVisibility);
 
     return () => {
       active = false;
       controller.abort();
       window.clearInterval(interval);
+      document.removeEventListener("visibilitychange",onVisibility);
     };
   }, []);
 
@@ -164,9 +175,12 @@ export function Terminal({
 
   useEffect(() => {
     let active = true;
+    let inFlight = false;
     const controller = new AbortController();
 
     const refreshWorkspace = () => {
+      if(!active||document.hidden||inFlight)return;
+      inFlight=true;
       fetch(`/api/live/workspace?id=${encodeURIComponent(selectedEventId)}`, {
         cache: "no-store",
         signal: controller.signal,
@@ -196,7 +210,8 @@ export function Terminal({
         )
         .catch(() => {
           if(active) setWorkspaceStatus("error");
-        });
+        })
+        .finally(()=>{inFlight=false;});
     };
 
     setRemoteWorkspace(null);
@@ -204,11 +219,14 @@ export function Terminal({
     setWorkspaceStatus("loading");
     refreshWorkspace();
     const interval = window.setInterval(refreshWorkspace, 15_000);
+    const onVisibility=()=>{if(!document.hidden)refreshWorkspace();};
+    document.addEventListener("visibilitychange",onVisibility);
 
     return () => {
       active = false;
       controller.abort();
       window.clearInterval(interval);
+      document.removeEventListener("visibilitychange",onVisibility);
     };
   }, [selectedEventId]);
 
@@ -368,6 +386,7 @@ export function Terminal({
             </small>
           </div>
 
+      <LivePaperPulse events={eventSummaries}/>
       <LiveCommandCenter
         events={eventSummaries}
         activeEventId={selectedEventId}
@@ -439,6 +458,8 @@ export function Terminal({
             <p>Автономный поиск проверяет реальные игровые снимки и публикует гипотезы. Модельные симуляции доступны отдельно, только по явному выбору.</p>
             <a href="/research/discovery">Открыть автономные исследования ↗</a>
             <a href="/research/watchlist">Проверить матчи и котировки ↗</a>
+            <a href="/research/paper-lab">Daily Paper · виртуальные $200 ↗</a>
+            <a href="/research/high-odds">High Odds · экспрессы без реальных ставок ↗</a>
           </div>
         </section>
       )}

@@ -741,3 +741,44 @@ test("Paper journals distinguish bridge table allowlist errors from missing API 
  assert.match(daily,/paper-journal\/readiness/);
  assert.doesNotMatch(route,/export async function POST|THE_ODDS_API_KEY|API_FOOTBALL_KEY|serviceRoleKey/);
 });
+
+test("Live view distinguishes certified fresh scores, stale decision labels and connects real paper journals",()=>{
+ const terminal=read("src/components/Terminal.tsx");
+ const center=read("src/components/LiveCommandCenter.tsx");
+ const bridge=read("src/components/LivePaperPulse.tsx");
+ const today=read("src/components/TodayExperience.tsx");
+ const css=read("src/components/live-paper-pulse.css");
+ assert.match(center,/type LiveFilter=/);
+ assert.match(center,/LIVE ≤120 С/);
+ assert.match(center,/liveCategory/);
+ assert.match(center,/const isCurrent=getObservedFreshness\(event\)\.freshLive/);
+ assert.match(center,/Number\.isFinite\(decisionAt\)/);
+ assert.match(center,/Date\.now\(\)-decisionAt<=120_000/);
+ assert.match(center,/visibleEvents\.map/);
+ assert.match(bridge,/paper-journal\/daily/);
+ assert.match(bridge,/paper-journal\/high-odds/);
+ assert.match(bridge,/baseAt!==null/);
+ assert.match(bridge,/highAt!==null/);
+ assert.match(bridge,/getObservedFreshness\(e,now\)\.freshLive/);
+ assert.match(bridge,/Нет автоматических реальных ставок/);
+ assert.match(terminal,/LivePaperPulse events=\{eventSummaries\}/);
+ assert.match(terminal,/document\.hidden\|\|inFlight/);
+ assert.match(terminal,/visibilitychange/);
+ assert.match(today,/research\/high-odds/);
+ assert.match(css,/html\[data-veto-sport-appearance="light"\]/);
+ assert.doesNotMatch(bridge,/insertPaperDailyPick|placeBet|createWager|THE_ODDS_API_KEY/);
+});
+
+test("Live paper exposure only references real persisted fixture IDs and cron status is truthful",()=>{
+ const bridge=read("src/components/LivePaperPulse.tsx");
+ const live=read("src/components/LiveCommandCenter.tsx");
+ const cron=read("src/app/api/cron/paper-research/route.ts");
+ const daily=read("src/app/api/intelligence/paper-journal/daily/route.ts");
+ assert.match(bridge,/const matched=real.filter\(e=>exposure.has\(e.id\)\)/);
+ assert.match(bridge,/view=check&event=/);
+ assert.match(bridge,/getObservedFreshness\(e,now\)\.label/);
+ assert.match(live,/LIVE-СТАТУС УСТАРЕЛ/);
+ assert.match(cron,/reason:run\?\.ok\?/);
+ assert.match(cron,/skipped:highOdds\?\.ok\?/);
+ assert.match(daily,/Dedicated authorized paper-research cron/);
+});

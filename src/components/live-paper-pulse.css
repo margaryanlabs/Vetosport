@@ -1,0 +1,66 @@
+.livePaperBridge{margin:22px 0 26px;border-radius:16px;padding:21px;
+ background:linear-gradient(115deg,rgba(37,37,42,.94),rgba(11,12,15,.97) 68%);
+ border:1px solid rgba(255,255,255,.15);color:#f3f3f5;display:grid;gap:19px}
+.livePaperBridgeTop{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.livePaperEyebrow{font:750 10px/1.5 ui-sans-serif,sans-serif;letter-spacing:.12em;color:#a7afb9}
+.livePaperBridge h3{font-size:clamp(24px,3.4vw,35px);letter-spacing:-.055em;font-weight:720;line-height:1.05;margin:10px 0;color:#f9f9f9}
+.livePaperBridge h3 em{font-style:normal;color:#a6b3c0}
+.livePaperBridgeTop p{color:#b0b9c2;font-size:12px;line-height:1.6;max-width:780px;margin:0}
+.livePaperBridgeTop button{background:#34373b;border:1px solid rgba(255,255,255,.22);border-radius:8px;padding:12px 15px;white-space:nowrap;cursor:pointer;color:#f7f7f7;font-size:12px;font-weight:700}
+.livePaperBridgeTop button:disabled{opacity:.5;cursor:default}
+.livePaperBridgeGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+.livePaperBridgeGrid article{display:flex;flex-direction:column;gap:13px;min-width:0;
+ border:1px solid rgba(255,255,255,.10);background:rgba(14,18,22,.82);padding:17px;border-radius:11px}
+.livePaperBridgeGrid article>strong{font-size:clamp(24px,3vw,35px);letter-spacing:-.06em;color:#f6f6f7;font-variant-numeric:tabular-nums}
+.livePaperBridgeGrid article>strong small{font-size:10px;letter-spacing:.10em;color:#a6b1bc;vertical-align:middle}
+.livePaperSmallStats{display:flex;flex-wrap:wrap;gap:6px}
+.livePaperSmallStats span{border-radius:5px;background:#24272d;padding:7px 9px;font-size:10px;color:#bbc6d0}
+.livePaperBridgeGrid article p{font-size:11px;color:#adb7c2;line-height:1.55;min-height:33px;margin:0}
+.livePaperBridgeGrid article .livePaperWarn{color:#dfa8a4}
+.livePaperBridgeGrid article .livePaperGood{color:#98dbbd}
+.livePaperBridgeGrid article a{margin-top:auto;text-decoration:none;color:#e6e9ed;
+ font-weight:710;font-size:12px;align-self:flex-start;border-bottom:1px solid rgba(255,255,255,.20);padding-bottom:5px}
+.livePaperBridgeFoot{display:flex;justify-content:space-between;gap:15px;border-top:1px solid rgba(255,255,255,.10);padding-top:13px;color:#9fa9b4;font-size:10px;line-height:1.5}
+.livePaperBridgeFoot .livePaperWarn{color:#dfaaa7}
+@media(max-width:940px){.livePaperBridgeGrid{grid-template-columns:1fr}.livePaperBridgeGrid article{gap:9px}.livePaperBridgeGrid article p{min-height:auto}}
+@media(max-width:590px){.livePaperBridge{padding:14px}.livePaperBridgeTop{display:grid}.livePaperBridgeTop button{width:100%}.livePaperBridgeFoot{flex-direction:column;gap:7px}}
+html[data-veto-sport-appearance="light"] .livePaperBridge{background:#fff!important;border-color:#d3dae3!important;color:#243347!important}
+html[data-veto-sport-appearance="light"] .livePaperBridge h3,
+html[data-veto-sport-appearance="light"] .livePaperBridgeGrid article>strong{color:#243347!important}
+html[data-veto-sport-appearance="light"] .livePaperBridgeGrid article{background:#f9fafc!important;border-color:#dce1e9!important}
+html[data-veto-sport-appearance="light"] .livePaperBridge :is(p,span,small){color:#516175!important}
+html[data-veto-sport-appearance="light"] .livePaperBridge .livePaperWarn{color:#a72d44!important}
+html[data-veto-sport-appearance="light"] .livePaperBridge .livePaperGood{color:#146b45!important}
+html[data-veto-sport-appearance="light"] .livePaperSmallStats span{background:#ebeff5!important}
+html[data-veto-sport-appearance="light"] .livePaperBridgeGrid article a{color:#223449!important;border-color:#a9b8c8!important}
+html[data-veto-sport-appearance="light"] .livePaperBridgeTop button{color:#243347!important;background:#f2f6fa!important;border-color:#c6d0db!important}
+
+/* Source-truth filter layer in live command. */
+.liveCommandFilters{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:13px 0 15px}
+.liveCommandFilters button{border:1px solid rgba(255,255,255,.16);border-radius:7px;background:#1b1e23;color:#c0c8d1;font-weight:720;font-size:10px;letter-spacing:.05em;padding:10px 12px;cursor:pointer}
+.liveCommandFilters button.active{background:#e1e9f0;color:#19202b;border-color:#ecf1f8}
+.liveCommandFilters button b{font-variant-numeric:tabular-nums;margin-left:5px}
+.liveCommandFilters>span{margin-left:auto;color:#9ca9b8;font-size:10px;line-height:1.5;max-width:320px;text-align:right}
+.liveCommandEmptyFiltered{padding:25px;border:1px dashed rgba(255,255,255,.2);border-radius:12px;color:#c7d0da;min-height:180px}
+.liveCommandEmptyFiltered strong{font-size:12px;letter-spacing:.06em}
+.liveCommandEmptyFiltered p{font-size:12px;line-height:1.7;color:#a6b4c3;margin-top:11px}
+html[data-veto-sport-appearance="light"] .liveCommandFilters button{background:#fff!important;color:#334358!important;border-color:#cdd7e1!important}
+html[data-veto-sport-appearance="light"] .liveCommandFilters button.active{background:#243246!important;color:#fff!important}
+html[data-veto-sport-appearance="light"] .liveCommandFilters>span,
+html[data-veto-sport-appearance="light"] .liveCommandEmptyFiltered :is(strong,p){color:#43546c!important}
+html[data-veto-sport-appearance="light"] .liveCommandEmptyFiltered{border-color:#cfd8e1!important}
+@media(max-width:760px){.liveCommandFilters>span{margin-left:0;text-align:left;max-width:100%;width:100%}.liveCommandFilters button{font-size:9px;padding:9px 10px}}
+
+.livePaperExposure{border-top:1px solid rgba(255,255,255,.1);padding-top:17px;display:grid;gap:12px}
+.livePaperExposure>div:first-child{display:grid;gap:6px}
+.livePaperExposure>div:first-child strong{font-size:13px;color:#ecf3f6}
+.livePaperExposure>div:first-child span{font-size:10px;color:#aab4bd;line-height:1.55}
+.livePaperExposureLinks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.livePaperExposureLinks a{display:grid;gap:6px;padding:12px 13px;border:1px solid rgba(255,255,255,.12);background:#181d23;border-radius:8px;text-decoration:none;min-width:0}
+.livePaperExposureLinks a strong{font-size:12px;color:#f0f4f8}
+.livePaperExposureLinks a span{font-size:10px;color:#bbccd6}
+.livePaperExposureLinks a small{font-size:10px;color:#a5b4c3}
+html[data-veto-sport-appearance="light"] .livePaperExposureLinks a{background:#f3f7fa!important;border-color:#d9e0e7!important}
+html[data-veto-sport-appearance="light"] .livePaperExposureLinks a strong{color:#1c3348!important}
+html[data-veto-sport-appearance="light"] .livePaperExposure>div:first-child strong{color:#1d3448!important}
+@media(max-width:630px){.livePaperExposureLinks{grid-template-columns:1fr}}
