@@ -27,7 +27,7 @@ export async function GET(){
    generatedAt:new Date().toISOString(),account,
    scheduler:{configuredInRepo:true,lastHeartbeat,blockedBy:safelyBlocked,
     health:lastHeartbeat&&(Date.now()-Date.parse(lastHeartbeat)<90*60_000)?"OBSERVED_RECENTLY":"NOT_RECENTLY_OBSERVED",
-    note:"Existing shadow-football cron can run paper observation. No picks are invented on days with insufficient evidence."},
+    note:"Dedicated authorized paper-research cron captures real prospective observations. A heartbeat proves a run, not a winning result; no picks are invented without source evidence."},
    sourceHealth:{
     oddsScores:{lastCheckedAt:oddsScoresHealth[0]?.checkedAt??null,
      healthy:oddsScoresHealth[0]?.status==="healthy"},
