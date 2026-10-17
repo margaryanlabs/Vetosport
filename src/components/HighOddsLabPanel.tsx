@@ -39,7 +39,16 @@ export function HighOddsLabPanel(){
    if(!obj.ok||obj.account.source!=="SERVER_PERSISTED"||!obj.account.paperOnly)throw Error("UNVERIFIED");
    setPayload(obj);setFault("");
   }catch{
-   setFault("Архив высоких коэффициентов пока недоступен. Не создаём демонстрационные выигрыши.");
+   try{
+    const health=await fetch("/api/intelligence/paper-journal/readiness",{cache:"no-store"});
+    const state:{issues?:Array<{scope:string;reason:string}>;suggestion?:string}=await health.json();
+    const failures=state.issues?.map(x=>x.scope+": "+x.reason).join("; ");
+    setFault(failures?
+     "Ошибка доступа к данным: "+failures+". "+(state.suggestion??""):
+     "Данные High Odds временно не загружаются. Диагностика хранилища доступна отдельно.");
+   }catch{
+    setFault("Не удалось связаться с сервером Preview. Возможно, требуется авторизация Vercel. Ключи спортивных API для просмотра сохранённых данных не нужны.");
+   }
   }finally{setBusy(false);}
  },[]);
  useEffect(()=>{void refresh();const id=setInterval(()=>void refresh(),60_000);
