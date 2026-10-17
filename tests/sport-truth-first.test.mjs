@@ -768,3 +768,17 @@ test("Live view distinguishes certified fresh scores, stale decision labels and 
  assert.match(css,/html\[data-veto-sport-appearance="light"\]/);
  assert.doesNotMatch(bridge,/insertPaperDailyPick|placeBet|createWager|THE_ODDS_API_KEY/);
 });
+
+test("Live paper exposure only references real persisted fixture IDs and cron status is truthful",()=>{
+ const bridge=read("src/components/LivePaperPulse.tsx");
+ const live=read("src/components/LiveCommandCenter.tsx");
+ const cron=read("src/app/api/cron/paper-research/route.ts");
+ const daily=read("src/app/api/intelligence/paper-journal/daily/route.ts");
+ assert.match(bridge,/const matched=real.filter\(e=>exposure.has\(e.id\)\)/);
+ assert.match(bridge,/view=check&event=/);
+ assert.match(bridge,/getObservedFreshness\(e,now\)\.label/);
+ assert.match(live,/LIVE-СТАТУС УСТАРЕЛ/);
+ assert.match(cron,/reason:run\?\.ok\?/);
+ assert.match(cron,/skipped:highOdds\?\.ok\?/);
+ assert.match(daily,/Dedicated authorized paper-research cron/);
+});
