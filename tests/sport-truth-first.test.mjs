@@ -782,3 +782,25 @@ test("Live paper exposure only references real persisted fixture IDs and cron st
  assert.match(cron,/skipped:highOdds\?\.ok\?/);
  assert.match(daily,/Dedicated authorized paper-research cron/);
 });
+
+test("The Odds API exact FT verifier uses daily UTC quota guard instead of blocking the previous day's budget",()=>{
+ const gate=read("src/lib/paper/ft-quota-gate.ts");
+ const cron=read("src/app/api/cron/the-odds-scores/route.ts");
+ const daily=read("src/app/api/intelligence/paper-journal/daily/route.ts");
+ const client=read("src/components/DailyPaperResearchPanel.tsx");
+ const self=read("src/app/api/intelligence/paper-journal/selfcheck/route.ts");
+ assert.match(gate,/FT_SCORE_QUOTA_MAX_AGE_MS=30\*60\*60_000/);
+ assert.match(gate,/FT_SCORE_MIN_PROVEN_CREDITS=100/);
+ assert.match(gate,/FT_SCORE_REPEAT_COOLDOWN_MS/);
+ assert.match(gate,/quotaRemaining:442/);
+ assert.match(cron,/assessFtScoreBudget/);
+ assert.match(cron,/lastScoresCall:scoresHealth\[0\]/);
+ assert.doesNotMatch(cron,/now\.getTime\(\)-6\*3600_000/);
+ assert.match(cron,/FT_SCORE_COST_CREDITS/);
+ assert.match(daily,/nextFtScoreCronUtc/);
+ assert.match(daily,/dueAfterTwoHours/);
+ assert.match(client,/FT-ПРОВЕРКА ВЫПОЛНЯЛАСЬ/);
+ assert.match(client,/nextPlannedScoresCheckUtc/);
+ assert.match(self,/ftQuotaGateSelfcheck/);
+ assert.doesNotMatch(cron,/placeBet|createWager|executeTrade/);
+});
