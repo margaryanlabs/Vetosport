@@ -1,4 +1,5 @@
 import {certifiedRegulationFinal} from "@/lib/research/evidence-coverage";
+import {certifyPersistedOddsScore} from "@/lib/paper/odds-score-certification";
 import type {PersistedEvent, PersistedEventStateRecord} from "@/lib/persistence/contracts";
 
 export type PatternStatus = "NEEDS_FINAL_RESULTS"|"EXPLORATORY"|"HOLDOUT_PENDING";
@@ -129,6 +130,21 @@ export function discoverObservedPatterns(input:{
       const minute=readMinute(row.state);
       if(minute===null||minute>105)continue;
       samples.push({eventId:id,at:row.capturedAt,minute,score,source:row.sourceProvider});
+    }
+    // Independent exact-ID EPL scores can certify 90-minute FT even if
+    // the API-Football results subscription rejects its own finals endpoint.
+    // Both sources must agree if both wrote certificates; conflicts fail closed.
+    if(event){
+      const oddsFinal=certifyPersistedOddsScore(event,rows,input.asOf);
+      const apiFinal=finalScores.get(id);
+      if(oddsFinal){
+        if(apiFinal&&(apiFinal.score.home!==oddsFinal.score.home||
+          apiFinal.score.away!==oddsFinal.score.away)){
+          finalScores.delete(id);
+        }else if(!apiFinal){
+          finalScores.set(id,{score:oddsFinal.score,at:oddsFinal.capturedAt});
+        }
+      }
     }
   }
   const discovered=new Map<string,PatternBucket>();
