@@ -64,6 +64,23 @@ type MarketReference={eventId:string;match:string;competition:string;startsAt:st
  executablePriceVerified:false;profitabilityVerified:false};
 type MarketReferenceResponse={ok:boolean;source:string;asOf:string;rows:MarketReference[];
  quotesScanned:number;fixturesScanned:number;eventsCapped:boolean;quotesCapped:boolean;independentModel:false};
+type LockedControlRow={pickId:string;eventId:string;match:string;competition:string;
+ startsAt:string;recordedAt:string;quoteAt:string;bookmaker:string;
+ selection:string;probability:number;odds:number;
+ status:"VERIFIED_FT"|"WAITING_FOR_FT"|"FT_CERTIFIED_BUT_PAPER_NOT_SETTLED";
+ outcome:0|1|null;score:{home:number;away:number}|null;source:string|null;
+ brier:number|null;logLoss:number|null;virtualProfit:number|null};
+type LockedControlProof={ok:true;source:"PERSISTED_ONLY";rows:LockedControlRow[];
+ coverage:{picksRead:number;eligibleLockedFixtures:number;sourceCertified:number;
+ verifiedSettlements:number;unreconciledFinals:number;unresolved:number;
+ picksMayBeCapped:boolean;eventReadsMayBeCapped:boolean;stateReadsMayBeCapped:boolean};
+ quality:{samples:number;wins:number;losses:number;meanProbability:number|null;
+ observedFrequency:number|null;brier:number|null;logLoss:number|null;
+ virtualNet:number;virtualStake:number;virtualYieldPct:number|null;
+ sufficientForCalibration:boolean;independentModel:false;
+ executionVerified:false;profitabilityVerified:false};
+ reliability:Array<{from:number;to:number;count:number;forecastMean:number;observedFrequency:number}>;
+ externalProviderCalls:0;realMoneyBets:0};
 type OperationalSource={id:string;label:string;state:"active"|"empty"|"waiting"|"degraded"|"stale"|"unknown";
  updatedAt:string|null;lastRunCode:string|null;ageMinutes:number|null;note:string};
 type OperationalFeed={source:"PERSISTED_ONLY";providers:OperationalSource[]};
@@ -99,7 +116,8 @@ export function PredictionsConsole(){
  const [proof,setProof]=useState<ModelProof|null>(null);
  const [sourceHealth,setSourceHealth]=useState<OperationalFeed|null>(null);
  const [benchmark,setBenchmark]=useState<MarketReferenceResponse|null>(null);
- const [statuses,setStatuses]=useState<Record<string,Status>>({paper:"loading",discovery:"loading",radar:"loading",shadow:"loading",anomalies:"loading",proof:"loading",sources:"loading",benchmark:"loading"});
+ const [controlProof,setControlProof]=useState<LockedControlProof|null>(null);
+ const [statuses,setStatuses]=useState<Record<string,Status>>({paper:"loading",discovery:"loading",radar:"loading",shadow:"loading",anomalies:"loading",proof:"loading",sources:"loading",benchmark:"loading",controlProof:"loading"});
  const [tab,setTab]=useState<PredictionTab>("all");
  const [cycle,setCycle]=useState(0);
  const [now,setNow]=useState(0);
@@ -119,6 +137,7 @@ export function PredictionsConsole(){
    {key:"radar",url:"/api/intelligence/research/opportunity-radar"},
    {key:"shadow",url:"/api/intelligence/predictions/shadow"},
    {key:"benchmark",url:"/api/intelligence/predictions/market-reference"},
+   {key:"controlProof",url:"/api/intelligence/predictions/market-proof"},
    {key:"anomalies",url:"/api/intelligence/predictions/anomalies"},
    {key:"proof",url:"/api/intelligence/predictions/validation"},
    {key:"sources",url:"/api/intelligence/research/source-health"},
@@ -130,7 +149,15 @@ export function PredictionsConsole(){
     .then(async response=>{if(!response.ok)throw Error("SOURCE_UNAVAILABLE");return response.json();})
     .then((value:unknown)=>{
      if(!alive)return;
-     if(key==="benchmark"){
+     if(key==="controlProof"){
+      const item=value as LockedControlProof;
+      if(item.ok!==true||item.source!=="PERSISTED_ONLY"||!Array.isArray(item.rows)||
+       !item.quality||item.quality.independentModel!==false||
+       item.quality.profitabilityVerified!==false||item.quality.executionVerified!==false||
+       item.externalProviderCalls!==0||item.realMoneyBets!==0)
+       throw Error("FORWARD_CONTROL_PROOF_INVALID");
+      setControlProof(item);
+    }else if(key==="benchmark"){
       const item=value as MarketReferenceResponse;
       if(item.ok!==true||item.source!=="PERSISTED_ONLY"||
        !Array.isArray(item.rows)||item.independentModel!==false||
@@ -180,6 +207,7 @@ export function PredictionsConsole(){
      if(key==="proof")setProof(null);
      if(key==="sources")setSourceHealth(null);
      if(key==="benchmark")setBenchmark(null);
+     if(key==="controlProof")setControlProof(null);
      update(key,"error");
     });
   });
@@ -215,7 +243,7 @@ export function PredictionsConsole(){
    <p>Здесь — не список популярных ставок и не подборка высоких коэффициентов.
     Только заранее зафиксированные прогнозы моделей VETO на реальные события,
     наблюдаемые ситуации и исследуемые закономерности. Каждый вывод можно проверить после матча.</p>
-   <div className="predHeroActions"><a href="#predNow">Прогнозы VETO ↓</a><a href="#predBenchmark">Контроль рынка ↓</a><a href="#predLinked">Совпадения гипотез ↓</a><a href="#predAnomalies">Аномалии и радар ↓</a><a href="#predProof">Проверка моделей ↓</a></div>
+   <div className="predHeroActions"><a href="#predNow">Прогнозы VETO ↓</a><a href="#predBenchmark">Контроль рынка ↓</a><a href="#predControlProof">Проверенные результаты ↓</a><a href="#predLinked">Совпадения гипотез ↓</a><a href="#predAnomalies">Аномалии и радар ↓</a><a href="#predProof">Проверка моделей ↓</a></div>
   </section>
   <section className="predStats" aria-label="Состояние исследований">
    {stats.map(s=><article key={s.name}><span>{s.name}</span><strong>{s.value}</strong><small>{s.detail}</small></article>)}
@@ -319,6 +347,63 @@ export function PredictionsConsole(){
        <Link href={"/?view=check&event="+encodeURIComponent(m.eventId)}>Матч ↗</Link>
       </footer>
      </article>)}
+    </div>}
+  </section>
+  <section className="predSection predControlProofSection" id="predControlProof">
+   <div className="predSectionHead"><div>
+    <span>PROSPECTIVE LEDGER / EXACT-ID FULL TIME</span>
+    <h2>Что рынок оценил до матча — и что произошло?</h2>
+    <p>Независимая сверка: записанная до начала матча вероятность без маржи →
+    настоящий подтверждённый FT → Brier Score. Считаем только один заранее зафиксированный
+    билет на матч. <b>Это проверка рынка, а не точности собственной модели VETO.</b></p>
+   </div><a className="predLink" href="/api/intelligence/predictions/market-proof/selfcheck" target="_blank" rel="noopener noreferrer">Доказательства ↗</a></div>
+   {statuses.controlProof!=="ready"?<div className="predEmpty" role="status">
+    <b>{statuses.controlProof==="error"?"Проверочный журнал временно недоступен":
+     "Сверяем заранее записанные эксперименты с независимыми сертификатами FT…"}</b>
+    <p>Никакие результаты не создаются на основе исходов, которых нет в журнале.</p></div>:
+    !controlProof?.rows.length?<div className="predEmpty">
+     <b>Пока нет полноценной цепочки «запись до матча → проверенный результат».</b>
+     <p>Нужен сохранённый до события контрольный прогноз, исход и точный сертификат FT.
+      Исторические коэффициенты задним числом не засчитываются.</p></div>:
+    <div className="predControlProofBody">
+     <div className="predProofTop"><div><small>CONTROL / NOT VETO MODEL</small>
+      <strong>Факты против ожиданий</strong>
+      <span>Бумажные рыночные наблюдения — полностью виртуальные, без реальных ставок.</span></div>
+      <b>{controlProof.quality.sufficientForCalibration?"МИНИМУМ НАБЛЮДЕНИЙ ДОСТИГНУТ":
+       "ВЫБОРКА МАЛА / ПРЕДВАРИТЕЛЬНО"}</b></div>
+     <div className="predProofKpis">
+      <article><small>ПОДТВЕРЖДЕНО ПРОВАЙДЕРОМ FT</small><strong>{controlProof.quality.samples}</strong><span>уникальных матчей с бумажным расчётом</span></article>
+      <article><small>BRIER SCORE РЫНКА</small><strong>{controlProof.quality.brier===null?"—":number(controlProof.quality.brier,4)}</strong>
+       <span>меньше — точнее, но только на ограниченной выборке</span></article>
+      <article><small>ПРОГНОЗНАЯ ЧАСТОТА</small><strong>{percent(controlProof.quality.meanProbability)}</strong>
+       <span>среднее ожидание по выбранным исходам</span></article>
+      <article><small>РЕАЛЬНАЯ ЧАСТОТА</small><strong>{percent(controlProof.quality.observedFrequency)}</strong>
+       <span>итоги проверенных событий</span></article>
+     </div>
+     <div className="predControlWarnings">
+      <p><b>Границы:</b> {controlProof.coverage.picksRead} записей исследовано,
+      {controlProof.coverage.verifiedSettlements} подтверждено повторно;
+      {controlProof.coverage.unresolved} ожидают FT,
+      {controlProof.coverage.unreconciledFinals} имеют FT, но ещё не завершена сверка журнала.</p>
+      <p>Виртуальный итог только по проверенным контрольным билетам: {controlProof.quality.virtualNet>=0?"+":""}{number(controlProof.quality.virtualNet,2)} условных USD.
+       Не доказаны заработок, исполнение коэффициента или преимущество VETO над рынком.</p>
+      {controlProof.coverage.picksMayBeCapped||controlProof.coverage.eventReadsMayBeCapped||
+       controlProof.coverage.stateReadsMayBeCapped?<p className="predProofWarning">Чтение истории ограничено. Итоги неполные.</p>:null}
+     </div>
+     <div className="predControlRows">
+      {controlProof.rows.slice(0,18).map(r=><article key={r.pickId}>
+       <div className="predControlMatch"><strong>{r.match}</strong>
+        <small>{r.competition} · до начала: {time(r.recordedAt)}</small>
+        <span>{contractLabel(r.selection,r.selection)} · {r.bookmaker}</span></div>
+       <div><small>ПЕРВОНАЧАЛЬНО</small><b>{percent(r.probability)}</b>
+        <span>Оценка рынка без маржи</span></div>
+       <div><small>ИТОГ</small><b>{r.score?r.score.home+":"+r.score.away:"—"}</b>
+        <span>{r.status==="VERIFIED_FT"?"Проверен по The Odds API":
+         r.status==="FT_CERTIFIED_BUT_PAPER_NOT_SETTLED"?"Нужна сверка журнала":"Ожидаем независимый FT"}</span></div>
+       <div><small>BRIER</small><b>{r.brier===null?"—":number(r.brier,4)}</b>
+        <span>{r.outcome===null?"Без оценки":r.outcome===1?"Исход наступил":"Исход не наступил"}</span></div>
+      </article>)}
+     </div>
     </div>}
   </section>
   <section className="predSection predProofSection" id="predProof">
