@@ -1,0 +1,30 @@
+import {readFileSync} from "node:fs";
+import test from "node:test";
+import assert from "node:assert/strict";
+const read=p=>readFileSync(new URL("../"+p,import.meta.url),"utf8");
+test("Real anomalies compare only independent bookmaker quotes of identical selections",()=>{
+ const engine=read("src/lib/research/price-dispersion.ts");
+ assert.match(engine,/latest=new Map<string,PersistedMarketQuoteRecord>/);
+ assert.match(engine,/candidates.length<3/);
+ assert.match(engine,/aligned.length<3/);
+ assert.match(engine,/q.marketKey,q.selectionKey,q.line/);
+ assert.match(engine,/q.providerLastUpdate/);
+ assert.match(engine,/q.suspended!==false/);
+ assert.match(engine,/if\(!Number.isFinite\(delta\)\|\|delta<\.12\)continue/);
+ assert.match(engine,/validatedEdge:false,executionVerified:false,researchOnly:true/);
+ assert.match(engine,/priceDispersionSelfcheck/);
+ assert.doesNotMatch(engine,/https:\/\/|fetch\(|Math\.random\(|placeBet/);
+});
+test("Price-anomaly API does no upstream sports-provider billing or betting",()=>{
+ const route=read("src/app/api/intelligence/predictions/anomalies/route.ts");
+ const self=read("src/app/api/intelligence/predictions/anomalies/selfcheck/route.ts");
+ const page=read("src/components/PredictionsConsole.tsx");
+ assert.match(route,/getPersistence/);
+ assert.match(route,/findPriceDispersion/);
+ assert.match(route,/quotesCapped/);
+ assert.match(route,/externalProviderCalls:0/);
+ assert.match(route,/automaticBettingEnabled:false/);
+ assert.match(self,/priceDispersionSelfcheck/);
+ assert.match(page,/Аномалии букмекерских котировок/);
+ assert.match(page,/Необычный разброс цен, не EDGE/);
+});
