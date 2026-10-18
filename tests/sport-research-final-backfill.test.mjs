@@ -15,8 +15,8 @@ test("The Odds API daily exact scores use existing quota gate for research match
  assert.match(cron,/source:"the-odds-api\.scores"/);
  assert.match(cron,/appendEventState/);
  assert.match(cron,/appendTruthJournal/);
- assert.match(selector,/canonicalKey\.startsWith\("football::epl::"\)/);
- assert.match(selector,/providerRefs\?\.\["the-odds-api"\]/);
+ assert.match(selector,/isExactEplFixture/);
+ assert.match(selector,/providerRefs!\["the-odds-api"\]/);
  assert.match(selector,/owners\.get/);
  assert.match(selector,/oddsResearchFinalTargetsSelfcheck/);
  assert.doesNotMatch(selector,/fetch\(|https:\/\/|process\.env/);
@@ -43,4 +43,22 @@ test("The Odds API score query is still guarded by 100-credit reserve and 20h re
  assert.match(gate,/FT_SCORE_REPEAT_COOLDOWN_MS=20\*60\*60_000/);
  assert.match(gate,/QUOTA_PROOF_EXPIRED/);
  assert.match(cron,/e\.event\.status!=="finished"/);
+});
+
+test("Cross-provider football identity preserves original API-Football provider id and never downgrades live fixtures",()=>{
+ const identity=source("src/lib/canonical/exact-source-identity.ts");
+ const league=source("src/lib/paper/epl-exact-identity.ts");
+ const odds=source("src/lib/ingestion/live-odds.ts");
+ const storage=source("src/lib/persistence/supabase-rest.ts");
+ assert.match(league,/isExactEplFixture/);
+ assert.match(league,/exactEplIdentitySelfcheck/);
+ assert.match(identity,/exactOddsProviderLinkSelfcheck/);
+ assert.match(identity,/assessment.participantScore>=.999/);
+ assert.match(identity,/compatible.length===1/);
+ assert.match(odds,/exactOddsProviderLink/);
+ assert.match(odds,/upsertEvent\(linked.event,linked.canonicalKey/);
+ assert.match(odds,/provider:client.id,id:externalEvent.id/);
+ assert.match(storage,/mergeProviderRefs/);
+ assert.match(storage,/provider_refs:providerRefs/);
+ assert.doesNotMatch(odds,/const updated=await persistence.upsertEvent\(incoming,linked.canonicalKey/);
 });
