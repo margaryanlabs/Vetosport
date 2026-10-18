@@ -62,3 +62,17 @@ test("Cross-provider football identity preserves original API-Football provider 
  assert.match(storage,/provider_refs:providerRefs/);
  assert.doesNotMatch(odds,/const updated=await persistence.upsertEvent\(incoming,linked.canonicalKey/);
 });
+
+test("A unique EPL odds fixture can be reused for API-Football live ingestion without fabricated provider IDs",()=>{
+ const canonical=source("src/lib/ingestion/canonical-live.ts");
+ const identity=source("src/lib/canonical/exact-source-identity.ts");
+ const league=source("src/lib/paper/epl-exact-identity.ts");
+ assert.match(canonical,/existingEplOddsCanonicalForLive/);
+ assert.match(canonical,/input.provider==="api-football"/);
+ assert.match(canonical,/oddsCanonical\)canonicalKey=oddsCanonical\.canonicalKey/);
+ assert.match(canonical,/await persistence\.upsertEvent/);
+ assert.match(identity,/matches.length===1/);
+ assert.match(identity,/input\.candidates\.some\(c=>c\.canonicalKey===input\.incomingCanonicalKey\)/);
+ assert.match(identity,/exactOddsProviderLinkSelfcheck/);
+ assert.match(league,/premier league · england/);
+});
