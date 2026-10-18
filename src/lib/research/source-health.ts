@@ -5,6 +5,7 @@ export const sourceDescriptors=[
  {id:"api-football-finals",label:"Окончательные результаты",cadenceHours:4},
  {id:"api-football-live-odds",label:"Рыночные котировки",cadenceHours:2},
  {id:"the-odds-api-scores",label:"EPL FT · независимый источник",cadenceHours:24},
+ {id:"veto-shadow-score-only",label:"VETO · модель по счёту",cadenceHours:0.1},
 ] as const;
 export type ProviderReadiness="active"|"empty"|"waiting"|"degraded"|"stale"|"unknown";
 export interface SafeSourceRun{
@@ -51,6 +52,8 @@ export function toSourceHealthView(input:{
  const info=latest?.metadata??{};
  // Successful request != usable market data. The sparse 2-hour in-play
  // sampling often reaches an empty upstream response.
+ const noModelSamples=descriptor.id==="veto-shadow-score-only"&&
+  latest?.status==="healthy"&&info.predictionsPersisted===0;
  const noMarkets=descriptor.id==="api-football-live-odds"&&
   latest?.status==="healthy"&&
   (info.unsuspendedWritten===0||(info.unsuspendedWritten===undefined&&info.quotesWritten===0));
@@ -58,10 +61,10 @@ export function toSourceHealthView(input:{
   info.failureCode==="NO_RECENT_VERIFIED_SCORE_FIXTURES"&&
   info.providerCalled===false;
  const state:ProviderReadiness=ageMinutes===null?"unknown":stale?"stale":
-  noVerifiedFixtures?"waiting":noMarkets?"empty":
+  noVerifiedFixtures?"waiting":noModelSamples?"waiting":noMarkets?"empty":
   latest?.status==="healthy"?"active":"degraded";
  // Never forward provider message, errors, metadata, ids or quota; metrics only.
- const stored=asSafeCount(info.finishedStored??info.certified??info.stored??info.quotesWritten);
+ const stored=asSafeCount(info.predictionsPersisted??info.finishedStored??info.certified??info.stored??info.quotesWritten);
  const scanned=asSafeCount(info.scannedEvents??info.upstreamFixtures??info.providerRows);
  const pending=descriptor.id==="api-football-finals"
   ?asSafeCount(info.eligibleCandidates??info.candidateCount):null;
@@ -144,7 +147,12 @@ export function toSourceHealthView(input:{
    "Достигнут резерв бесплатной квоты; новые цены не записывались.":
   lastRunCode==="STORAGE_WRITE_FAILURE"?
    "Ошибка сохранения проверенной котировки; запись и подтверждение рынков неполные.":null;
- const note=quotaHint??(state==="unknown"?"Нет подтверждённого запуска этого источника.":
+ const note=quotaHint??(descriptor.id==="veto-shadow-score-only"&&
+  state==="waiting"?
+  "Цикл модели выполняется, но без свежего проверенного score/clock не записал новых прогнозов.":
+  descriptor.id==="veto-shadow-score-only"&&state==="active"?
+  "Записаны реальные source-only shadow оценки по явным 1.35/1.15 голевым допущениям. Модель НЕ калибрована.":
+  state==="unknown"?"Нет подтверждённого запуска этого источника.":
   state==="stale"?"Последний запуск устарел; новые данные не подтверждены.":
   state==="empty"?"Источник ответил без новых рыночных данных. Проверять нечего, цены отсутствуют.":
   state==="waiting"?"Нет подходящих наблюдений: внешний источник коэффициентов не запрашивался.":
@@ -160,7 +168,7 @@ export function toSourceHealthView(input:{
   if(!Number.isFinite(t)||t>now||t<=0)return[];
   const m=run.metadata??{};
   const recorded=asSafeCount(descriptor.id==="api-football-live-odds"&&m.unsuspendedWritten!==undefined?
-   m.unsuspendedWritten:(m.finishedStored??m.certified??m.stored??m.quotesWritten));
+   m.unsuspendedWritten:(m.predictionsPersisted??m.finishedStored??m.certified??m.stored??m.quotesWritten));
   const outcome:SafeSourceRun["outcome"]=m.failureCode==="NO_RECENT_VERIFIED_SCORE_FIXTURES"&&m.providerCalled===false?
     "waiting":run.status!=="healthy"?"degraded":
     descriptor.id==="api-football-live-odds"&&recorded===0?"empty":

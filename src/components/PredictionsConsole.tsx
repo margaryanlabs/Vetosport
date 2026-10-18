@@ -31,7 +31,10 @@ type RadarRow={id:string;status:"PAPER"|"WATCH"|"PASS";scenario:string;
  reasons:string[];quote?:{decimalOdds:number;capturedAt:string}};
 type RadarResponse={generatedAt:string;source:string;rows:RadarRow[]};
 type ShadowRow={id:string;eventId:string;competition:string;match:string;marketKey:string;selectionKey:string;
- modelProbability:number;modelFairOdds:number;modelVersion:string;predictionAt:string;stateAt:string;stage:"UNVALIDATED_SHADOW_FORECAST"};
+ modelProbability:number;modelFairOdds:number;modelVersion:string;predictionAt:string;stateAt:string;
+ modelBasis?:"FIXED_UNCALIBRATED_GOAL_PRIORS"|"SOURCE_ALIGNED_QUOTE_RESEARCH";
+ bookmakerQuoteRequired?:boolean;independentCalibrationVerified?:false;
+ stage:"UNVALIDATED_SHADOW_FORECAST"};
 type ShadowResponse={ok:boolean;source:string;asOf:string;rows:ShadowRow[];decisionAuthority:false};
 type MarketAnomaly={id:string;eventId:string;match:string;competition:string;marketKey:string;
  selectionKey:string;line:number|null;provider:string;medianOdds:number;highestObservedOdds:number;
@@ -222,8 +225,9 @@ export function PredictionsConsole(){
   </section>
   <section className="predSection" id="predNow">
    <div className="predSectionHead"><div><span>01 / REAL-TIME MODEL SURFACE</span><h2>Оперативные оценки VETO</h2>
-    <p>Реальные матчи, реальные сохранённые входные данные, предварительные вероятности модели.
-       Без подтверждённого коэффициента букмекера и проверки калибровки это ещё не рекомендация ставить.</p></div></div>
+    <p>Модель рассчитывает вероятности непосредственно по реальному счёту и времени матча — даже когда
+      букмекерские коэффициенты недоступны. Сначала используем явно фиксированные голевые допущения,
+      не проверенную силу конкретных команд. Без калибровки это исследовательские оценки, а не ставки.</p></div></div>
    {statuses.shadow!=="ready"?<div className="predEmpty" role="status">
     {statuses.shadow==="error"?"Сохранённые прогнозы shadow-модели недоступны.":"Проверяем последние расчёты модели…"}</div>:
     (shadow?.rows.length??0)===0?<div className="predEmpty"><b>В актуальном окне нет свежих прогнозов shadow-модели.</b>
@@ -231,7 +235,9 @@ export function PredictionsConsole(){
         Проверить, почему модель ничего не выпустила, можно в состоянии данных и журнале исследований.</p>
      <Link href="/research/discovery">Диагностика исследований ↗</Link></div>:
     <div className="predForecastGrid">{shadow!.rows.slice(0,14).map(x=><article className="predForecast" key={x.id}>
-     <header><span>REAL MATCH / SHADOW MODEL</span><b className="pending">НЕЗАВИСИМАЯ ПРОВЕРКА ВПЕРЕДИ</b></header>
+     <header><span>{x.modelBasis==="FIXED_UNCALIBRATED_GOAL_PRIORS"?
+      "REAL SCORE + CLOCK / PRIOR MODEL":"REAL MATCH / SHADOW MODEL"}</span>
+      <b className="pending">НЕ КАЛИБРОВАНО</b></header>
      <small>{x.competition} · расчёт {time(x.predictionAt)}</small>
      <h3>{x.match}</h3><p className="predOutcome">{contractLabel(x.marketKey==="football.1x2"?
       x.selectionKey==="home"?"FT_HOME":x.selectionKey==="away"?"FT_AWAY":"FT_DRAW":
@@ -241,8 +247,12 @@ export function PredictionsConsole(){
       <div><small>ЦЕНА БУКМЕКЕРА</small><strong className="predShadowUnquoted">НЕ ПРОВЕРЕНА</strong></div></div>
      <div className="predForecastProvenance"><span>Источник: сохранённый матч · {time(x.stateAt)}</span>
       <span>Модель: {x.modelVersion} · {time(x.predictionAt)}</span>
-      <span>Статус: исследовательская модель, не EDGE и не исполнимая котировка.</span></div>
-     <footer><small>Одиночная некалиброванная модель. Нельзя выводить прибыльность без независимой цены и результата.</small>
+      {x.modelBasis==="FIXED_UNCALIBRATED_GOAL_PRIORS"?
+       <span>Основа: наблюдаемый счёт + время, 1,35 / 1,15 гола на матч — фиксированные
+         допущения. НЕ характеристики команд и НЕ прогноз с независимой калибровкой.</span>:
+       <span>Требуется связь с сохранёнными рынками; цены не подтверждают прибыльность модели.</span>}
+      <span>Статус: только SHADOW / исследование. Котировка и прибыльность не подтверждены.</span></div>
+     <footer><small>Вероятности пока условны: реальный матч ≠ доказанная точность или ценовое преимущество.</small>
       <Link href={"/?view=check&event="+encodeURIComponent(x.eventId)}>Разобрать ↗</Link></footer>
     </article>)}</div>}
   </section>
