@@ -10,7 +10,7 @@ export function isExactEplFixture(event:PersistedEvent):boolean{
  if(typeof id!=="string"||!/^[a-f0-9]{32}$/i.test(id))return false;
  const competition=event.event.competition.trim().toLowerCase().replace(/\s+/g," ");
  return (event.canonicalKey.startsWith("football::epl::")&&
-  ["epl","premier league","english premier league"].includes(competition))||
+  ["epl","premier league","english premier league","premier league · england","premier league - england"].includes(competition))||
   (event.canonicalKey.startsWith("football::premier-league-england::")&&
    (competition==="premier league · england"||
     competition==="premier league - england"));
