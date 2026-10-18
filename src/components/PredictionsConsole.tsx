@@ -55,6 +55,14 @@ type ModelProof={ok:boolean;source:string;selected:ModelProofCohort|null;selecte
  coverage:{eventsScanned:number;eventsWithFt:number;predictionRowsRead:number;verifiedSamples:number;
  scanMayBeCapped:boolean;sampleMayBeCapped:boolean};
  profitableStrategyVerified:false;historicalEdgeValidated:false;lookbackDays:number};
+type BundesligaModelRow={id:string;match:string;startsAt:string;forecastAt:string;
+ modelVersion:string;probability:{home:number;draw:number;away:number};
+ trainingSource:"OPENLIGADB_COMMUNITY";stage:"UNCALIBRATED_SHADOW_PREMATCH";
+ bookmakerPriceVerified:false;licensedLiveClock:false;independentFtCertified:false;
+ profitabilityValidated:false};
+type BundesligaModelResponse={ok:boolean;source:string;asOf:string;
+ rows:BundesligaModelRow[];scanMayBeCapped:boolean;fixturesScanned:number;
+ bookmakerProviderCalls:0;licensedLiveClock:false;independentFtCertified:false};
 type MarketReference={eventId:string;match:string;competition:string;startsAt:string;
  sampleAt:string;latestSourceAt:string;bookmakers:number;source:"PERSISTED_THE_ODDS_API";
  probability:{home:number;draw:number;away:number};
@@ -116,8 +124,9 @@ export function PredictionsConsole(){
  const [proof,setProof]=useState<ModelProof|null>(null);
  const [sourceHealth,setSourceHealth]=useState<OperationalFeed|null>(null);
  const [benchmark,setBenchmark]=useState<MarketReferenceResponse|null>(null);
+ const [bundesliga,setBundesliga]=useState<BundesligaModelResponse|null>(null);
  const [controlProof,setControlProof]=useState<LockedControlProof|null>(null);
- const [statuses,setStatuses]=useState<Record<string,Status>>({paper:"loading",discovery:"loading",radar:"loading",shadow:"loading",anomalies:"loading",proof:"loading",sources:"loading",benchmark:"loading",controlProof:"loading"});
+ const [statuses,setStatuses]=useState<Record<string,Status>>({paper:"loading",discovery:"loading",radar:"loading",shadow:"loading",anomalies:"loading",proof:"loading",sources:"loading",benchmark:"loading",bundesliga:"loading",controlProof:"loading"});
  const [tab,setTab]=useState<PredictionTab>("all");
  const [cycle,setCycle]=useState(0);
  const [now,setNow]=useState(0);
@@ -137,6 +146,7 @@ export function PredictionsConsole(){
    {key:"radar",url:"/api/intelligence/research/opportunity-radar"},
    {key:"shadow",url:"/api/intelligence/predictions/shadow"},
    {key:"benchmark",url:"/api/intelligence/predictions/market-reference"},
+   {key:"bundesliga",url:"/api/intelligence/predictions/bundesliga-prematch"},
    {key:"controlProof",url:"/api/intelligence/predictions/market-proof"},
    {key:"anomalies",url:"/api/intelligence/predictions/anomalies"},
    {key:"proof",url:"/api/intelligence/predictions/validation"},
@@ -157,6 +167,16 @@ export function PredictionsConsole(){
        item.externalProviderCalls!==0||item.realMoneyBets!==0)
        throw Error("FORWARD_CONTROL_PROOF_INVALID");
       setControlProof(item);
+    }else if(key==="bundesliga"){
+      const item=value as BundesligaModelResponse;
+      if(item.ok!==true||item.source!=="PERSISTED_ONLY"||!Array.isArray(item.rows)||
+        item.licensedLiveClock!==false||item.independentFtCertified!==false||
+        item.bookmakerProviderCalls!==0||item.rows.some(x=>
+         x.trainingSource!=="OPENLIGADB_COMMUNITY"||
+         x.stage!=="UNCALIBRATED_SHADOW_PREMATCH"||
+         x.bookmakerPriceVerified!==false||x.profitabilityValidated!==false))
+       throw Error("BUNDESLIGA_PREMATCH_INVALID");
+      setBundesliga(item);
     }else if(key==="benchmark"){
       const item=value as MarketReferenceResponse;
       if(item.ok!==true||item.source!=="PERSISTED_ONLY"||
@@ -208,6 +228,7 @@ export function PredictionsConsole(){
      if(key==="proof")setProof(null);
      if(key==="sources")setSourceHealth(null);
      if(key==="benchmark")setBenchmark(null);
+     if(key==="bundesliga")setBundesliga(null);
      if(key==="controlProof")setControlProof(null);
      update(key,"error");
     });
@@ -225,6 +246,7 @@ export function PredictionsConsole(){
  const liveHypotheses=(discovery?.liveMatches??[]).filter(x=>now>0&&Number.isFinite(Date.parse(x.observedAt))&&
   Date.parse(x.observedAt)<=now&&now-Date.parse(x.observedAt)<=120_000);
  const stats=[
+  {name:"ПРЕДМАТЧЕВЫХ МОДЕЛЕЙ",value:statuses.bundesliga==="ready"?String(bundesliga?.rows.length??0):"—",detail:"История Бундеслиги · без коэффициентов"},
   {name:"РЫНОЧНЫХ ОРИЕНТИРОВ",value:statuses.benchmark==="ready"?String(benchmark?.rows.length??0):"—",detail:"Без маржи, НЕ независимая модель"},
   {name:"АНОМАЛИЙ КОТИРОВОК",value:statuses.anomalies==="ready"?String(anomalies?.rows.length??0):"—",detail:"Необычный разброс цен, не EDGE"},
   {name:"СВЕЖИХ МОДЕЛЬНЫХ ОЦЕНОК",value:statuses.shadow==="ready"?String(shadow?.rows.length??0):"—",detail:"Shadow-модель на реальных событиях"},
@@ -244,7 +266,7 @@ export function PredictionsConsole(){
    <p>Здесь — не список популярных ставок и не подборка высоких коэффициентов.
     Только заранее зафиксированные прогнозы моделей VETO на реальные события,
     наблюдаемые ситуации и исследуемые закономерности. Каждый вывод можно проверить после матча.</p>
-   <div className="predHeroActions"><a href="#predNow">Прогнозы VETO ↓</a><a href="#predBenchmark">Контроль рынка ↓</a><a href="#predControlProof">Проверенные результаты ↓</a><a href="#predLinked">Совпадения гипотез ↓</a><a href="#predAnomalies">Аномалии и радар ↓</a><a href="#predProof">Проверка моделей ↓</a></div>
+   <div className="predHeroActions"><a href="#predNow">Прогнозы VETO ↓</a><a href="#predBundesliga">Бундеслига · модель ↓</a><a href="#predBenchmark">Контроль рынка ↓</a><a href="#predControlProof">Проверенные результаты ↓</a><a href="#predLinked">Совпадения гипотез ↓</a><a href="#predAnomalies">Аномалии и радар ↓</a><a href="#predProof">Проверка моделей ↓</a></div>
   </section>
   <section className="predStats" aria-label="Состояние исследований">
    {stats.map(s=><article key={s.name}><span>{s.name}</span><strong>{s.value}</strong><small>{s.detail}</small></article>)}
@@ -309,6 +331,49 @@ export function PredictionsConsole(){
      <footer><small>Вероятности пока условны: реальный матч ≠ доказанная точность или ценовое преимущество.</small>
       <Link href={"/?view=check&event="+encodeURIComponent(x.eventId)}>Разобрать ↗</Link></footer>
     </article>)}</div>}
+  </section>
+  <section className="predSection predBundesligaSection" id="predBundesliga">
+   <div className="predSectionHead"><div>
+    <span>INDEPENDENT PREMATCH RESEARCH / FREE COMMUNITY HISTORY</span>
+    <h2>VETO Bundesliga · независимая предматчевая модель</h2>
+    <p>Отдельная Poisson-модель оценивает исходы матчей чемпионата Германии, используя
+     <b> результаты прошедших матчей и статистику конкретных команд</b> из OpenLigaDB.
+     Не использует котировки букмекеров или выдуманный LIVE-таймер. Это первая исследовательская версия —
+     <b> без независимой калибровки и доказанной прибыльности</b>.</p>
+   </div><a className="predLink" href="/api/intelligence/research/bundesliga-model/selfcheck" target="_blank" rel="noopener noreferrer">Проверить модель ↗</a></div>
+   {statuses.bundesliga!=="ready"?<div className="predEmpty" role="status">
+    {statuses.bundesliga==="error"?"История предматчевых моделей пока недоступна.":
+     "Проверяем настоящие сохранённые прогнозы Бундеслиги…"}</div>:
+    !bundesliga?.rows.length?<div className="predEmpty">
+     <b>Сейчас нет записанных предматчевых оценок с достаточной историей.</b>
+     <p>Первый автоматический цикл анализирует прошлый и текущий сезоны немецкой Бундеслиги.
+      Прогнозы появляются только до начала матча и только когда каждая команда имеет достаточный
+      объём подтверждённой истории. У сообщества OpenLigaDB нет гарантированного секундного LIVE-времени.</p>
+     <p>Найдено матчей в хранилище: {bundesliga?.fixturesScanned??0}.
+      {bundesliga?.scanMayBeCapped?" Чтение истории ограничено — не делаем неполных выводов.":""}</p>
+    </div>:
+    <div className="predForecastGrid">
+     {bundesliga.rows.slice(0,12).map(f=><article className="predForecast" key={f.id}>
+      <header><span>OPENLIGADB / TEAM POISSON V1</span>
+       <b className="pending">НЕ КАЛИБРОВАНО</b></header>
+      <small>Германия · Бундеслига · начало {time(f.startsAt)}</small>
+      <h3>{f.match}</h3>
+      <p className="predOutcome">Независимая оценка 1X2 из истории команд</p>
+      <div className="predNumbers">
+       <div><small>ПОБЕДА 1</small><strong>{percent(f.probability.home)}</strong></div>
+       <div><small>НИЧЬЯ X</small><strong>{percent(f.probability.draw)}</strong></div>
+       <div><small>ПОБЕДА 2</small><strong>{percent(f.probability.away)}</strong></div>
+      </div>
+      <div className="predForecastProvenance">
+       <span>Зафиксировано до матча: {time(f.forecastAt)}</span>
+       <span>Модель: {f.modelVersion}</span>
+       <span>Источник: OpenLigaDB, данные сообщества · лицензия ODbL</span>
+       <span>НЕ LIVE · независимый результат FT пока не подтверждён</span>
+      </div>
+      <footer><small>Только SHADOW-исследование: рыночная цена и точность на отложенных матчах не проверены.</small>
+       <a href="https://www.openligadb.de/" target="_blank" rel="noopener noreferrer">Источник ↗</a></footer>
+     </article>)}
+    </div>}
   </section>
   <section className="predSection predBenchmarkSection" id="predBenchmark">
    <div className="predSectionHead"><div>

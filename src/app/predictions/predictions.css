@@ -7,7 +7,7 @@
 .predHero h1{font-size:clamp(49px,7vw,104px);letter-spacing:-.075em;line-height:.98;margin:18px 0 27px}.predHero h1 em{font-style:normal;color:#8f939e}
 .predHero p{font-size:15px;color:#b2b4bf;line-height:1.8;max-width:800px}.predHeroActions{display:flex;gap:9px;flex-wrap:wrap;margin-top:26px}
 .predHeroActions a{padding:12px 17px;border:1px solid #45434b;border-radius:9px;background:#1e1d21;font-size:12px;font-weight:750}.predHeroActions a:first-child{background:#d84458;border-color:#d84458;color:#fff}
-.predStats{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px}.predStats article{display:grid;gap:13px;border:1px solid #32323a;background:#19191d;border-radius:12px;padding:23px;min-width:0}
+.predStats{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:10px}.predStats article{display:grid;gap:13px;border:1px solid #32323a;background:#19191d;border-radius:12px;padding:23px;min-width:0}
 .predStats span{font-size:10px;font-weight:800;letter-spacing:.12em;color:#b2b4be}.predStats strong{font:780 40px/1 var(--font-veto-tech),monospace;letter-spacing:-.06em}.predStats small{font-size:11px;color:#a9abb4;line-height:1.5}
 .predEvidenceBanner{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:14px 0 35px;padding:21px 24px;background:linear-gradient(95deg,#322127,#1b1a1e);border:1px solid #6d3943;border-radius:11px}
 .predEvidenceBanner strong{font-size:10px;letter-spacing:.13em;color:#f5b4c0}.predEvidenceBanner p{color:#c9bac0;font-size:12px;line-height:1.65;max-width:940px;margin:9px 0 0}
@@ -149,3 +149,19 @@ html[data-veto-sport-appearance="light"] .predControlProofSection{background:#ff
 html[data-veto-sport-appearance="light"] .predRoot :is(.predControlWarnings,.predControlRows article){background:#f8fafc;border-color:#dbe0e9}
 html[data-veto-sport-appearance="light"] .predRoot :is(.predControlWarnings b,.predControlRows article strong,.predControlRows article b){color:#253148}
 html[data-veto-sport-appearance="light"] .predRoot :is(.predControlWarnings p,.predControlRows article small,.predControlRows article span){color:#626c7b}
+
+
+/* Bookmaker-independent pre-match research is VISUALLY distinct from
+ * live observations and marketplace price controls. */
+.predBundesligaSection{border:1px solid #3c4b43;background:linear-gradient(135deg,rgba(76,119,93,.12),rgba(13,18,17,.52));
+ border-radius:16px;margin:26px 0;padding:23px}
+.predBundesligaSection .predSectionHead h2{letter-spacing:-.02em}
+.predBundesligaSection .predForecast{border-color:#40584c}
+.predBundesligaSection .predForecast header>span{color:#a4c7b6}
+.predBundesligaSection .predForecast header>b{background:rgba(71,130,98,.12);color:#c4d6c7;border-color:#416c54}
+.predBundesligaSection .predForecastProvenance span{line-height:1.6}
+@media(max-width:1250px){.predRoot .predStats{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:650px){.predBundesligaSection{padding:14px}.predRoot .predStats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+html[data-veto-sport-appearance="light"] .predBundesligaSection{background:#f7fbf8;border-color:#acc8b6}
+html[data-veto-sport-appearance="light"] .predBundesligaSection .predForecast{border-color:#bed5c7}
+html[data-veto-sport-appearance="light"] .predBundesligaSection .predForecast header>span{color:#32664e}
