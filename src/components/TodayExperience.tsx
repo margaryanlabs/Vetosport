@@ -138,7 +138,7 @@ export function TodayExperience({
       <section className="todayStart" aria-label="С чего начать">
         <header><span>VETO / YOUR FIRST 30 SECONDS</span><strong>Три шага: прогноз → анализ → исследование.</strong></header>
         <div className="todayStartGrid">
-          <a href="/predictions"><span className="todayStartNumber">01</span><strong>Прогнозы VETO</strong><small>Что мы реально прогнозируем, почему и как это проверяем.</small><b aria-hidden>↗</b></a>
+          <button type="button" onClick={()=>{window.location.href="/predictions";}}><span className="todayStartNumber">01</span><strong>Прогнозы VETO</strong><small>Что мы реально прогнозируем, почему и как это проверяем.</small><b aria-hidden>↗</b></button>
           <button type="button" onClick={()=>heroEvent ? onSelectEvent(heroEvent.id) : onOpenMatches()}><span className="todayStartNumber">02</span><strong>Разобрать игру</strong><small>Понять прогноз, цену и что может пойти не так.</small><b aria-hidden>↗</b></button>
           <a href="/research/discovery"><span className="todayStartNumber">03</span><strong>Исследовать закономерности</strong><small>Реальные наблюдения, гипотезы и границы доказательств.</small><b aria-hidden>↗</b></a>
         </div>
