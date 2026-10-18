@@ -98,6 +98,7 @@ export function TodayExperience({
             <h1 id="today-title">Спорт, который<br/><em>можно понять.</em></h1>
             <p>Выбери матч, посмотри счёт и данные, затем проверь вывод VETO. Никаких сложных терминов до того, как увидишь саму игру.</p>
             <div className="todayHeroActions">
+              <a className="todayWatchlistAction" href="/predictions">Главные прогнозы VETO <span>↗</span></a>
               <button type="button" className="todayPrimaryAction" onClick={onOpenMatches}>Смотреть матчи <span>↗</span></button>
               <button type="button" className="todaySecondaryAction" onClick={()=>heroEvent ? onSelectEvent(heroEvent.id):onOpenMatches()}>Разобрать матч <span>→</span></button>
               <a className="todayWatchlistAction" href="/research/watchlist">Радар матчей <span>↗</span></a>
@@ -135,9 +136,9 @@ export function TodayExperience({
       </header>
 
       <section className="todayStart" aria-label="С чего начать">
-        <header><span>VETO / YOUR FIRST 30 SECONDS</span><strong>Три понятных шага — выбери, что тебе нужно.</strong></header>
+        <header><span>VETO / YOUR FIRST 30 SECONDS</span><strong>Три шага: прогноз → анализ → исследование.</strong></header>
         <div className="todayStartGrid">
-          <button type="button" onClick={onOpenMatches}><span className="todayStartNumber">01</span><strong>Смотреть матчи</strong><small>Счёт, время, турнир и источник информации.</small><b aria-hidden>↗</b></button>
+          <a href="/predictions"><span className="todayStartNumber">01</span><strong>Прогнозы VETO</strong><small>Что мы реально прогнозируем, почему и как это проверяем.</small><b aria-hidden>↗</b></a>
           <button type="button" onClick={()=>heroEvent ? onSelectEvent(heroEvent.id) : onOpenMatches()}><span className="todayStartNumber">02</span><strong>Разобрать игру</strong><small>Понять прогноз, цену и что может пойти не так.</small><b aria-hidden>↗</b></button>
           <a href="/research/discovery"><span className="todayStartNumber">03</span><strong>Исследовать закономерности</strong><small>Реальные наблюдения, гипотезы и границы доказательств.</small><b aria-hidden>↗</b></a>
         </div>
