@@ -1,6 +1,7 @@
 import {NextResponse} from "next/server";
 import {getPersistence,persistenceConfiguration} from "@/lib/persistence/factory";
 import {isSelfcheckEvent} from "@/lib/live/persisted-utils";
+import {SCORE_ONLY_MODEL_VERSION} from "@/lib/live/score-only-shadow";
 import type {PersistedEventStateRecord,PersistedPredictionSnapshotRecord} from "@/lib/persistence/contracts";
 
 export const dynamic="force-dynamic";
@@ -60,10 +61,23 @@ export async function GET(){
   const eventMap=new Map(events.map(event=>[event.id,event]));
   const dedup=new Map<string,PersistedPredictionSnapshotRecord>();
   for(const p of predictions.filter(validPrediction).sort((a,b)=>Date.parse(b.capturedAt)-Date.parse(a.capturedAt))){
-   const key=p.eventId+"|"+p.marketKey+"|"+p.selectionKey;
+   const version=p.modelSignals.find(x=>x&&typeof x==="object"&&!Array.isArray(x)&&
+    (x as {mode?:unknown}).mode==="SHADOW") as {version?:string}|undefined;
+   const key=p.eventId+"|"+version?.version+"|"+p.marketKey+"|"+p.selectionKey;
    if(!dedup.has(key))dedup.set(key,p);
   }
-  const rows=[...dedup.values()].slice(0,45).flatMap(p=>{
+  // Visible preview is one coherent 1X2 trio per fixture, not 14
+  // selections from the same heavily sampled football match.
+  const perFixture=new Map<string,number>();
+  const selected=[...dedup.values()].filter(p=>{
+   if(p.marketKey!=="football.1x2"||
+    !["home","draw","away"].includes(p.selectionKey))return false;
+   const n=perFixture.get(p.eventId)??0;
+   if(n>=3)return false;
+   perFixture.set(p.eventId,n+1);
+   return true;
+  });
+  const rows=selected.slice(0,45).flatMap(p=>{
    const event=eventMap.get(p.eventId),state=recentStates.get(p.eventId);
    if(!event||!state)return[];
    const model=p.modelSignals.find(s=>s&&typeof s==="object"&&!Array.isArray(s)&&
@@ -74,6 +88,10 @@ export async function GET(){
     marketKey:p.marketKey,selectionKey:p.selectionKey,
     modelProbability:p.fairProbability,modelFairOdds:p.fairOdds,
     modelVersion:model?.version??"SHADOW",
+    modelBasis:model?.version===SCORE_ONLY_MODEL_VERSION?
+     "FIXED_UNCALIBRATED_GOAL_PRIORS":"SOURCE_ALIGNED_QUOTE_RESEARCH",
+    bookmakerQuoteRequired:model?.version!==SCORE_ONLY_MODEL_VERSION,
+    independentCalibrationVerified:false,
     predictionAt:p.capturedAt,stateAt:state.capturedAt,
     kickoffAt:event.event.startsAt,
     modelAgreement:p.modelAgreement,uncertainty:p.uncertainty,
@@ -83,7 +101,7 @@ export async function GET(){
   });
   return NextResponse.json({ok:true,source:"PERSISTED_ONLY",asOf,rows,
    eventsScanned:events.length,externalProviderCalls:0,decisionAuthority:false,
-   note:"Single-model forward shadow snapshots from real, recent source. NOT approved picks, and no executable market price or edge verified."},{headers});
+   note:"Research-only forward model snapshots from real observed game states. Score-only branch uses FIXED, uncalibrated 1.35/1.15 goal assumptions: not actual team strengths or proven betting value."},{headers});
  }catch{
   return NextResponse.json({ok:false,source:"READ_ERROR",asOf,rows:[],
    externalProviderCalls:0,decisionAuthority:false},{headers,status:503});
