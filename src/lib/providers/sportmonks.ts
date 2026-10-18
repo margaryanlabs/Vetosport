@@ -338,3 +338,58 @@ export class SportmonksFootballClient {
     });
   }
 }
+
+
+/** No network. Exact fixture score/period/provenance contract. */
+export function sportmonksLiveAdapterSelfcheck(){
+ const client=new SportmonksFootballClient({apiToken:"selfcheck-never-used"});
+ const raw:SportmonksFixture={
+  id:420,league_id:8,state_id:6,name:"Home vs Away",
+  starting_at:"2026-10-18 15:00:00",
+  participants:[
+   {id:10,name:"Home",meta:{location:"home"}},
+   {id:11,name:"Away",meta:{location:"away"}},
+  ],
+  scores:[
+   {id:1,fixture_id:420,type_id:1,participant_id:10,description:"CURRENT",
+    score:{goals:2,participant:"home"}},
+   {id:2,fixture_id:420,type_id:1,participant_id:11,description:"CURRENT",
+    score:{goals:1,participant:"away"}},
+   {id:3,fixture_id:420,type_id:2,participant_id:10,description:"1ST_HALF",
+    score:{goals:1,participant:"home"}},
+  ],
+  periods:[{id:4,fixture_id:420,sort_order:2,counts_from:45,ticking:true,
+   minutes:62,seconds:20}],
+ };
+ const state=client.getLiveState(raw);
+ const mutate=(field:Partial<SportmonksFixture>)=>client.getLiveState({...raw,...field});
+ const checks=[
+  {name:"Full current score and ticking second-half clock accepted",
+   passed:state?.score.home===2&&state.score.away===1&&
+    state.minute===62&&state.period==="2H"},
+  {name:"No current score, half-time segment alone never fabricates game score",
+   passed:mutate({scores:raw.scores?.filter(s=>s.description!=="CURRENT")})===null},
+  {name:"Wrong provider fixture-ID score cannot be joined",
+   passed:mutate({scores:raw.scores?.map(s=>({...s,fixture_id:999}))})===null},
+  {name:"Duplicate home CURRENT score fails closed",
+   passed:mutate({scores:[...raw.scores!,raw.scores![0]]})===null},
+  {name:"Ticking period missing cannot create a source-only model clock",
+   passed:mutate({periods:[]})===null},
+  {name:"Half-time state without live ticking clock is excluded",
+   passed:mutate({state_id:3})===null},
+  {name:"Extratime is excluded from a 90-minute model",
+   passed:mutate({state_id:9})===null},
+  {name:"Future/invalid minute does not become an in-play feature",
+   passed:mutate({periods:[{...raw.periods![0],minutes:90}]})===null},
+  {name:"Only explicit full-time state with CURRENT exact score can settle",
+   passed:client.extractFinalScore({...raw,state_id:5})?.home===2&&
+    client.extractFinalScore({...raw,state_id:8})===null},
+  {name:"No aggregate max-of-period fallback for full-time score",
+   passed:client.extractFinalScore({...raw,state_id:5,
+    scores:raw.scores?.filter(s=>s.description!=="CURRENT")})===null},
+  {name:"Source request method covers entire live window",
+   passed:client.getActiveLivescores.toString().includes("/livescores")&&
+    !client.getActiveLivescores.toString().includes("/latest")},
+ ];
+ return {passed:checks.every(c=>c.passed),checks};
+}
