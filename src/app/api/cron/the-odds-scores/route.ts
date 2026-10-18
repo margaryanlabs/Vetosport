@@ -4,6 +4,7 @@ import {parseOddsApiScore,matchOddsApiScore} from "@/lib/paper/odds-score-certif
 import {journalizeEventState} from "@/lib/data-plane/journalize";
 import {assessFtScoreBudget,FT_SCORE_COST_CREDITS} from "@/lib/paper/ft-quota-gate";
 import {selectOddsResearchFinalTargets} from "@/lib/paper/odds-research-final-targets";
+import {isExactEplFixture} from "@/lib/paper/epl-exact-identity";
 export const dynamic="force-dynamic";
 export const maxDuration=30;
 const headers={"Cache-Control":"no-store","X-Robots-Tag":"noindex"};
@@ -80,7 +81,7 @@ export async function GET(req:Request){
   const fetched=await Promise.all(dueEventIds.map(id=>store.getEventById(id)));
   const candidates=[...new Map(fetched.filter((e):e is NonNullable<typeof e>=>
     !!e&&e.event.status!=="finished"&&e.event.sport==="football"&&
-    e.canonicalKey.startsWith("football::epl::")&&
+    isExactEplFixture(e)&&
     /^[a-f0-9]{32}$/i.test(e.providerRefs?.["the-odds-api"]??"")&&
     Date.parse(e.event.startsAt)<=now.getTime()-60*60_000)
     .map(e=>[e.id,e])).values()];
