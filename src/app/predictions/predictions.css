@@ -7,7 +7,7 @@
 .predHero h1{font-size:clamp(49px,7vw,104px);letter-spacing:-.075em;line-height:.98;margin:18px 0 27px}.predHero h1 em{font-style:normal;color:#8f939e}
 .predHero p{font-size:15px;color:#b2b4bf;line-height:1.8;max-width:800px}.predHeroActions{display:flex;gap:9px;flex-wrap:wrap;margin-top:26px}
 .predHeroActions a{padding:12px 17px;border:1px solid #45434b;border-radius:9px;background:#1e1d21;font-size:12px;font-weight:750}.predHeroActions a:first-child{background:#d84458;border-color:#d84458;color:#fff}
-.predStats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}.predStats article{display:grid;gap:13px;border:1px solid #32323a;background:#19191d;border-radius:12px;padding:23px;min-width:0}
+.predStats{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px}.predStats article{display:grid;gap:13px;border:1px solid #32323a;background:#19191d;border-radius:12px;padding:23px;min-width:0}
 .predStats span{font-size:10px;font-weight:800;letter-spacing:.12em;color:#b2b4be}.predStats strong{font:780 40px/1 var(--font-veto-tech),monospace;letter-spacing:-.06em}.predStats small{font-size:11px;color:#a9abb4;line-height:1.5}
 .predEvidenceBanner{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:14px 0 35px;padding:21px 24px;background:linear-gradient(95deg,#322127,#1b1a1e);border:1px solid #6d3943;border-radius:11px}
 .predEvidenceBanner strong{font-size:10px;letter-spacing:.13em;color:#f5b4c0}.predEvidenceBanner p{color:#c9bac0;font-size:12px;line-height:1.65;max-width:940px;margin:9px 0 0}
@@ -108,3 +108,18 @@ html[data-veto-sport-appearance="light"] .predRoot :is(.predReadiness,.predReadi
 html[data-veto-sport-appearance="light"] .predRoot .predReadinessGrid header span{color:#273248}
 html[data-veto-sport-appearance="light"] .predRoot :is(.predReadinessGrid p,.predReadinessGrid small){color:#606d80}
 html[data-veto-sport-appearance="light"] .predRoot .predReadinessProblem{color:#a64152}
+
+
+/* Distinct market-implied control: never style it as an independent model pick. */
+.predBenchmarkSection{margin:24px 0 38px;padding:23px;border:1px solid #404049;border-radius:15px;
+ background:linear-gradient(135deg,rgba(126,135,156,.09),rgba(13,14,20,.6))}
+.predBenchmarkSection .predSectionHead b{color:#d9dbe8}
+.predBenchmarkSection .predForecast{border-color:#414350}
+.predBenchmarkSection .predForecast header>span{color:#a5b6cf}
+.predBenchmarkSection .predForecast header>b{background:rgba(126,135,156,.16);color:#b9c6d9;border-color:#526075}
+@media(max-width:1290px){.predRoot .predStats{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:1080px){.predRoot .predStats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.predBenchmarkSection{padding:14px}.predRoot .predStats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+html[data-veto-sport-appearance="light"] .predBenchmarkSection{background:#f9fafc;border-color:#cbd5e5}
+html[data-veto-sport-appearance="light"] .predBenchmarkSection .predForecast{border-color:#cbd5e5}
+html[data-veto-sport-appearance="light"] .predBenchmarkSection .predForecast header>span{color:#385273}
