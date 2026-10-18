@@ -7,7 +7,7 @@
 .predHero h1{font-size:clamp(49px,7vw,104px);letter-spacing:-.075em;line-height:.98;margin:18px 0 27px}.predHero h1 em{font-style:normal;color:#8f939e}
 .predHero p{font-size:15px;color:#b2b4bf;line-height:1.8;max-width:800px}.predHeroActions{display:flex;gap:9px;flex-wrap:wrap;margin-top:26px}
 .predHeroActions a{padding:12px 17px;border:1px solid #45434b;border-radius:9px;background:#1e1d21;font-size:12px;font-weight:750}.predHeroActions a:first-child{background:#d84458;border-color:#d84458;color:#fff}
-.predStats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.predStats article{display:grid;gap:13px;border:1px solid #32323a;background:#19191d;border-radius:12px;padding:23px;min-width:0}
+.predStats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}.predStats article{display:grid;gap:13px;border:1px solid #32323a;background:#19191d;border-radius:12px;padding:23px;min-width:0}
 .predStats span{font-size:10px;font-weight:800;letter-spacing:.12em;color:#b2b4be}.predStats strong{font:780 40px/1 var(--font-veto-tech),monospace;letter-spacing:-.06em}.predStats small{font-size:11px;color:#a9abb4;line-height:1.5}
 .predEvidenceBanner{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:14px 0 35px;padding:21px 24px;background:linear-gradient(95deg,#322127,#1b1a1e);border:1px solid #6d3943;border-radius:11px}
 .predEvidenceBanner strong{font-size:10px;letter-spacing:.13em;color:#f5b4c0}.predEvidenceBanner p{color:#c9bac0;font-size:12px;line-height:1.65;max-width:940px;margin:9px 0 0}
@@ -36,6 +36,7 @@
 .predRadarList article{display:grid;gap:10px}.predRadarList article>div{display:grid;gap:5px}.predRadarList p{font-size:11px;color:#aeb0bb;line-height:1.55;margin:0}.predRadarList a{color:#f6b5c0;font-size:11px;font-weight:750}
 .predFootnote{font-size:11px;color:#e5adba}.predFooter{display:flex;gap:25px;justify-content:space-between;align-items:center;border-top:1px solid #35343b;padding:25px 0 45px}
 .predFooter p{font-size:11px;color:#979aa7;line-height:1.6;max-width:950px}.predFooter a{font-size:11px;color:#e7bbc4;white-space:nowrap}
+@media(max-width:1250px){.predStats{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:1080px){.predStats{grid-template-columns:repeat(2,1fr)}.predLower{grid-template-columns:1fr}.predSectionHead{align-items:start;flex-wrap:wrap}}
 @media(max-width:680px){.predRoot{padding:0 15px}.predNav{align-items:flex-start;flex-direction:column}.predNav>div a{padding:8px}.predHero{padding:39px 0 29px}.predHero p{font-size:13px}.predStats{gap:7px}.predStats article{padding:16px}.predStats strong{font-size:30px}.predEvidenceBanner{align-items:flex-start;flex-direction:column;padding:16px}.predForecastGrid{grid-template-columns:1fr}.predForecast{padding:16px}.predForecast footer{align-items:flex-start;flex-direction:column}.predNumbers>div{padding:10px}.predSectionHead h2{font-size:30px}.predFooter{flex-direction:column;align-items:start}}
 html[data-veto-sport-appearance="light"] .predRoot{background:#f5f6f8;color:#202e42}
