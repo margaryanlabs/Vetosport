@@ -11,7 +11,7 @@ test("Real source-only shadow model forecasts do not need bookmaker quotes or fa
  assert.match(model,/state\.state\.source!=="api-football\.fixtures\.live"/);
  assert.match(model,/String\(stateId\)!==providerRef/);
  assert.match(model,/now-observed>MAX_STATE_AGE_MS/);
- assert.match(model,/observedScore\.minute>90/);
+ assert.match(model,/observedScore\.minute>89/);
  assert.match(model,/buildFootballProbabilitySurface/);
  assert.match(model,/bookmakerPriceVerified:false/);
  assert.match(model,/quoteFeaturesUsed:false/);
