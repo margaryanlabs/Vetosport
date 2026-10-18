@@ -37,16 +37,24 @@ export async function GET(request: Request) {
       { status: settlementErrors === 0 ? 200 : 502 },
     );
   } catch (error) {
-    return NextResponse.json(
-      {
-        ok: false,
-        skipped: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Football live cycle failed.",
-      },
-      { status: 502 },
-    );
+    const raw=error instanceof Error?error.message:"";
+    const allowed=new Set(["SPORTMONKS_AUTH","SPORTMONKS_SUBSCRIPTION",
+      "SPORTMONKS_QUOTA","SPORTMONKS_UPSTREAM"]);
+    const failureCode=allowed.has(raw)?raw:"SPORTMONKS_UPSTREAM";
+    // A failing secondary provider must never expose account details or
+    // a token-bearing provider URL in a public cron error response.
+    try{
+      const {getPersistence}=await import("@/lib/persistence/factory");
+      await getPersistence().appendProviderHealth({
+        providerId:"sportmonks-football",status:"degraded",
+        checkedAt:new Date().toISOString(),
+        message:"Sportmonks in-play source unavailable; no derived score or FT persisted.",
+        metadata:{failureCode,upstreamAttempted:true,verifiedLiveStates:0},
+      });
+    }catch{/* No fabricated healthy heartbeat. */}
+    return NextResponse.json({ok:false,skipped:false,
+      error:"Sportmonks live source unavailable; check source health.",
+      failureCode,source:"sportmonks-football",externalBookmakerCalls:0},
+      {status:502,headers:{"Cache-Control":"no-store"}});
   }
 }
