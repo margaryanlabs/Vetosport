@@ -1,0 +1,67 @@
+import {readFileSync} from "node:fs";
+import assert from "node:assert/strict";
+import test from "node:test";
+const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
+test("Model verification uses only recorded shadow forecasts and independently certified FT",()=>{
+ const lib=read("src/lib/research/forecast-validation.ts");
+ assert.match(lib,/certifyStoredPaperFinal/);
+ assert.match(lib,/state.sourceProvider==="api-football"/);
+ assert.match(lib,/state.state.status==="live"/);
+ assert.match(lib,/validStates.has\(p.capturedAt\)/);
+ assert.match(lib,/capture>=firstFinal/);
+ assert.match(lib,/p\.fairProbability<=0\|\|p\.fairProbability>=1/);
+ assert.match(lib,/mode==="SHADOW"/);
+ assert.match(lib,/version\.length<=100/);
+ assert.match(lib,/firstFinal/);
+ assert.doesNotMatch(lib,/Math\.random|https:\/\/|fetch\(|placeBet|realMoneyOrder/);
+});
+test("Each fixture gets only one earliest eligible market per model version",()=>{
+ const lib=read("src/lib/research/forecast-validation.ts");
+ assert.match(lib,/a\.p\.capturedAt\)-finiteTime\(b\.p\.capturedAt\)/);
+ assert.match(lib,/fixedMarketRank/);
+ assert.match(lib,/if\(byVersion\.has\(item\.version\)\)continue/);
+ assert.match(lib,/new Set\(chronological\.map\(r=>r\.eventId\)\)/);
+ assert.match(lib,/fullTimeBinaryOutcome/);
+ assert.match(lib,/football\.btts/);
+ assert.match(lib,/football\.1x2/);
+});
+test("Scorecard never claims an uncalibrated winning model from short history",()=>{
+ const lib=read("src/lib/research/forecast-validation.ts");
+ assert.match(lib,/train\.length>=60&&holdout\.length>=20/);
+ assert.match(lib,/const baseline=train\.length/);
+ assert.match(lib,/holdout=chronological\.slice\(split\)/);
+ assert.match(lib,/const train=chronological\.slice\(0,split\)/);
+ assert.match(lib,/holdoutBaselineBrier/);
+ assert.match(lib,/brier/);
+ assert.match(lib,/logLoss/);
+ assert.match(lib,/historicalEdgeValidated:false/);
+ assert.match(lib,/profitableStrategyVerified:false/);
+ assert.match(lib,/forecastValidationSelfcheck/);
+});
+test("Forecast verification source reads bounded retained history without paid provider calls",()=>{
+ const route=read("src/app/api/intelligence/predictions/validation/route.ts");
+ const selfcheck=read("src/app/api/intelligence/predictions/validation/selfcheck/route.ts");
+ assert.match(route,/windowDays=7/);
+ assert.match(route,/maxEvents=120/);
+ assert.match(route,/listRecentEventStates/);
+ assert.match(route,/listRecentPredictionsForEvents/);
+ assert.match(route,/sampleMayBeCapped/);
+ assert.match(route,/scanMayBeCapped/);
+ assert.match(route,/externalProviderCalls:0/);
+ assert.match(route,/automaticBettingEnabled:false/);
+ assert.doesNotMatch(route,/the-odds-api\.com|api-sports\.io/);
+ assert.match(selfcheck,/forecastValidationSelfcheck/);
+ assert.match(selfcheck,/status:result.passed\?200:503/);
+});
+test("Scorecard UI exposes evidence, holdout, calibration and no unjustified ROI",()=>{
+ const page=read("src/components/PredictionsConsole.tsx");
+ const style=read("src/app/predictions/predictions.css");
+ assert.match(page,/\/api\/intelligence\/predictions\/validation/);
+ assert.match(page,/Калибровка вероятностей/);
+ assert.match(page,/ПРОВЕРЕНО НА HOLDOUT/);
+ assert.match(page,/доходность НЕ доказаны|прибыльность НЕ доказаны|НЕ доказаны/);
+ assert.match(page,/Brier — показатель точности вероятностей, не дохода/);
+ assert.match(page,/profitableStrategyVerified!==false/);
+ assert.match(style,/predProofKpis/);
+ assert.match(style,/data-veto-sport-appearance="light"/);
+});

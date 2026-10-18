@@ -38,6 +38,23 @@ type MarketAnomaly={id:string;eventId:string;match:string;competition:string;mar
  highestBookmaker:string;deviationPct:number;bookmakerCount:number;lastCapturedAt:string;
  classification:"PRICE_DISPERSION_RESEARCH";validatedEdge:false;executionVerified:false;researchOnly:true};
 type AnomalyResponse={ok:boolean;source:string;asOf:string;rows:MarketAnomaly[];quotesCapped?:boolean;scanMayBeCapped?:boolean};
+type ModelSummary={samples:number;fixtures:number;wins:number;
+ brier:number|null;logLoss:number|null;meanProbability:number|null;observedFrequency:number|null};
+type ModelProofCohort={modelVersion:string;latestAt:string;total:ModelSummary;train:ModelSummary;holdout:ModelSummary;
+ trainBaselineProbability:number|null;holdoutBaselineBrier:number|null;holdoutBrierSkillVsTrainBaseline:number|null;
+ holdoutCountSufficient:boolean;historicalEdgeValidated:false;
+ reliabilityBins:Array<{min:number;max:number;count:number;forecastMean:number;observedFrequency:number}>};
+type ModelProofRow={id:string;eventId:string;match:string;competition:string;modelVersion:string;
+ marketKey:string;selectionKey:string;capturedAt:string;startsAt:string;finalAt:string;
+ finalScore:{home:number;away:number};probability:number;outcome:0|1;source:string};
+type ModelProof={ok:boolean;source:string;selected:ModelProofCohort|null;selectedModelVersion:string|null;
+ recent:ModelProofRow[];cohorts:ModelProofCohort[];
+ coverage:{eventsScanned:number;eventsWithFt:number;predictionRowsRead:number;verifiedSamples:number;
+ scanMayBeCapped:boolean;sampleMayBeCapped:boolean};
+ profitableStrategyVerified:false;historicalEdgeValidated:false;lookbackDays:number};
+type OperationalSource={id:string;label:string;state:"active"|"empty"|"waiting"|"degraded"|"stale"|"unknown";
+ updatedAt:string|null;lastRunCode:string|null;ageMinutes:number|null;note:string};
+type OperationalFeed={source:"PERSISTED_ONLY";providers:OperationalSource[]};
 type Status="loading"|"ready"|"error";
 type PredictionTab="all"|"open"|"settled";
 const number=(n:number,digits=1)=>new Intl.NumberFormat("ru-RU",{maximumFractionDigits:digits,minimumFractionDigits:digits}).format(n);
@@ -67,7 +84,9 @@ export function PredictionsConsole(){
  const [radar,setRadar]=useState<RadarResponse|null>(null);
  const [shadow,setShadow]=useState<ShadowResponse|null>(null);
  const [anomalies,setAnomalies]=useState<AnomalyResponse|null>(null);
- const [statuses,setStatuses]=useState<Record<string,Status>>({paper:"loading",discovery:"loading",radar:"loading",shadow:"loading",anomalies:"loading"});
+ const [proof,setProof]=useState<ModelProof|null>(null);
+ const [sourceHealth,setSourceHealth]=useState<OperationalFeed|null>(null);
+ const [statuses,setStatuses]=useState<Record<string,Status>>({paper:"loading",discovery:"loading",radar:"loading",shadow:"loading",anomalies:"loading",proof:"loading",sources:"loading"});
  const [tab,setTab]=useState<PredictionTab>("all");
  const [cycle,setCycle]=useState(0);
  const [now,setNow]=useState(0);
@@ -87,6 +106,8 @@ export function PredictionsConsole(){
    {key:"radar",url:"/api/intelligence/research/opportunity-radar"},
    {key:"shadow",url:"/api/intelligence/predictions/shadow"},
    {key:"anomalies",url:"/api/intelligence/predictions/anomalies"},
+   {key:"proof",url:"/api/intelligence/predictions/validation"},
+   {key:"sources",url:"/api/intelligence/research/source-health"},
   ] as const;
   const update=(key:string,status:Status)=>{if(alive)setStatuses(old=>({...old,[key]:status}));};
   sources.forEach(({key,url})=>{
@@ -95,7 +116,11 @@ export function PredictionsConsole(){
     .then(async response=>{if(!response.ok)throw Error("SOURCE_UNAVAILABLE");return response.json();})
     .then((value:unknown)=>{
      if(!alive)return;
-     if(key==="paper"){
+     if(key==="sources"){
+      const item=value as OperationalFeed;
+      if(item.source!=="PERSISTED_ONLY"||!Array.isArray(item.providers))throw Error("SOURCE_HEALTH_INVALID");
+      setSourceHealth(item);
+    }else if(key==="paper"){
       const item=value as PaperResponse;
       if(item.ok!==true||!Array.isArray(item.account?.tickets))throw Error("PAPER_INVALID");
       setPaper(item);
@@ -103,7 +128,13 @@ export function PredictionsConsole(){
       const item=value as DiscoveryResponse;
       if(item.source!=="PERSISTED_ONLY"||!Array.isArray(item.patterns))throw Error("DISCOVERY_INVALID");
       setDiscovery(item);
-     }else if(key==="anomalies"){
+     }else if(key==="proof"){
+      const item=value as ModelProof;
+      if(item.ok!==true||item.source!=="PERSISTED_ONLY"||!Array.isArray(item.recent)||
+       !item.coverage||item.profitableStrategyVerified!==false||item.historicalEdgeValidated!==false)
+       throw Error("MODEL_PROOF_INVALID");
+      setProof(item);
+    }else if(key==="anomalies"){
       const item=value as AnomalyResponse;
       if(item.ok!==true||item.source!=="PERSISTED_ONLY"||!Array.isArray(item.rows))throw Error("ANOMALIES_INVALID");
       setAnomalies(item);
@@ -124,6 +155,8 @@ export function PredictionsConsole(){
      if(key==="radar")setRadar(null);
      if(key==="shadow")setShadow(null);
      if(key==="anomalies")setAnomalies(null);
+     if(key==="proof")setProof(null);
+     if(key==="sources")setSourceHealth(null);
      update(key,"error");
     });
   });
@@ -158,7 +191,7 @@ export function PredictionsConsole(){
    <p>Здесь — не список популярных ставок и не подборка высоких коэффициентов.
     Только заранее зафиксированные прогнозы моделей VETO на реальные события,
     наблюдаемые ситуации и исследуемые закономерности. Каждый вывод можно проверить после матча.</p>
-   <div className="predHeroActions"><a href="#predNow">Прогнозы VETO ↓</a><a href="#predLinked">Совпадения гипотез ↓</a><a href="#predAnomalies">Аномалии и радар ↓</a></div>
+   <div className="predHeroActions"><a href="#predNow">Прогнозы VETO ↓</a><a href="#predLinked">Совпадения гипотез ↓</a><a href="#predAnomalies">Аномалии и радар ↓</a><a href="#predProof">Проверка моделей ↓</a></div>
   </section>
   <section className="predStats" aria-label="Состояние исследований">
    {stats.map(s=><article key={s.name}><span>{s.name}</span><strong>{s.value}</strong><small>{s.detail}</small></article>)}
@@ -168,6 +201,25 @@ export function PredictionsConsole(){
     Независимые модели пока проходят бумажную проверку. Контрольные цены букмекера не называем прогнозами VETO.</p></div>
    <button type="button" onClick={refresh}>Обновить из источников ↻</button>
   </div>
+  <section className="predSection predReadiness" id="predReadiness">
+   <div className="predSectionHead"><div><span>DATA PLANE / LIVE OPERATIONAL READINESS</span>
+    <h2>Почему прогнозы могут отсутствовать?</h2>
+    <p>Показываем состояние реальных источников. Выдавать статистическую гипотезу за прогноз без свежего
+      матча и независимого результата нельзя. Диагностика использует сохранённую историю — без платных вызовов API.</p></div></div>
+   {statuses.sources!=="ready"?<div className="predEmpty">
+    {statuses.sources==="error"?"Нет доступа к проверенному состоянию источников.":"Проверяем источники и последние запуски…"}</div>:
+    <div className="predReadinessGrid">
+     {(sourceHealth?.providers??[]).map(s=><article key={s.id}>
+      <header><span>{s.label}</span><b className={"source-"+s.state}>{s.state==="active"?"РАБОТАЕТ":
+       s.state==="stale"?"УСТАРЕЛ":s.state==="waiting"?"ОЖИДАНИЕ":
+       s.state==="degraded"?"ОГРАНИЧЕНИЕ":s.state==="empty"?"НЕТ ДАННЫХ":"НЕИЗВЕСТНО"}</b></header>
+      <p>{s.note}</p><small>{s.updatedAt?"Последняя запись: "+time(s.updatedAt):"Последний успешный запуск неизвестен."}</small>
+      {s.lastRunCode==="UPSTREAM_SUBSCRIPTION"&&<strong className="predReadinessProblem">Нужен доступ провайдера к подтверждению FT.
+         Это нельзя исправить формулой прогноза.</strong>}
+     </article>)}
+     {(sourceHealth?.providers.length??0)===0&&<div className="predEmpty">Пока нет проверенной истории запусков источников.</div>}
+    </div>}
+  </section>
   <section className="predSection" id="predNow">
    <div className="predSectionHead"><div><span>01 / REAL-TIME MODEL SURFACE</span><h2>Оперативные оценки VETO</h2>
     <p>Реальные матчи, реальные сохранённые входные данные, предварительные вероятности модели.
@@ -194,8 +246,63 @@ export function PredictionsConsole(){
       <Link href={"/?view=check&event="+encodeURIComponent(x.eventId)}>Разобрать ↗</Link></footer>
     </article>)}</div>}
   </section>
+  <section className="predSection predProofSection" id="predProof">
+   <div className="predSectionHead"><div><span>02 / MODEL VERIFICATION · REAL FULL TIME</span>
+    <h2>Что модель предсказывала на самом деле?</h2>
+    <p>Сверяем сохранённые до результата оценки VETO с независимо подтверждённым финальным счётом.
+       Для каждого матча используем ровно один заранее определённый снимок одной версии модели.
+       Последние 30% матчей проверяются отдельно от более ранних 70%.</p></div>
+    <a className="predLink" href="/api/intelligence/predictions/validation/selfcheck" target="_blank" rel="noopener noreferrer">Selfcheck ↗</a></div>
+   {statuses.proof!=="ready"?<div className="predEmpty" role="status">
+    <b>{statuses.proof==="error"?"Историческая проверка недоступна":"Сверяем модели с независимым FT…"}</b>
+    <p>Никаких придуманных результатов, процентов побед или показателей доходности.</p></div>:
+    !proof?.selected?<div className="predEmpty">
+     <b>Пока нет пар «реальный прогноз модели → независимый FT».</b>
+     <p>Просмотрено {proof?.coverage.eventsScanned??0} завершённых матчей, независимо подтверждены
+      {proof?.coverage.eventsWithFt??0} финалов. Наличие одного только FT не доказывает, что прогноз существовал раньше.</p>
+     <Link href="/research/discovery">Проверить цепочку источников ↗</Link></div>:
+    <div className="predProofContent">
+     <div className="predProofTop"><div><small>ВЕРСИЯ МОДЕЛИ</small><strong>{proof.selected.modelVersion}</strong>
+      <span>Хронологический holdout · {proof.lookbackDays} дней сохранённой истории</span></div>
+      <b>{proof.selected.holdoutCountSufficient?"МИНИМАЛЬНОЕ ПОКРЫТИЕ ЕСТЬ":"НЕДОСТАТОЧНО ПОДТВЕРЖДЕНИЙ"}</b></div>
+     <div className="predProofKpis">
+      <article><small>СОПОСТАВЛЕННЫХ ПРОГНОЗОВ</small><strong>{proof.selected.total.samples}</strong><span>один снимок на матч и версию</span></article>
+      <article><small>ПРОВЕРЕНО НА HOLDOUT</small><strong>{proof.selected.holdout.fixtures}</strong><span>обособленные поздние матчи</span></article>
+      <article><small>BRIER МОДЕЛИ / HOLDOUT</small><strong>{proof.selected.holdout.brier===null?"—":number(proof.selected.holdout.brier,4)}</strong><span>чем меньше, тем лучше</span></article>
+      <article><small>BRIER БАЗОВОЙ ЧАСТОТЫ</small><strong>{proof.selected.holdoutBaselineBrier===null?"—":number(proof.selected.holdoutBaselineBrier,4)}</strong><span>частота из train, без заглядывания в holdout</span></article>
+     </div>
+     <div className="predProofDetails">
+      <div><h3>Калибровка вероятностей</h3>
+       <p>Что модель ожидала и что произошло в независимой проверочной части. Маленькая выборка не показывает надёжную закономерность.</p>
+       {proof.selected.reliabilityBins.length?proof.selected.reliabilityBins.map(bin=><div key={bin.min} className="predCalibBin">
+        <header><b>{Math.round(bin.min*100)}–{Math.round(bin.max*100)}% · {bin.count} матчей</b>
+         <span>Модель: {percent(bin.forecastMean)} · факт: {percent(bin.observedFrequency)}</span></header>
+        <div className="predCalibTracks"><div className="predCalibTrack"><i style={{width:Math.min(100,bin.forecastMean*100)+"%"}}/></div>
+         <div className="predCalibTrack actual"><i style={{width:Math.min(100,bin.observedFrequency*100)+"%"}}/></div></div>
+       </div>):<p>Нет проверочной части для построения калибровки.</p>}
+      </div>
+      <div><h3>Границы доказательств</h3>
+       <p>Обучающая часть: {proof.selected.train.fixtures} матчей. Независимая: {proof.selected.holdout.fixtures}.
+        Модель не настраивалась на holdout в этом отчёте, но её предыдущая разработка могла использовать пересекающуюся историю.</p>
+       <p>Достаточность объёма: {proof.selected.holdoutCountSufficient?"формально есть минимальная выборка, но нужна независимая валидация":"не достигнута"}.</p>
+       {proof.coverage.scanMayBeCapped||proof.coverage.sampleMayBeCapped?
+        <p className="predProofWarning">История ограничена лимитом чтения. Результат не является полной оценкой качества модели.</p>:null}
+       <p className="predProofWarning">Преимущество перед букмекером, исполнимая цена и прибыльность НЕ доказаны. Brier — показатель точности вероятностей, не дохода.</p>
+      </div>
+     </div>
+     <div className="predProofHistory"><h3>Последние проверенные исходы</h3>
+      <div className="predProofRows">{proof.recent.filter(r=>r.modelVersion===proof.selectedModelVersion).slice(0,12).map(r=>
+       <article key={r.id}><div><strong>{r.match}</strong><small>{r.competition} · прогноз {time(r.capturedAt)}</small>
+        <span>{r.marketKey} · {r.selectionKey}</span></div>
+        <div><small>ОЦЕНКА</small><b>{percent(r.probability)}</b></div>
+        <div><small>ИСТИННЫЙ FT</small><b>{r.finalScore.home}:{r.finalScore.away}</b></div>
+        <div><small>ИСХОД СОБЫТИЯ</small><b>{r.outcome===1?"НАСТУПИЛ":"НЕ НАСТУПИЛ"}</b></div>
+       </article>)}</div>
+     </div>
+    </div>}
+  </section>
   <section className="predSection" id="predAnomalies">
-   <div className="predSectionHead"><div><span>02 / MARKET ANOMALY DETECTOR</span><h2>Аномалии букмекерских котировок</h2>
+   <div className="predSectionHead"><div><span>03 / MARKET ANOMALY DETECTOR</span><h2>Аномалии букмекерских котировок</h2>
     <p>Независимо сравниваем свежие цены как минимум трёх букмекеров на один и тот же рынок и исход.
      Находим значительные расхождения, но не называем их доходными ставками до проверки ликвидности и исполнения.</p></div></div>
    {statuses.anomalies!=="ready"?<div className="predEmpty" role="status">
@@ -223,7 +330,7 @@ export function PredictionsConsole(){
     </article>)}</div>}
   </section>
   <section className="predSection" id="predLinked">
-   <div className="predSectionHead"><div><span>03 / DISCOVERY → REAL FIXTURE</span><h2>Гипотезы на реальных матчах</h2>
+   <div className="predSectionHead"><div><span>04 / DISCOVERY → REAL FIXTURE</span><h2>Гипотезы на реальных матчах</h2>
     <p>Когда в текущей игре возникает ситуация, которую VETO ранее обнаружил в архиве,
        мы автоматически сопоставляем её с конкретной гипотезой, проверяем время счёта и наличие цены.
        Это пока исследовательские совпадения, а не доказанные прибыльные сигналы.</p></div></div>
@@ -257,7 +364,7 @@ export function PredictionsConsole(){
     </div>}
   </section>
   <section className="predSection" id="predList">
-   <div className="predSectionHead"><div><span>04 / FORWARD PAPER LEDGER</span><h2>Главные прогнозы VETO</h2>
+   <div className="predSectionHead"><div><span>05 / FORWARD PAPER LEDGER</span><h2>Главные прогнозы VETO</h2>
     <p>Конкретный матч → исход → вероятность модели → цена из источника → проверка результата.</p></div>
     <div className="predTabRow" role="group" aria-label="Фильтр прогнозов">
      {([{id:"all",label:"Все"},{id:"open",label:"Ожидают FT"},{id:"settled",label:"Проверены"}] as const).map(x=>
@@ -296,7 +403,7 @@ export function PredictionsConsole(){
   </section>
   <div className="predLower">
    <section className="predSection" id="predHypotheses">
-    <div className="predSectionHead"><div><span>05 / PATTERN DISCOVERY</span><h2>Найденные гипотезы</h2>
+    <div className="predSectionHead"><div><span>06 / PATTERN DISCOVERY</span><h2>Найденные гипотезы</h2>
      <p>VETO ищет статистические закономерности. Без подтверждённых рыночных цен это ещё не готовый прогноз.</p></div></div>
     {statuses.discovery!=="ready"?<div className="predEmpty">{statuses.discovery==="error"?"Исторические наблюдения недоступны.":"Проверяем исследовательский архив…"}</div>:
      (discovery?.patterns.length??0)===0?<div className="predEmpty">Сохранённых гипотез за доступное окно пока нет.</div>:
@@ -310,7 +417,7 @@ export function PredictionsConsole(){
     <Link className="predLink" href="/research/discovery">Вся лаборатория закономерностей ↗</Link>
    </section>
    <section className="predSection" id="predRadar">
-    <div className="predSectionHead"><div><span>06 / SITUATION SCANNER</span><h2>Необычные ситуации</h2>
+    <div className="predSectionHead"><div><span>07 / SITUATION SCANNER</span><h2>Необычные ситуации</h2>
      <p>Матчи с наблюдаемыми условиями для исследования. Радар не считает их аномалиями с доказанным преимуществом.</p></div></div>
     {statuses.radar!=="ready"?<div className="predEmpty">{statuses.radar==="error"?"Радар временно недоступен.":"Читаем последние сохранённые события…"}</div>:
      radarCases.length===0?<div className="predEmpty">Сейчас нет свежих ситуаций, достаточных даже для исследовательского наблюдения.</div>:

@@ -50,3 +50,61 @@ html[data-veto-sport-appearance="light"] .predRoot .predEvidenceBanner{backgroun
 html[data-veto-sport-appearance="light"] .predRoot .predNav>div a{color:#38516d;border-color:#d2d5e0}
 html[data-veto-sport-appearance="light"] .predRoot .predTabRow button{color:#33435b;background:#ecedf1}
 html[data-veto-sport-appearance="light"] .predRoot .predTabRow button[aria-pressed=true]{color:#fff;background:#dc495e}
+
+
+/* Forecast proof: one model version, explicitly separated chronological holdout. */
+.predProofSection{margin:18px 0 44px;padding:22px;border:1px solid #373039;background:linear-gradient(130deg,#161416,#101114);border-radius:16px}
+.predProofContent{display:grid;gap:19px}
+.predProofTop{display:flex;align-items:center;justify-content:space-between;gap:16px;background:linear-gradient(120deg,rgba(173,68,85,.17),rgba(255,255,255,.025));border:1px solid #49343e;border-radius:11px;padding:21px}
+.predProofTop>div{display:grid;gap:8px}.predProofTop small{font-size:10px;color:#d9aab5;letter-spacing:.12em}
+.predProofTop strong{font-size:25px;font-weight:850;color:#f5f1f3;letter-spacing:-.045em;overflow-wrap:anywhere}
+.predProofTop span{font-size:11px;color:#aaa6b2}.predProofTop>b{font-size:10px;letter-spacing:.09em;color:#e6c0c8;background:#492c35;padding:10px 12px;border-radius:8px;text-align:center}
+.predProofKpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.predProofKpis article{padding:19px;background:#232126;border:1px solid #3c363f;border-radius:11px;display:grid;gap:9px;min-width:0}
+.predProofKpis small{font-size:10px;color:#b6b1bb;letter-spacing:.075em;line-height:1.4}
+.predProofKpis strong{font:760 clamp(22px,3vw,36px)/1.1 var(--font-veto-tech),monospace;color:#f8f4f6;letter-spacing:-.05em}
+.predProofKpis span{font-size:10px;color:#a9a3ae;line-height:1.4}
+.predProofDetails{display:grid;grid-template-columns:1.25fr .75fr;gap:12px}
+.predProofDetails>div{padding:21px;border:1px solid #35333c;border-radius:11px;background:#1c1b20;min-width:0}
+.predProofDetails h3,.predProofHistory h3{font-size:19px;letter-spacing:-.035em;margin:0 0 13px}
+.predProofDetails p{font-size:12px;line-height:1.75;color:#b5b0be;margin:0 0 12px}
+.predProofWarning{border-left:2px solid #d05c6e;padding-left:12px;color:#efb8c2!important}
+.predCalibBin{padding:12px 0;border-top:1px solid #333039}
+.predCalibBin header{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;font-size:11px;color:#c8c2cc}
+.predCalibBin b{font-weight:740}.predCalibBin span{color:#aaa6b4}
+.predCalibTracks{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.predCalibTrack{height:8px;background:#353039;border-radius:5px;overflow:hidden}
+.predCalibTrack i{display:block;height:100%;background:#d36376;min-width:1px}
+.predCalibTrack.actual i{background:#b5bac8}
+.predProofHistory{padding:20px;border:1px solid #35333c;border-radius:11px;background:#1a191d}
+.predProofRows{display:grid;gap:6px}
+.predProofRows article{display:grid;grid-template-columns:minmax(0,1.8fr) repeat(3,minmax(0,.6fr));gap:14px;align-items:center;border-top:1px solid #37343a;padding:15px 0}
+.predProofRows article>div{display:grid;gap:5px;min-width:0}
+.predProofRows article strong,.predProofRows article b{font-size:12px;color:#f4eff2;overflow-wrap:anywhere}
+.predProofRows article small,.predProofRows article span{font-size:10px;line-height:1.5;color:#a9a5b2;overflow-wrap:anywhere}
+@media(max-width:1050px){.predProofKpis{grid-template-columns:repeat(2,minmax(0,1fr))}.predProofDetails{grid-template-columns:1fr}}
+@media(max-width:680px){.predProofSection{padding:14px}.predProofTop{align-items:start;flex-direction:column;padding:14px}.predProofDetails>div{padding:15px}.predProofKpis article{padding:14px}.predProofHistory{padding:13px}.predProofRows article{grid-template-columns:minmax(0,1.5fr) minmax(0,.7fr);gap:12px}.predProofRows article>div{padding-bottom:4px}}
+html[data-veto-sport-appearance="light"] .predProofSection{background:#fff;border-color:#e2d9e1}
+html[data-veto-sport-appearance="light"] .predRoot :is(.predProofTop,.predProofKpis article,.predProofDetails>div,.predProofHistory){background:#f8f6f8;border-color:#e3dbe3}
+html[data-veto-sport-appearance="light"] .predRoot :is(.predProofTop strong,.predProofKpis strong,.predProofDetails h3,.predProofHistory h3,.predProofRows strong,.predProofRows b){color:#24334b}
+html[data-veto-sport-appearance="light"] .predRoot :is(.predProofTop span,.predProofKpis small,.predProofKpis span,.predProofDetails p,.predCalibBin span,.predProofRows small,.predProofRows span){color:#626b7c}
+html[data-veto-sport-appearance="light"] .predRoot .predProofTop>b{background:#f3dce2;color:#9d4052}
+
+
+.predReadiness{padding:22px;background:#131317;border:1px solid #313039;border-radius:14px;margin:18px 0 38px}
+.predReadinessGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.predReadinessGrid>article{min-width:0;display:grid;align-content:start;gap:13px;padding:19px;border:1px solid #37353c;border-radius:11px;background:#1b1a1f}
+.predReadinessGrid header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.predReadinessGrid header span{color:#f5f2f6;font-size:14px;font-weight:760}
+.predReadinessGrid header b{font-size:10px;letter-spacing:.08em;color:#d8b5bd;border:1px solid #5a444e;border-radius:6px;padding:7px 9px}
+.predReadinessGrid header b.source-active{color:#b8e2c8;border-color:#345841}
+.predReadinessGrid header b.source-stale,.predReadinessGrid header b.source-degraded{color:#e7a3b1;border-color:#6b3c48}
+.predReadinessGrid p{margin:0;color:#bbb5c1;font-size:12px;line-height:1.7}
+.predReadinessGrid small{color:#aba4b1;font-size:10px}
+.predReadinessProblem{font-size:11px;color:#f7b8c3;line-height:1.55}
+@media(max-width:900px){.predReadinessGrid{grid-template-columns:1fr}}
+@media(max-width:680px){.predReadiness{padding:14px}.predReadinessGrid>article{padding:15px}}
+html[data-veto-sport-appearance="light"] .predRoot :is(.predReadiness,.predReadinessGrid>article){background:#fff;border-color:#dbe0e8}
+html[data-veto-sport-appearance="light"] .predRoot .predReadinessGrid header span{color:#273248}
+html[data-veto-sport-appearance="light"] .predRoot :is(.predReadinessGrid p,.predReadinessGrid small){color:#606d80}
+html[data-veto-sport-appearance="light"] .predRoot .predReadinessProblem{color:#a64152}
