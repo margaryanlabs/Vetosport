@@ -46,7 +46,7 @@ export async function GET(){
   const validPrediction=(prediction:PersistedPredictionSnapshotRecord)=>{
    const at=Date.parse(prediction.capturedAt),state=recentStates.get(prediction.eventId);
    if(!state||!Number.isFinite(at)||at>now||now-at>MAX_SNAPSHOT_AGE_MS||
-    at<Date.parse(state.capturedAt)-MAX_SNAPSHOT_AGE_MS||
+    at!==Date.parse(state.capturedAt)||
     !Number.isFinite(prediction.fairProbability)||
     prediction.fairProbability<=0||prediction.fairProbability>=1||
     !Number.isFinite(prediction.fairOdds)||prediction.fairOdds<=1)return false;
