@@ -48,7 +48,7 @@ export function buildBundesligaPrematchForecasts(input:{
  const forecasts:BundesligaForecast[]=[];
  const future=input.current.filter(f=>f.final===null&&
    Date.parse(f.startsAt)-now>=30*60000&&
-   Date.parse(f.startsAt)-now<=72*HOUR)
+   Date.parse(f.startsAt)-now<=10*24*HOUR)
   .sort((a,b)=>Date.parse(a.startsAt)-Date.parse(b.startsAt));
  for(const fixture of future){
   const h=gamesFor(fixture.homeId),a=gamesFor(fixture.awayId);
