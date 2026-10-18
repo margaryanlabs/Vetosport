@@ -83,7 +83,7 @@ type LockedControlProof={ok:true;source:"PERSISTED_ONLY";rows:LockedControlRow[]
  externalProviderCalls:0;realMoneyBets:0};
 type OperationalSource={id:string;label:string;state:"active"|"empty"|"waiting"|"degraded"|"stale"|"unknown";
  updatedAt:string|null;lastRunCode:string|null;ageMinutes:number|null;note:string};
-type OperationalFeed={source:"PERSISTED_ONLY"|"PERSISTED_AND_SAFE_RUNTIME_CONFIG";secretsExposed?:false;providers:OperationalSource[]};
+type OperationalFeed={source:"PERSISTED_ONLY"|"PERSISTED_AND_SAFE_RUNTIME_CONFIG";secretsExposed?:boolean;providers:OperationalSource[]};
 type Status="loading"|"ready"|"error";
 type PredictionTab="all"|"open"|"settled";
 const number=(n:number,digits=1)=>new Intl.NumberFormat("ru-RU",{maximumFractionDigits:digits,minimumFractionDigits:digits}).format(n);
