@@ -14,8 +14,17 @@ type PaperResponse={ok:boolean;generatedAt?:string;account?:{tickets:PaperTicket
 type Pattern={id:string;label:string;family:string;observations:number;settled:number;wins:number;
  holdoutCount:number;holdoutHitRate:number|null;hitRate:number|null;
  status:"NEEDS_FINAL_RESULTS"|"EXPLORATORY"|"HOLDOUT_PENDING";verifiedOddsCount:number;validatedEdge:boolean};
+type LiveHypothesis={
+ id:string;eventId:string;match:string;competition:string;observedAt:string;
+ minute:number;score:{home:number;away:number};hypothesisId:string;hypothesisLabel:string;
+ settled:number;hitRate:number|null;holdoutCount:number;holdoutHitRate:number|null;
+ stage:"SOURCE_OBSERVATION"|"INDICATIVE_PAPER_ONLY";validatedEdge:false;
+ executablePriceVerified:false;researchOnly:true;
+ quote:null|{provider:string;bookmaker:string;odds:number;capturedAt:string;contract:string};
+ reasons:string[];
+};
 type DiscoveryResponse={source:string;generatedAt:string;hypothesesScreened:number;validatedEdgeCount:number;
- patterns:Pattern[];fetchCoverage?:{windowMayBeCapped:boolean}};
+ patterns:Pattern[];liveMatches?:LiveHypothesis[];matchCoverage?:{scannedLiveEvents:number;quoteReadFailed:boolean;matched:number};fetchCoverage?:{windowMayBeCapped:boolean}};
 type RadarRow={id:string;status:"PAPER"|"WATCH"|"PASS";scenario:string;
  event:{homeName:string;awayName:string;clock:string;homeScore:string;awayScore:string;lastUpdatedAt?:string};
  evidence:{freshScore:boolean;verifiedQuote:boolean;independentProbability:false;executionVerified:false};
@@ -116,6 +125,8 @@ export function PredictionsConsole(){
  const settled=tickets.filter(t=>Boolean(t.settlement));
  const shown=tickets.filter(t=>tab==="all"||tab==="open"&&!t.settlement||tab==="settled"&&Boolean(t.settlement)).slice(0,40);
  const radarCases=(radar?.rows??[]).filter(x=>x.status!=="PASS"&&x.scenario==="UNDER_4_5_LATE_1_1");
+ const liveHypotheses=(discovery?.liveMatches??[]).filter(x=>now>0&&Number.isFinite(Date.parse(x.observedAt))&&
+  Date.parse(x.observedAt)<=now&&now-Date.parse(x.observedAt)<=120_000);
  const stats=[
   {name:"СВЕЖИХ МОДЕЛЬНЫХ ОЦЕНОК",value:statuses.shadow==="ready"?String(shadow?.rows.length??0):"—",detail:"Shadow-модель на реальных событиях"},
   {name:"ПРОГНОЗОВ МОДЕЛИ",value:statuses.paper==="ready"?String(tickets.length):"—",detail:"Записаны заранее, независимая модель"},
@@ -134,7 +145,7 @@ export function PredictionsConsole(){
    <p>Здесь — не список популярных ставок и не подборка высоких коэффициентов.
     Только заранее зафиксированные прогнозы моделей VETO на реальные события,
     наблюдаемые ситуации и исследуемые закономерности. Каждый вывод можно проверить после матча.</p>
-   <div className="predHeroActions"><a href="#predNow">Прогнозы VETO ↓</a><a href="#predHypotheses">Гипотезы ↓</a><a href="#predRadar">Аномалии и радар ↓</a></div>
+   <div className="predHeroActions"><a href="#predNow">Прогнозы VETO ↓</a><a href="#predLinked">Совпадения гипотез ↓</a><a href="#predRadar">Аномалии и радар ↓</a></div>
   </section>
   <section className="predStats" aria-label="Состояние исследований">
    {stats.map(s=><article key={s.name}><span>{s.name}</span><strong>{s.value}</strong><small>{s.detail}</small></article>)}
@@ -170,8 +181,42 @@ export function PredictionsConsole(){
       <Link href={"/?view=check&event="+encodeURIComponent(x.eventId)}>Разобрать ↗</Link></footer>
     </article>)}</div>}
   </section>
+  <section className="predSection" id="predLinked">
+   <div className="predSectionHead"><div><span>02 / DISCOVERY → REAL FIXTURE</span><h2>Гипотезы на реальных матчах</h2>
+    <p>Когда в текущей игре возникает ситуация, которую VETO ранее обнаружил в архиве,
+       мы автоматически сопоставляем её с конкретной гипотезой, проверяем время счёта и наличие цены.
+       Это пока исследовательские совпадения, а не доказанные прибыльные сигналы.</p></div></div>
+   {statuses.discovery!=="ready"?<div className="predEmpty" role="status">
+    {statuses.discovery==="error"?"Нет доступа к источнику исторических закономерностей.":"Ищем совпадения архивных гипотез с реальными матчами…"}</div>:
+    liveHypotheses.length===0?<div className="predEmpty">
+     <b>Сейчас нет свежих подтверждённых совпадений.</b>
+     <p>Система не подставляет старые снимки как live. На исследовании были проверены
+      {discovery?.matchCoverage?.scannedLiveEvents??0} потенциальных live-матчей,
+      но действующий набор гипотез и источников не дал подходящих активных кандидатов.</p>
+     {discovery?.matchCoverage?.quoteReadFailed&&<p>Отдельно: считывание сохранённых букмекерских котировок было недоступно.</p>}
+     <Link href="/research/discovery">Смотреть весь архив гипотез ↗</Link></div>:
+    <div className="predForecastGrid">
+     {liveHypotheses.slice(0,12).map(row=><article className="predForecast" key={row.id}>
+      <header><span>REAL SOURCE / HYPOTHESIS MATCH</span>
+       <b className="pending">{row.stage==="INDICATIVE_PAPER_ONLY"?"ТОЛЬКО PAPER":"НАБЛЮДЕНИЕ"}</b></header>
+      <small>{row.competition} · {time(row.observedAt)}</small><h3>{row.match}</h3>
+      <p className="predOutcome">{row.hypothesisLabel}</p>
+      <div className="predNumbers"><div><small>ИСТОРИЧЕСКАЯ ЧАСТОТА*</small><strong>{percent(row.hitRate)}</strong></div>
+       <div><small>НЕЗАВИСИМЫЙ HOLDOUT*</small><strong>{percent(row.holdoutHitRate)}</strong></div>
+       <div><small>КОЭФФИЦИЕНТ</small><strong>{row.quote?number(row.quote.odds,2):"—"}</strong></div></div>
+      <div className="predForecastProvenance">
+       <span>Снимок: {row.minute}′ · {row.score.home}:{row.score.away} · {time(row.observedAt)}</span>
+       <span>Исторических подтверждённых FT: {row.settled} · Holdout: {row.holdoutCount}</span>
+       {row.quote&&<span>Сохранённая котировка: {row.quote.bookmaker} / {row.quote.provider} · {time(row.quote.capturedAt)}</span>}
+       <span>{row.reasons[0]}</span>
+      </div>
+      <footer><small>*Эти частоты не являются вероятностью отдельного матча; нет доказанного EDGE или подтверждения исполнимой цены.</small>
+       <Link href={"/?view=check&event="+encodeURIComponent(row.eventId)}>Разобрать ↗</Link></footer>
+     </article>)}
+    </div>}
+  </section>
   <section className="predSection" id="predList">
-   <div className="predSectionHead"><div><span>02 / FORWARD PAPER LEDGER</span><h2>Главные прогнозы VETO</h2>
+   <div className="predSectionHead"><div><span>03 / FORWARD PAPER LEDGER</span><h2>Главные прогнозы VETO</h2>
     <p>Конкретный матч → исход → вероятность модели → цена из источника → проверка результата.</p></div>
     <div className="predTabRow" role="group" aria-label="Фильтр прогнозов">
      {([{id:"all",label:"Все"},{id:"open",label:"Ожидают FT"},{id:"settled",label:"Проверены"}] as const).map(x=>
@@ -210,7 +255,7 @@ export function PredictionsConsole(){
   </section>
   <div className="predLower">
    <section className="predSection" id="predHypotheses">
-    <div className="predSectionHead"><div><span>03 / PATTERN DISCOVERY</span><h2>Найденные гипотезы</h2>
+    <div className="predSectionHead"><div><span>04 / PATTERN DISCOVERY</span><h2>Найденные гипотезы</h2>
      <p>VETO ищет статистические закономерности. Без подтверждённых рыночных цен это ещё не готовый прогноз.</p></div></div>
     {statuses.discovery!=="ready"?<div className="predEmpty">{statuses.discovery==="error"?"Исторические наблюдения недоступны.":"Проверяем исследовательский архив…"}</div>:
      (discovery?.patterns.length??0)===0?<div className="predEmpty">Сохранённых гипотез за доступное окно пока нет.</div>:
@@ -224,7 +269,7 @@ export function PredictionsConsole(){
     <Link className="predLink" href="/research/discovery">Вся лаборатория закономерностей ↗</Link>
    </section>
    <section className="predSection" id="predRadar">
-    <div className="predSectionHead"><div><span>04 / SITUATION SCANNER</span><h2>Необычные ситуации</h2>
+    <div className="predSectionHead"><div><span>05 / SITUATION SCANNER</span><h2>Необычные ситуации</h2>
      <p>Матчи с наблюдаемыми условиями для исследования. Радар не считает их аномалиями с доказанным преимуществом.</p></div></div>
     {statuses.radar!=="ready"?<div className="predEmpty">{statuses.radar==="error"?"Радар временно недоступен.":"Читаем последние сохранённые события…"}</div>:
      radarCases.length===0?<div className="predEmpty">Сейчас нет свежих ситуаций, достаточных даже для исследовательского наблюдения.</div>:
