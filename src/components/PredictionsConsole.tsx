@@ -52,6 +52,9 @@ type ModelProof={ok:boolean;source:string;selected:ModelProofCohort|null;selecte
  coverage:{eventsScanned:number;eventsWithFt:number;predictionRowsRead:number;verifiedSamples:number;
  scanMayBeCapped:boolean;sampleMayBeCapped:boolean};
  profitableStrategyVerified:false;historicalEdgeValidated:false;lookbackDays:number};
+type OperationalSource={id:string;label:string;state:"active"|"empty"|"waiting"|"degraded"|"stale"|"unknown";
+ updatedAt:string|null;lastRunCode:string|null;ageMinutes:number|null;note:string};
+type OperationalFeed={source:"PERSISTED_ONLY";providers:OperationalSource[]};
 type Status="loading"|"ready"|"error";
 type PredictionTab="all"|"open"|"settled";
 const number=(n:number,digits=1)=>new Intl.NumberFormat("ru-RU",{maximumFractionDigits:digits,minimumFractionDigits:digits}).format(n);
@@ -82,7 +85,8 @@ export function PredictionsConsole(){
  const [shadow,setShadow]=useState<ShadowResponse|null>(null);
  const [anomalies,setAnomalies]=useState<AnomalyResponse|null>(null);
  const [proof,setProof]=useState<ModelProof|null>(null);
- const [statuses,setStatuses]=useState<Record<string,Status>>({paper:"loading",discovery:"loading",radar:"loading",shadow:"loading",anomalies:"loading",proof:"loading"});
+ const [sourceHealth,setSourceHealth]=useState<OperationalFeed|null>(null);
+ const [statuses,setStatuses]=useState<Record<string,Status>>({paper:"loading",discovery:"loading",radar:"loading",shadow:"loading",anomalies:"loading",proof:"loading",sources:"loading"});
  const [tab,setTab]=useState<PredictionTab>("all");
  const [cycle,setCycle]=useState(0);
  const [now,setNow]=useState(0);
@@ -103,6 +107,7 @@ export function PredictionsConsole(){
    {key:"shadow",url:"/api/intelligence/predictions/shadow"},
    {key:"anomalies",url:"/api/intelligence/predictions/anomalies"},
    {key:"proof",url:"/api/intelligence/predictions/validation"},
+   {key:"sources",url:"/api/intelligence/research/source-health"},
   ] as const;
   const update=(key:string,status:Status)=>{if(alive)setStatuses(old=>({...old,[key]:status}));};
   sources.forEach(({key,url})=>{
@@ -111,7 +116,11 @@ export function PredictionsConsole(){
     .then(async response=>{if(!response.ok)throw Error("SOURCE_UNAVAILABLE");return response.json();})
     .then((value:unknown)=>{
      if(!alive)return;
-     if(key==="paper"){
+     if(key==="sources"){
+      const item=value as OperationalFeed;
+      if(item.source!=="PERSISTED_ONLY"||!Array.isArray(item.providers))throw Error("SOURCE_HEALTH_INVALID");
+      setSourceHealth(item);
+    }else if(key==="paper"){
       const item=value as PaperResponse;
       if(item.ok!==true||!Array.isArray(item.account?.tickets))throw Error("PAPER_INVALID");
       setPaper(item);
@@ -147,6 +156,7 @@ export function PredictionsConsole(){
      if(key==="shadow")setShadow(null);
      if(key==="anomalies")setAnomalies(null);
      if(key==="proof")setProof(null);
+     if(key==="sources")setSourceHealth(null);
      update(key,"error");
     });
   });
@@ -191,6 +201,25 @@ export function PredictionsConsole(){
     Независимые модели пока проходят бумажную проверку. Контрольные цены букмекера не называем прогнозами VETO.</p></div>
    <button type="button" onClick={refresh}>Обновить из источников ↻</button>
   </div>
+  <section className="predSection predReadiness" id="predReadiness">
+   <div className="predSectionHead"><div><span>DATA PLANE / LIVE OPERATIONAL READINESS</span>
+    <h2>Почему прогнозы могут отсутствовать?</h2>
+    <p>Показываем состояние реальных источников. Выдавать статистическую гипотезу за прогноз без свежего
+      матча и независимого результата нельзя. Диагностика использует сохранённую историю — без платных вызовов API.</p></div></div>
+   {statuses.sources!=="ready"?<div className="predEmpty">
+    {statuses.sources==="error"?"Нет доступа к проверенному состоянию источников.":"Проверяем источники и последние запуски…"}</div>:
+    <div className="predReadinessGrid">
+     {(sourceHealth?.providers??[]).map(s=><article key={s.id}>
+      <header><span>{s.label}</span><b className={"source-"+s.state}>{s.state==="active"?"РАБОТАЕТ":
+       s.state==="stale"?"УСТАРЕЛ":s.state==="waiting"?"ОЖИДАНИЕ":
+       s.state==="degraded"?"ОГРАНИЧЕНИЕ":s.state==="empty"?"НЕТ ДАННЫХ":"НЕИЗВЕСТНО"}</b></header>
+      <p>{s.note}</p><small>{s.updatedAt?"Последняя запись: "+time(s.updatedAt):"Последний успешный запуск неизвестен."}</small>
+      {s.lastRunCode==="UPSTREAM_SUBSCRIPTION"&&<strong className="predReadinessProblem">Нужен доступ провайдера к подтверждению FT.
+         Это нельзя исправить формулой прогноза.</strong>}
+     </article>)}
+     {(sourceHealth?.providers.length??0)===0&&<div className="predEmpty">Пока нет проверенной истории запусков источников.</div>}
+    </div>}
+  </section>
   <section className="predSection" id="predNow">
    <div className="predSectionHead"><div><span>01 / REAL-TIME MODEL SURFACE</span><h2>Оперативные оценки VETO</h2>
     <p>Реальные матчи, реальные сохранённые входные данные, предварительные вероятности модели.
