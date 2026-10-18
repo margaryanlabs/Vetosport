@@ -1,0 +1,33 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+const read=p=>readFileSync(new URL("../"+p,import.meta.url),"utf8");
+test("Read-through Bundesliga calculations cache two free source requests and never imply prospective entry",()=>{
+ const api=read("src/app/api/intelligence/predictions/bundesliga-preview/route.ts");
+ assert.match(api,/unstable_cache/);
+ assert.match(api,/revalidate:1800/);
+ assert.match(api,/fetchBundesligaSeason\(season-1\)/);
+ assert.match(api,/fetchBundesligaSeason\(season\)/);
+ assert.match(api,/buildBundesligaPrematchForecasts/);
+ assert.match(api,/status:"UNCALIBRATED_READ_ONLY_PREVIEW"/);
+ assert.match(api,/isPersisted:false/);
+ assert.match(api,/previewOnly:true,persistedForecasts:0/);
+ assert.match(api,/independentCalibrationVerified:false/);
+ assert.match(api,/bookmakerProviderCalls:0/);
+ assert.match(api,/marketQuoteInputsUsed:0/);
+ assert.match(api,/resultCertificatesUsed:0/);
+ assert.match(api,/Date\.parse\(f\.startsAt\)-start>=30\*60_000/);
+ assert.doesNotMatch(api,/getPersistence|appendPrediction|appendDecision|placeBet|THE_ODDS_API_KEY|SPORTMONKS_API_TOKEN/);
+});
+test("UI never displays previewed community estimates as immutably recorded or validated picks",()=>{
+ const page=read("src/components/PredictionsConsole.tsx");
+ const css=read("src/app/predictions/predictions.css");
+ assert.match(page,/bundesliga-preview/);
+ assert.match(page,/status!=="UNCALIBRATED_READ_ONLY_PREVIEW"/);
+ assert.match(page,/r\.isPersisted!==false/);
+ assert.match(page,/ПРЕВЬЮ · НЕ ЗАПИСАНО/);
+ assert.match(page,/Не SHADOW-журнал, не LIVE и не сертифицированный исход/);
+ assert.match(page,/Автоматический журнал пока не содержит/);
+ assert.match(css,/predResearchPreview/);
+ assert.match(css,/data-veto-sport-appearance="light"/);
+});
