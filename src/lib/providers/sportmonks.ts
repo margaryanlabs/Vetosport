@@ -28,7 +28,13 @@ type SportmonksScore = {
   };
 };
 
+type SportmonksPeriod={
+  id?:number;fixture_id?:number;started?:number;ended?:number|null;
+  counts_from?:number;sort_order?:number;ticking?:boolean;
+  minutes?:number;seconds?:number;has_timer?:boolean;
+};
 type SportmonksFixture = {
+  periods?:SportmonksPeriod[];
   id: number;
   league_id?: number;
   state_id?: number;
@@ -117,8 +123,12 @@ export class SportmonksFootballClient {
     const receivedAt = new Date();
 
     if (!response.ok) {
-      const body = await response.text();
-      throw new Error(`Sportmonks ${response.status}: ${body.slice(0, 300)}`);
+      // Never echo provider response or query-token in user-facing errors.
+      // Provider restrictions are meaningful to the operator but may contain
+      // account identifiers or API tokens.
+      throw new Error(response.status===401?"SPORTMONKS_AUTH":
+       response.status===403?"SPORTMONKS_SUBSCRIPTION":
+       response.status===429?"SPORTMONKS_QUOTA":"SPORTMONKS_UPSTREAM");
     }
 
     return {
@@ -181,6 +191,15 @@ export class SportmonksFootballClient {
     };
   }
 
+  /** Every 5-minute cron must poll the FULL live-score window.
+   * /fixtures/latest and /livescores/latest ONLY return a 10-second update
+   * window; sampling those every 5 minutes misses most actual games.
+   * /livescores retains in-play games and 15 minutes of completed fixtures. */
+  getActiveLivescores(){
+    return this.request<Paged<SportmonksFixture>>(
+      "/livescores",{include:"participants;state;scores;periods"},
+    );
+  }
   getLatestUpdatedFixtures() {
     return this.request<Paged<SportmonksFixture>>(
       "/fixtures/latest",
@@ -244,6 +263,51 @@ export class SportmonksFootballClient {
     const home = latestBySide.get("home");
     const away = latestBySide.get("away");
     return home == null || away == null ? null : { home, away };
+  }
+
+  /** Reject aggregated HALF-time / extra-time score instead of guessing
+   * CURRENT = full score. The score side is checked against the same two
+   * fixture-specific participants; duplicates fail closed. */
+  extractVerifiedCurrentScore(raw:SportmonksFixture):{home:number;away:number}|null{
+    const home=raw.participants?.filter(p=>p.meta?.location==="home")??[];
+    const away=raw.participants?.filter(p=>p.meta?.location==="away")??[];
+    if(home.length!==1||away.length!==1||home[0].id===away[0].id)return null;
+    const list=(raw.scores??[]).filter(s=>s.fixture_id===raw.id&&
+      s.description?.toUpperCase()==="CURRENT");
+    const h=list.filter(s=>s.score?.participant==="home"&&s.participant_id===home[0].id);
+    const a=list.filter(s=>s.score?.participant==="away"&&s.participant_id===away[0].id);
+    if(h.length!==1||a.length!==1||list.length!==2)return null;
+    const goals=[h[0].score?.goals,a[0].score?.goals];
+    if(!goals.every(v=>Number.isInteger(v)&&typeof v==="number"&&v>=0&&v<=12))
+      return null;
+    return {home:goals[0] as number,away:goals[1] as number};
+  }
+  /** Official Sportmonks period counters are cumulative minutes. For model
+   * inference demand a ticking regular period, not fixture kickoff elapsed
+   * wall-clock, a break, injury time, or extra-time phase. */
+  extractVerifiedLiveClock(raw:SportmonksFixture):
+   {period:"1H"|"2H";minute:number}|null{
+    const code=raw.state?.id??raw.state_id;
+    const expected=code===2?{period:"1H" as const,order:1,from:0}:
+      code===6?{period:"2H" as const,order:2,from:45}:null;
+    if(!expected)return null;
+    const active=(raw.periods??[]).filter(p=>p.ticking===true&&
+      p.fixture_id===raw.id&&p.sort_order===expected.order&&
+      p.counts_from===expected.from);
+    if(active.length!==1)return null;
+    const {minutes,seconds}=active[0];
+    if(!Number.isInteger(minutes)||minutes===undefined||minutes<0||minutes>89||
+      expected.period==="1H"&&minutes>=45||
+      expected.period==="2H"&&minutes<45||
+      seconds!==undefined&&(!Number.isInteger(seconds)||seconds<0||seconds>59))
+      return null;
+    return{period:expected.period,minute:minutes};
+  }
+  getLiveState(raw:SportmonksFixture):{score:{home:number;away:number};
+   period:"1H"|"2H";minute:number}|null{
+    const score=this.extractVerifiedCurrentScore(raw);
+    const clock=this.extractVerifiedLiveClock(raw);
+    return score&&clock?{score,...clock}:null;
   }
 
   normalizeInplayOdds(rows: SportmonksInplayOdd[]): MarketQuote[] {
