@@ -89,3 +89,22 @@ html[data-veto-sport-appearance="light"] .predRoot :is(.predProofTop,.predProofK
 html[data-veto-sport-appearance="light"] .predRoot :is(.predProofTop strong,.predProofKpis strong,.predProofDetails h3,.predProofHistory h3,.predProofRows strong,.predProofRows b){color:#24334b}
 html[data-veto-sport-appearance="light"] .predRoot :is(.predProofTop span,.predProofKpis small,.predProofKpis span,.predProofDetails p,.predCalibBin span,.predProofRows small,.predProofRows span){color:#626b7c}
 html[data-veto-sport-appearance="light"] .predRoot .predProofTop>b{background:#f3dce2;color:#9d4052}
+
+
+.predReadiness{padding:22px;background:#131317;border:1px solid #313039;border-radius:14px;margin:18px 0 38px}
+.predReadinessGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.predReadinessGrid>article{min-width:0;display:grid;align-content:start;gap:13px;padding:19px;border:1px solid #37353c;border-radius:11px;background:#1b1a1f}
+.predReadinessGrid header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.predReadinessGrid header span{color:#f5f2f6;font-size:14px;font-weight:760}
+.predReadinessGrid header b{font-size:10px;letter-spacing:.08em;color:#d8b5bd;border:1px solid #5a444e;border-radius:6px;padding:7px 9px}
+.predReadinessGrid header b.source-active{color:#b8e2c8;border-color:#345841}
+.predReadinessGrid header b.source-stale,.predReadinessGrid header b.source-degraded{color:#e7a3b1;border-color:#6b3c48}
+.predReadinessGrid p{margin:0;color:#bbb5c1;font-size:12px;line-height:1.7}
+.predReadinessGrid small{color:#aba4b1;font-size:10px}
+.predReadinessProblem{font-size:11px;color:#f7b8c3;line-height:1.55}
+@media(max-width:900px){.predReadinessGrid{grid-template-columns:1fr}}
+@media(max-width:680px){.predReadiness{padding:14px}.predReadinessGrid>article{padding:15px}}
+html[data-veto-sport-appearance="light"] .predRoot :is(.predReadiness,.predReadinessGrid>article){background:#fff;border-color:#dbe0e8}
+html[data-veto-sport-appearance="light"] .predRoot .predReadinessGrid header span{color:#273248}
+html[data-veto-sport-appearance="light"] .predRoot :is(.predReadinessGrid p,.predReadinessGrid small){color:#606d80}
+html[data-veto-sport-appearance="light"] .predRoot .predReadinessProblem{color:#a64152}
