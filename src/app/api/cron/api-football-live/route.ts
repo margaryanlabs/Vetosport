@@ -61,10 +61,28 @@ export async function GET(request:Request){
       quotaReserve:apiFootballSchedule.reserve,estimatedScheduledRequestsPerDay:apiFootballSchedule.perDay,
       bookmakerOddsVerified:false,sourceTimestampVerified:false,
     },{status:failures?502:200,headers:{"Cache-Control":"no-store"}});
-  }catch{
+  }catch(error){
+    // A failed provider request previously returned HTTP 502 without ANY
+    // persisted heartbeat. Source-health would then look "stale" for days,
+    // obscuring the real cause of missing models and FT observations.
+    // Publish only allowlisted failure categories, never raw API payloads or keys.
+    const message=error instanceof Error?error.message:"";
+    const failureCode=/HTTP 401\b/.test(message)?"UPSTREAM_AUTH":
+      /HTTP 403\b/.test(message)?"UPSTREAM_HTTP_403":
+      /HTTP 429\b/.test(message)?"UPSTREAM_HTTP_429":
+      /HTTP 5[0-9][0-9]\b/.test(message)?"UPSTREAM_UNCLASSIFIED":
+      "STORAGE_OR_PROVIDER_FAILURE";
+    try{
+      await getPersistence().appendProviderHealth({
+        providerId:"api-football",status:"degraded",checkedAt:new Date().toISOString(),
+        message:"Live fixture source did not produce a verified snapshot.",
+        metadata:{failureCode,upstreamAttempted:true,stored:0,failedPoll:true},
+      });
+    }catch{/* Upstream error must remain visible even if the health bridge fails. */}
     return NextResponse.json({
-      ok:false,error:"API-Football polling failed. Verify key, upstream quota and provider health. No fake matches generated.",
-      bookmakerOddsVerified:false,
+      ok:false,error:"API-Football polling failed. Check public source health; no fake matches generated.",
+      statusCode:"LIVE_SOURCE_UNAVAILABLE",bookmakerOddsVerified:false,
+      sourceHeartbeatAttempted:true,
     },{status:502,headers:{"Cache-Control":"no-store"}});
   }
 }
