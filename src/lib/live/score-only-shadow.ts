@@ -21,7 +21,7 @@ export const SCORE_ONLY_FEATURE_VERSION="football.score-clock-prior-input.v1";
 export const SCORE_ONLY_MODEL_VERSION="football.score-clock-prior.v1";
 export const SCORE_ONLY_PRIOR={home:1.35,away:1.15} as const;
 const MAX_STATE_AGE_MS=38*60_000;
-const MAX_KICKOFF_AGE_MS=150*60_000;
+const MAX_KICKOFF_AGE_MS=125*60_000;
 const fixedTargets=new Set([
  "football.1x2::home","football.1x2::draw","football.1x2::away",
  "football.total_goals::under-2.5","football.total_goals::under-3.5",
@@ -63,7 +63,7 @@ function relevantObservedState(event:PersistedEvent,state:PersistedEventStateRec
  if(period!=="1H"&&period!=="HT"&&period!=="2H")return "NONREGULATION_PERIOD";
  const observedScore=observedFootballState(state.state);
  if(!observedScore||!Number.isInteger(observedScore.minute)||
-  observedScore.minute<0||observedScore.minute>90||
+  observedScore.minute<0||observedScore.minute>89||
   observedScore.score.home>12||observedScore.score.away>12)return "SCORE_CLOCK_INVALID";
  // Strict validation rather than deriving "real" player or team xG data
  // from an undocumented endpoint. The existing model's fallback prior is
@@ -196,6 +196,8 @@ export function scoreOnlyShadowSelfcheck(){
    pass:run({...state,state:{...state.state,period:"PEN"}}).ok===false},
   {name:"No real observed score means no fake model state",
    pass:run({...state,state:{...state.state,score:undefined}}).ok===false},
+  {name:"Late lingering LIVE label after two hours cannot authorize a fresh forecast",
+   pass:run({...state,capturedAt:"2026-10-18T16:13:00Z"},event,"2026-10-18T16:14:00Z").ok===false},
   {name:"Source timestamp unverified explicitly and no betting decision writes",
    pass:good.ok&&good.plan.sourceEmissionTimeVerified===false&&good.plan.decisionWrites===0},
  ];
