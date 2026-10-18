@@ -33,6 +33,11 @@ type RadarResponse={generatedAt:string;source:string;rows:RadarRow[]};
 type ShadowRow={id:string;eventId:string;competition:string;match:string;marketKey:string;selectionKey:string;
  modelProbability:number;modelFairOdds:number;modelVersion:string;predictionAt:string;stateAt:string;stage:"UNVALIDATED_SHADOW_FORECAST"};
 type ShadowResponse={ok:boolean;source:string;asOf:string;rows:ShadowRow[];decisionAuthority:false};
+type MarketAnomaly={id:string;eventId:string;match:string;competition:string;marketKey:string;
+ selectionKey:string;line:number|null;provider:string;medianOdds:number;highestObservedOdds:number;
+ highestBookmaker:string;deviationPct:number;bookmakerCount:number;lastCapturedAt:string;
+ classification:"PRICE_DISPERSION_RESEARCH";validatedEdge:false;executionVerified:false;researchOnly:true};
+type AnomalyResponse={ok:boolean;source:string;asOf:string;rows:MarketAnomaly[];quotesCapped?:boolean;scanMayBeCapped?:boolean};
 type Status="loading"|"ready"|"error";
 type PredictionTab="all"|"open"|"settled";
 const number=(n:number,digits=1)=>new Intl.NumberFormat("ru-RU",{maximumFractionDigits:digits,minimumFractionDigits:digits}).format(n);
@@ -61,7 +66,8 @@ export function PredictionsConsole(){
  const [discovery,setDiscovery]=useState<DiscoveryResponse|null>(null);
  const [radar,setRadar]=useState<RadarResponse|null>(null);
  const [shadow,setShadow]=useState<ShadowResponse|null>(null);
- const [statuses,setStatuses]=useState<Record<string,Status>>({paper:"loading",discovery:"loading",radar:"loading",shadow:"loading"});
+ const [anomalies,setAnomalies]=useState<AnomalyResponse|null>(null);
+ const [statuses,setStatuses]=useState<Record<string,Status>>({paper:"loading",discovery:"loading",radar:"loading",shadow:"loading",anomalies:"loading"});
  const [tab,setTab]=useState<PredictionTab>("all");
  const [cycle,setCycle]=useState(0);
  const [now,setNow]=useState(0);
@@ -80,6 +86,7 @@ export function PredictionsConsole(){
    {key:"discovery",url:"/api/intelligence/research/discovery"},
    {key:"radar",url:"/api/intelligence/research/opportunity-radar"},
    {key:"shadow",url:"/api/intelligence/predictions/shadow"},
+   {key:"anomalies",url:"/api/intelligence/predictions/anomalies"},
   ] as const;
   const update=(key:string,status:Status)=>{if(alive)setStatuses(old=>({...old,[key]:status}));};
   sources.forEach(({key,url})=>{
@@ -96,7 +103,11 @@ export function PredictionsConsole(){
       const item=value as DiscoveryResponse;
       if(item.source!=="PERSISTED_ONLY"||!Array.isArray(item.patterns))throw Error("DISCOVERY_INVALID");
       setDiscovery(item);
-     }else if(key==="shadow"){
+     }else if(key==="anomalies"){
+      const item=value as AnomalyResponse;
+      if(item.ok!==true||item.source!=="PERSISTED_ONLY"||!Array.isArray(item.rows))throw Error("ANOMALIES_INVALID");
+      setAnomalies(item);
+    }else if(key==="shadow"){
       const item=value as ShadowResponse;
       if(item.ok!==true||item.source!=="PERSISTED_ONLY"||!Array.isArray(item.rows)||item.decisionAuthority!==false)throw Error("SHADOW_INVALID");
       setShadow(item);
@@ -112,6 +123,7 @@ export function PredictionsConsole(){
      if(key==="discovery")setDiscovery(null);
      if(key==="radar")setRadar(null);
      if(key==="shadow")setShadow(null);
+     if(key==="anomalies")setAnomalies(null);
      update(key,"error");
     });
   });
@@ -128,6 +140,7 @@ export function PredictionsConsole(){
  const liveHypotheses=(discovery?.liveMatches??[]).filter(x=>now>0&&Number.isFinite(Date.parse(x.observedAt))&&
   Date.parse(x.observedAt)<=now&&now-Date.parse(x.observedAt)<=120_000);
  const stats=[
+  {name:"АНОМАЛИЙ КОТИРОВОК",value:statuses.anomalies==="ready"?String(anomalies?.rows.length??0):"—",detail:"Необычный разброс цен, не EDGE"},
   {name:"СВЕЖИХ МОДЕЛЬНЫХ ОЦЕНОК",value:statuses.shadow==="ready"?String(shadow?.rows.length??0):"—",detail:"Shadow-модель на реальных событиях"},
   {name:"ПРОГНОЗОВ МОДЕЛИ",value:statuses.paper==="ready"?String(tickets.length):"—",detail:"Записаны заранее, независимая модель"},
   {name:"ОЖИДАЮТ ИСХОДА",value:statuses.paper==="ready"?String(open.length):"—",detail:"Результат пока не подтверждён"},
@@ -145,7 +158,7 @@ export function PredictionsConsole(){
    <p>Здесь — не список популярных ставок и не подборка высоких коэффициентов.
     Только заранее зафиксированные прогнозы моделей VETO на реальные события,
     наблюдаемые ситуации и исследуемые закономерности. Каждый вывод можно проверить после матча.</p>
-   <div className="predHeroActions"><a href="#predNow">Прогнозы VETO ↓</a><a href="#predLinked">Совпадения гипотез ↓</a><a href="#predRadar">Аномалии и радар ↓</a></div>
+   <div className="predHeroActions"><a href="#predNow">Прогнозы VETO ↓</a><a href="#predLinked">Совпадения гипотез ↓</a><a href="#predAnomalies">Аномалии и радар ↓</a></div>
   </section>
   <section className="predStats" aria-label="Состояние исследований">
    {stats.map(s=><article key={s.name}><span>{s.name}</span><strong>{s.value}</strong><small>{s.detail}</small></article>)}
@@ -181,8 +194,36 @@ export function PredictionsConsole(){
       <Link href={"/?view=check&event="+encodeURIComponent(x.eventId)}>Разобрать ↗</Link></footer>
     </article>)}</div>}
   </section>
+  <section className="predSection" id="predAnomalies">
+   <div className="predSectionHead"><div><span>02 / MARKET ANOMALY DETECTOR</span><h2>Аномалии букмекерских котировок</h2>
+    <p>Независимо сравниваем свежие цены как минимум трёх букмекеров на один и тот же рынок и исход.
+     Находим значительные расхождения, но не называем их доходными ставками до проверки ликвидности и исполнения.</p></div></div>
+   {statuses.anomalies!=="ready"?<div className="predEmpty" role="status">
+    {statuses.anomalies==="error"?"Источник рыночных котировок недоступен.":"Сопоставляем сохранённые цены букмекеров…"}</div>:
+    (anomalies?.rows.length??0)===0?<div className="predEmpty">
+     <b>Нет подтверждённых аномалий в актуальной выборке.</b><p>Для результата нужны свежие однозначные цены, три различных букмекера и отклонение от медианы.
+       Устаревшие или неполные котировки не показываются как найденные возможности.</p>
+     {anomalies?.quotesCapped&&<p>Лимит выборки достигнут — расчёты расхождений заблокированы.</p>}</div>:
+    <div className="predForecastGrid">{anomalies!.rows.slice(0,12).map(x=><article className="predForecast" key={x.id}>
+     <header><span>REAL QUOTES / PRICE DISPERSION</span><b className="pending">ИССЛЕДОВАНИЕ</b></header>
+     <small>{x.competition} · {time(x.lastCapturedAt)}</small>
+     <h3>{x.match}</h3><p className="predOutcome">{x.marketKey} · {x.selectionKey}{x.line!==null?" · "+x.line:""}</p>
+     <div className="predNumbers">
+      <div><small>МЕДИАНА КОЭФФ.</small><strong>{number(x.medianOdds,2)}</strong></div>
+      <div><small>МАКС. ЦЕНА</small><strong>{number(x.highestObservedOdds,2)}</strong></div>
+      <div><small>ОТКЛОНЕНИЕ</small><strong>+{number(x.deviationPct)}%</strong></div>
+     </div>
+     <div className="predForecastProvenance">
+      <span>Источники: {x.bookmakerCount} разных букмекера · {x.provider}</span>
+      <span>Максимальная сохранённая цена: {x.highestBookmaker}</span>
+      <span>Цена с отметкой времени: {time(x.lastCapturedAt)}</span>
+     </div>
+     <footer><small>Расхождение цены само по себе не доказывает ошибку рынка или исполнимость ставки.</small>
+      <Link href={"/?view=check&event="+encodeURIComponent(x.eventId)}>Посмотреть матч ↗</Link></footer>
+    </article>)}</div>}
+  </section>
   <section className="predSection" id="predLinked">
-   <div className="predSectionHead"><div><span>02 / DISCOVERY → REAL FIXTURE</span><h2>Гипотезы на реальных матчах</h2>
+   <div className="predSectionHead"><div><span>03 / DISCOVERY → REAL FIXTURE</span><h2>Гипотезы на реальных матчах</h2>
     <p>Когда в текущей игре возникает ситуация, которую VETO ранее обнаружил в архиве,
        мы автоматически сопоставляем её с конкретной гипотезой, проверяем время счёта и наличие цены.
        Это пока исследовательские совпадения, а не доказанные прибыльные сигналы.</p></div></div>
@@ -216,7 +257,7 @@ export function PredictionsConsole(){
     </div>}
   </section>
   <section className="predSection" id="predList">
-   <div className="predSectionHead"><div><span>03 / FORWARD PAPER LEDGER</span><h2>Главные прогнозы VETO</h2>
+   <div className="predSectionHead"><div><span>04 / FORWARD PAPER LEDGER</span><h2>Главные прогнозы VETO</h2>
     <p>Конкретный матч → исход → вероятность модели → цена из источника → проверка результата.</p></div>
     <div className="predTabRow" role="group" aria-label="Фильтр прогнозов">
      {([{id:"all",label:"Все"},{id:"open",label:"Ожидают FT"},{id:"settled",label:"Проверены"}] as const).map(x=>
@@ -255,7 +296,7 @@ export function PredictionsConsole(){
   </section>
   <div className="predLower">
    <section className="predSection" id="predHypotheses">
-    <div className="predSectionHead"><div><span>04 / PATTERN DISCOVERY</span><h2>Найденные гипотезы</h2>
+    <div className="predSectionHead"><div><span>05 / PATTERN DISCOVERY</span><h2>Найденные гипотезы</h2>
      <p>VETO ищет статистические закономерности. Без подтверждённых рыночных цен это ещё не готовый прогноз.</p></div></div>
     {statuses.discovery!=="ready"?<div className="predEmpty">{statuses.discovery==="error"?"Исторические наблюдения недоступны.":"Проверяем исследовательский архив…"}</div>:
      (discovery?.patterns.length??0)===0?<div className="predEmpty">Сохранённых гипотез за доступное окно пока нет.</div>:
@@ -269,7 +310,7 @@ export function PredictionsConsole(){
     <Link className="predLink" href="/research/discovery">Вся лаборатория закономерностей ↗</Link>
    </section>
    <section className="predSection" id="predRadar">
-    <div className="predSectionHead"><div><span>05 / SITUATION SCANNER</span><h2>Необычные ситуации</h2>
+    <div className="predSectionHead"><div><span>06 / SITUATION SCANNER</span><h2>Необычные ситуации</h2>
      <p>Матчи с наблюдаемыми условиями для исследования. Радар не считает их аномалиями с доказанным преимуществом.</p></div></div>
     {statuses.radar!=="ready"?<div className="predEmpty">{statuses.radar==="error"?"Радар временно недоступен.":"Читаем последние сохранённые события…"}</div>:
      radarCases.length===0?<div className="predEmpty">Сейчас нет свежих ситуаций, достаточных даже для исследовательского наблюдения.</div>:
