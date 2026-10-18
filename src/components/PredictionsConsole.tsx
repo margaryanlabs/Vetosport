@@ -83,7 +83,7 @@ type LockedControlProof={ok:true;source:"PERSISTED_ONLY";rows:LockedControlRow[]
  externalProviderCalls:0;realMoneyBets:0};
 type OperationalSource={id:string;label:string;state:"active"|"empty"|"waiting"|"degraded"|"stale"|"unknown";
  updatedAt:string|null;lastRunCode:string|null;ageMinutes:number|null;note:string};
-type OperationalFeed={source:"PERSISTED_ONLY";providers:OperationalSource[]};
+type OperationalFeed={source:"PERSISTED_ONLY"|"PERSISTED_AND_SAFE_RUNTIME_CONFIG";secretsExposed?:false;providers:OperationalSource[]};
 type Status="loading"|"ready"|"error";
 type PredictionTab="all"|"open"|"settled";
 const number=(n:number,digits=1)=>new Intl.NumberFormat("ru-RU",{maximumFractionDigits:digits,minimumFractionDigits:digits}).format(n);
@@ -167,7 +167,8 @@ export function PredictionsConsole(){
       setBenchmark(item);
     }else if(key==="sources"){
       const item=value as OperationalFeed;
-      if(item.source!=="PERSISTED_ONLY"||!Array.isArray(item.providers))throw Error("SOURCE_HEALTH_INVALID");
+      if(!["PERSISTED_ONLY","PERSISTED_AND_SAFE_RUNTIME_CONFIG"].includes(item.source)||
+       !Array.isArray(item.providers)||item.secretsExposed===true)throw Error("SOURCE_HEALTH_INVALID");
       setSourceHealth(item);
     }else if(key==="paper"){
       const item=value as PaperResponse;
@@ -266,6 +267,10 @@ export function PredictionsConsole(){
        s.state==="stale"?"УСТАРЕЛ":s.state==="waiting"?"ОЖИДАНИЕ":
        s.state==="degraded"?"ОГРАНИЧЕНИЕ":s.state==="empty"?"НЕТ ДАННЫХ":"НЕИЗВЕСТНО"}</b></header>
       <p>{s.note}</p><small>{s.updatedAt?"Последняя запись: "+time(s.updatedAt):"Последний успешный запуск неизвестен."}</small>
+      {s.lastRunCode==="SPORTMONKS_NOT_CONFIGURED"&&<strong className="predReadinessProblem">
+         Не подключён ключ Sportmonks. В Vercel → vetosport → Settings → Environment Variables
+         добавьте SPORTMONKS_API_TOKEN для Production, затем проверьте разрешённые лиги и live-доступ.
+         Без ключа сервер не обращается к Sportmonks.</strong>}
       {s.lastRunCode==="UPSTREAM_SUBSCRIPTION"&&<strong className="predReadinessProblem">Нужен доступ провайдера к подтверждению FT.
          Это нельзя исправить формулой прогноза.</strong>}
      </article>)}
