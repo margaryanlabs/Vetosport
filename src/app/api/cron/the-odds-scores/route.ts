@@ -3,12 +3,15 @@ import {getPersistence,persistenceConfiguration} from "@/lib/persistence/factory
 import {parseOddsApiScore,matchOddsApiScore} from "@/lib/paper/odds-score-certification";
 import {journalizeEventState} from "@/lib/data-plane/journalize";
 import {assessFtScoreBudget,FT_SCORE_COST_CREDITS} from "@/lib/paper/ft-quota-gate";
+import {selectOddsResearchFinalTargets} from "@/lib/paper/odds-research-final-targets";
 export const dynamic="force-dynamic";
 export const maxDuration=30;
 const headers={"Cache-Control":"no-store","X-Robots-Tag":"noindex"};
 /** Optional once-a-day exact-provider EPL FT reconciliation.
  * Cost 2 The Odds API quota credits per poll (daysFrom=3).
  * Disabled by default until operator opts in and reviews quota budget.
+ * In the SAME 2-credit daily scores request, cover due EPL research
+ * fixtures (even without a paper ticket) by exact provider identifiers.
  * Read-only upstream; local append-only result certificates, zero bets.
  */
 export async function GET(req:Request){
@@ -45,10 +48,24 @@ export async function GET(req:Request){
    .flatMap(p=>p.legs).filter(leg=>
     Date.parse(leg.eventStartsAt)>=now.getTime()-3*DAY&&
     Date.parse(leg.eventStartsAt)<=now.getTime()-60*60_000);
-  const dueEventIds=[...new Set([...outstanding.map(p=>p.eventId),
-    ...highDue.map(leg=>leg.eventId)])].slice(0,30);
+  // No paper-ticket dependency for historical research FT. Research targets
+  // join the existing operator-enabled, daily quota-gated scores request.
+  const researchWindows=await Promise.all([0,1,2].map(day=>
+   store.listRecentEvents({
+    from:new Date(now.getTime()-(day+1)*DAY).toISOString(),
+    to:new Date(now.getTime()-day*DAY).toISOString(),
+    statuses:["scheduled","live"],limit:100,
+   })));
+  const researchScanCapped=researchWindows.some(w=>w.length>=100);
+  const researchCandidates=selectOddsResearchFinalTargets({
+   events:[...new Map(researchWindows.flat().map(e=>[e.id,e])).values()],
+   asOf,maxResults:30,
+  });
+  const paperEventIds=[...new Set([...outstanding.map(p=>p.eventId),
+   ...highDue.map(leg=>leg.eventId)])].slice(0,30);
+  const dueEventIds=[...new Set([...paperEventIds,...researchCandidates.map(e=>e.id)])].slice(0,30);
   if(!dueEventIds.length)return NextResponse.json({ok:true,skipped:true,
-   reason:"NO_DUE_PAPER_FT_CERTIFICATES",quotaCharged:0},{headers});
+   reason:"NO_DUE_PAPER_OR_RESEARCH_FT_CERTIFICATES",quotaCharged:0},{headers});
   // This cron fires at 07:00 UTC; legitimate last odds observations may
   // be 23h old. A 6h limit silently prevented EVERY next-day settlement.
   // Pure source-credit gate: bounded 30h provenance, >=100-credit cushion,
@@ -126,11 +143,14 @@ export async function GET(req:Request){
    quotaRemaining,message:failures?"Some exact EPL FT writes failed.":"Exact provider-ID EPL FT lookup finished.",
    metadata:{provider:"the-odds-api",sportKey:"soccer_epl",costCredits:FT_SCORE_COST_CREDITS,providerCalls:1,
     candidates:safeCandidates.length,certified,unmatched,failures,
-    droppedDuplicateIds:duplicateSourceIds.size,windowMayBeCapped:false},
+    droppedDuplicateIds:duplicateSourceIds.size,windowMayBeCapped:researchScanCapped,
+    researchCandidates:researchCandidates.length,additionalProviderCallsForResearch:0},
   });
   return NextResponse.json({ok:failures===0,source:"the-odds-api.scores",
    researchOnly:true,providerCalls:1,nominalCredits:FT_SCORE_COST_CREDITS,
-   candidateGames:safeCandidates.length,certified,unmatched,failures,capped:false},
+   candidateGames:safeCandidates.length,certified,unmatched,failures,
+   researchCandidates:researchCandidates.length,researchScanCapped,
+   additionalProviderCallsForResearch:0,capped:researchScanCapped},
    {status:failures?503:200,headers});
  }catch{
   return NextResponse.json({ok:false,error:"ODDS_SCORES_SOURCE_UNAVAILABLE",
