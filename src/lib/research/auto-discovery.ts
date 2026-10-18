@@ -83,6 +83,19 @@ const wilsonLower=(wins:number,n:number)=>{
   const z=1.96,p=wins/n,z2=z*z,den=1+z2/n;
   return Math.max(0,(p+z2/(2*n)-z*Math.sqrt(p*(1-p)/n+z2/(4*n*n)))/den);
 };
+/** One source of truth for live matching and historical pattern-bucket formation.
+ * This only describes an observed situation, never an independently estimated edge. */
+export function observedPatternKeyFor(input:{minute:number;score:{home:number;away:number};family:string}):string|null{
+ const market=markets.find(x=>x.id===input.family);
+ if(!market||!Number.isFinite(input.minute)||input.minute<0||input.minute>105||
+  !validScore(input.score)||!market.possible(input.score))return null;
+ return timeBucket(input.minute).id+"__"+scoreBucket(input.score).id+"__"+market.id;
+}
+export function observedFootballState(input:Record<string,unknown>):{minute:number;score:{home:number;away:number}}|null{
+ const score=validScore(input.score),minute=readMinute(input);
+ return score&&minute!==null&&minute<=105?{minute,score}:null;
+}
+
 interface PatternBucket {
   id:string;label:string;family:string;market:Market;
   points:Map<string,Point>;
@@ -164,7 +177,7 @@ export function discoverObservedPatterns(input:{
     lookbackHours:hours,eventsScanned:eligible.size,usableLiveObservations:samples.length,
     verifiedFinals:finalScores.size,hypothesesScreened:patterns.length,validatedEdgeCount:0,
     note:"Автоматический перебор ситуаций; это гипотезы, не ставки. Завершения матчей должны иметь отдельный проверенный снимок. Частота исхода и Wilson-граница не доказывают EV. Множество сравнений, доступные коэффициенты, holdout и исполнение ещё требуют проверки.",
-    patterns:patterns.slice(0,Math.min(24,Math.max(1,input.maxPatterns??16))),
+    patterns:patterns.slice(0,Math.min(200,Math.max(1,input.maxPatterns??16))),
   };
 }
 export function observedPatternDiscoverySelfcheck(){

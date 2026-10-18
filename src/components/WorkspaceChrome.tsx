@@ -103,7 +103,7 @@ export function WorkspaceChrome({
               {item.desktop}
             </button>
           ))}
-          <a className="matchShellWatchLink" href="/research/discovery">DISCOVERY ↗</a>
+          <a className="matchShellWatchLink" href="/predictions">ПРОГНОЗЫ ↗</a>
         </nav>
 
         <div className="matchShellTools">
@@ -151,7 +151,7 @@ export function WorkspaceChrome({
             <span>{item.mobile}</span>
           </button>
         ))}
-        <a className="matchShellMobileWatch" href="/research/watchlist" aria-label="Радар матчей и исследовательских рынков">РАДАР</a>
+        <a className="matchShellMobileWatch" href="/predictions" aria-label="Главные прогнозы VETO">ПРОГНОЗЫ</a>
         <button
           aria-expanded={moreOpen}
           className={moreOpen || ["history", "research", "system"].includes(activeView) ? "active" : ""}
@@ -183,6 +183,7 @@ export function WorkspaceChrome({
                 </button>
               );
             })}
+            <a href="/predictions" onClick={()=>setMoreOpen(false)}>ПРОГНОЗЫ VETO ↗</a>
             <a href="/research/discovery" onClick={()=>setMoreOpen(false)}>AUTONOMOUS DISCOVERY ↗</a>
             <a href="/research/watchlist" onClick={()=>setMoreOpen(false)}>РАДАР РЕАЛЬНЫХ МАТЧЕЙ ↗</a>
             <a href="/plans" onClick={()=>setMoreOpen(false)}>ПЛАНЫ ДОСТУПА ↗</a>
