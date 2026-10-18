@@ -6,12 +6,14 @@ import { getSportmonksClient } from "@/lib/providers/factory";
 export const ingestLatestFootballState = async () => {
   const client = getSportmonksClient();
   const persistence = getPersistence();
-  const envelope = await client.getLatestUpdatedFixtures();
+  const envelope = await client.getActiveLivescores();
 
   let eventsSeen = 0;
   let eventsPersisted = 0;
   let statesPersisted = 0;
   let journalRows = 0;
+  let verifiedLiveStates=0;
+  let liveWithoutExactClockOrScore=0;
   const finishedEvents: Array<{
     eventId: string;
     providerEventId: string;
@@ -37,14 +39,29 @@ export const ingestLatestFootballState = async () => {
     });
     eventsPersisted += 1;
 
-    const score = client.extractFinalScore(raw);
+    const verifiedLive=event.status==="live"?client.getLiveState(raw):null;
+    const finalScore=event.status==="finished"?client.extractFinalScore(raw):null;
+    // A public regulation clock must never be inferred from wall-clock
+    // time since kickoff; use Sportmonks ticking periods only.
+    const score=verifiedLive?.score??finalScore;
+    if(event.status==="live"){
+      if(verifiedLive)verifiedLiveStates++;
+      else liveWithoutExactClockOrScore++;
+    }
     const state = {
       status: event.status,
       score,
+      ...(verifiedLive?{
+       period:verifiedLive.period,
+       elapsedSeconds:verifiedLive.minute*60,
+       clock:verifiedLive.minute+"′",
+       clockResolution:"MINUTES_NOT_SECONDS",
+       providerSnapshotTimeUnknown:true,
+      }:{}),
       providerEventId: event.id,
       home: event.home,
       away: event.away,
-      source: "sportmonks.fixtures.latest",
+      source: "sportmonks.livescores",
     };
 
     await persistence.appendEventState({
@@ -68,11 +85,11 @@ export const ingestLatestFootballState = async () => {
       }),
     ]);
 
-    if (event.status === "finished" && score) {
+    if (event.status === "finished" && finalScore) {
       finishedEvents.push({
         eventId: persisted.id,
         providerEventId: event.id,
-        finalScore: score,
+        finalScore: finalScore!,
         settledAt: envelope.receivedAt,
       });
     }
@@ -90,6 +107,8 @@ export const ingestLatestFootballState = async () => {
       statesPersisted,
       journalRows,
       finishedEvents: finishedEvents.length,
+      verifiedLiveStates,liveWithoutExactClockOrScore,
+      liveWindow:"SPORTMONKS_LIVESCORES_ALL_NOT_LATEST_10_SECONDS",
     },
   });
 
@@ -101,6 +120,6 @@ export const ingestLatestFootballState = async () => {
     eventsPersisted,
     statesPersisted,
     journalRows,
-    finishedEvents,
+    finishedEvents,verifiedLiveStates,liveWithoutExactClockOrScore,
   };
 };
