@@ -162,7 +162,7 @@ export function PredictionsConsole(){
       "",x.marketKey+" · "+x.selectionKey)}</p>
      <div className="predNumbers"><div><small>ОЦЕНКА МОДЕЛИ</small><strong>{percent(x.modelProbability)}</strong></div>
       <div><small>МОДЕЛЬНЫЙ FAIR KF</small><strong>{number(x.modelFairOdds,2)}</strong></div>
-      <div><small>ЦЕНА БУКМЕКЕРА</small><strong>НЕ ПРОВЕРЕНА</strong></div></div>
+      <div><small>ЦЕНА БУКМЕКЕРА</small><strong className="predShadowUnquoted">НЕ ПРОВЕРЕНА</strong></div></div>
      <div className="predForecastProvenance"><span>Источник: сохранённый матч · {time(x.stateAt)}</span>
       <span>Модель: {x.modelVersion} · {time(x.predictionAt)}</span>
       <span>Статус: исследовательская модель, не EDGE и не исполнимая котировка.</span></div>
