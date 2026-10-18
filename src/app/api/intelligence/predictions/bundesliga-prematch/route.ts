@@ -13,7 +13,7 @@ export async function GET(){
    rows:[],bookmakerProviderCalls:0},{status:503,headers});
  try{
   const store=getPersistence(),H=3600_000;
-  const windows=await Promise.all([0,24,48].map(h=>store.listRecentEvents({
+  const windows=await Promise.all(Array.from({length:10},(_,day)=>day*24).map(h=>store.listRecentEvents({
    from:new Date(now+h*H).toISOString(),
    to:new Date(now+(h+24)*H).toISOString(),
    statuses:["scheduled"],limit:100,
@@ -24,7 +24,7 @@ export async function GET(){
    e.event.competition==="Bundesliga · Germany"&&
    /^[1-9]\d{3,9}$/.test(e.providerRefs?.["openligadb-community"]??"")&&
    Date.parse(e.event.startsAt)>=now+30*60_000&&
-   Date.parse(e.event.startsAt)<now+72*H)
+   Date.parse(e.event.startsAt)<now+10*24*H)
     .map(e=>[e.id,e])).values()].slice(0,30);
   if(!events.length||capped)return NextResponse.json({
    ok:true,source:"PERSISTED_ONLY",asOf,rows:[],
