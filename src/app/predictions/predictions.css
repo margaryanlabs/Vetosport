@@ -123,3 +123,29 @@ html[data-veto-sport-appearance="light"] .predRoot .predReadinessProblem{color:#
 html[data-veto-sport-appearance="light"] .predBenchmarkSection{background:#f9fafc;border-color:#cbd5e5}
 html[data-veto-sport-appearance="light"] .predBenchmarkSection .predForecast{border-color:#cbd5e5}
 html[data-veto-sport-appearance="light"] .predBenchmarkSection .predForecast header>span{color:#385273}
+
+
+/* Independent revalidation of LOCKED market controls vs exact FT truth. */
+.predControlProofSection{border:1px solid #4b404b;border-radius:16px;margin:26px 0 45px;padding:22px;
+ background:linear-gradient(135deg,rgba(130,70,105,.12),#121216 55%,#16151a)}
+.predControlProofBody{display:grid;gap:18px}
+.predControlWarnings{padding:18px 20px;border:1px solid #3b3742;background:#1d1b20;border-radius:11px}
+.predControlWarnings p{font-size:12px;line-height:1.8;color:#bdb5c2;margin:0 0 10px}
+.predControlWarnings p:last-child{margin-bottom:0}
+.predControlWarnings b{color:#e5dae5}
+.predControlRows{display:grid;gap:9px}
+.predControlRows article{display:grid;grid-template-columns:minmax(0,1.7fr) repeat(3,minmax(0,.65fr));
+ gap:18px;align-items:center;border-radius:10px;padding:18px;border:1px solid #37343f;background:#201e24}
+.predControlRows article>div{min-width:0;display:flex;flex-direction:column;gap:7px}
+.predControlRows article strong,.predControlRows article b{font-size:16px;line-height:1.3;color:#f4eef4;overflow-wrap:anywhere}
+.predControlRows article small{font-size:10px;letter-spacing:.05em;color:#ad9caa}
+.predControlRows article span{font-size:11px;color:#aea7b4;line-height:1.5;overflow-wrap:anywhere}
+@media(max-width:1000px){.predControlRows article{grid-template-columns:minmax(0,1.2fr) 1fr;gap:13px}}
+@media(max-width:600px){.predControlProofSection{padding:13px}
+ .predControlRows article{grid-template-columns:1fr 1fr;gap:12px;padding:13px}
+ .predControlRows .predControlMatch{grid-column:1/-1;padding-bottom:8px;border-bottom:1px solid #33313c}
+ .predControlWarnings{padding:14px}}
+html[data-veto-sport-appearance="light"] .predControlProofSection{background:#fff;border-color:#cbd5e2}
+html[data-veto-sport-appearance="light"] .predRoot :is(.predControlWarnings,.predControlRows article){background:#f8fafc;border-color:#dbe0e9}
+html[data-veto-sport-appearance="light"] .predRoot :is(.predControlWarnings b,.predControlRows article strong,.predControlRows article b){color:#253148}
+html[data-veto-sport-appearance="light"] .predRoot :is(.predControlWarnings p,.predControlRows article small,.predControlRows article span){color:#626c7b}
