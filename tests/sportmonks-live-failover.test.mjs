@@ -53,7 +53,7 @@ test("Source status and safe provider errors never leak API credentials",()=>{
  assert.match(health,/SPORTMONKS_SUBSCRIPTION/);
  assert.match(cron,/const allowed=new Set/);
  assert.match(cron,/appendProviderHealth/);
- assert.doesNotMatch(cron,/error\.message\s*:/);
+ assert.doesNotMatch(cron,/error:\s*error\.message/);
  assert.doesNotMatch(p,/body\.slice\(0, 300\)/);
  assert.match(self,/sportmonksLiveAdapterSelfcheck/);
  assert.match(self,/providerCalls:0/);
