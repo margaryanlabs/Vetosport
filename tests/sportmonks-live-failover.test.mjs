@@ -38,7 +38,7 @@ test("Sportmonks shadow lane needs exact provider reference and separate model v
  assert.match(m,/event\.providerRefs\?\.\[state\.sourceProvider\]/);
  assert.match(m,/bookmakerPriceVerified:false/);
  assert.match(m,/decisionWrites:0/);
- assert.match(m,/Sportmonks exact-ID genuine period/score/);
+ assert.match(m,/Sportmonks exact-ID genuine period\/score/);
  assert.match(shadow,/SPORTMONKS_SCORE_MODEL_VERSION/);
  assert.match(shadow,/state\.sourceProvider==="sportmonks-football"/);
  assert.match(shadow,/matching\.providerRefs\?\.\[state\.sourceProvider\]/);
