@@ -119,6 +119,7 @@ export class SportmonksFootballClient {
     const response = await fetch(url, {
       headers: { accept: "application/json" },
       cache: "no-store",
+      signal:AbortSignal.timeout(12_000),
     });
     const receivedAt = new Date();
 
@@ -235,34 +236,12 @@ export class SportmonksFootballClient {
     };
   }
 
-  extractFinalScore(fixture: SportmonksFixture) {
-    const scores = fixture.scores ?? [];
-    const preferred = scores.filter((row) =>
-      ["CURRENT", "FULLTIME", "FULL_TIME"].includes(
-        (row.description ?? "").toUpperCase(),
-      ),
-    );
-    const source = preferred.length > 0 ? preferred : scores;
-
-    const latestBySide = new Map<"home" | "away", number>();
-    for (const row of source) {
-      const side = row.score?.participant;
-      const goals = row.score?.goals;
-      if (
-        (side === "home" || side === "away") &&
-        typeof goals === "number" &&
-        Number.isFinite(goals)
-      ) {
-        latestBySide.set(
-          side,
-          Math.max(latestBySide.get(side) ?? 0, goals),
-        );
-      }
-    }
-
-    const home = latestBySide.get("home");
-    const away = latestBySide.get("away");
-    return home == null || away == null ? null : { home, away };
+  /** The Sportmonks state ID 5 is FT after REGULATION.
+   * Do not manufacture an FT score by taking max(half, extra-time,
+   * penalty) as the old fallback did. */
+  extractFinalScore(fixture:SportmonksFixture):{home:number;away:number}|null{
+    const status=fixture.state?.id??fixture.state_id;
+    return status===5?this.extractVerifiedCurrentScore(fixture):null;
   }
 
   /** Reject aggregated HALF-time / extra-time score instead of guessing
