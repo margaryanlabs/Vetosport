@@ -37,7 +37,7 @@ const contractLabel=(value:string,selection:string)=>{
  if(total)return (total[1]==="OVER"?"Тотал больше ":"Тотал меньше ")+total[2]+".5";
  return selection;
 };
-const isIndependent=(ticket:PaperTicket)=>ticket.modelVersion!=="QUOTE_IMPLIED_CONTROL_V1"&&
+const isIndependent=(ticket:PaperTicket)=>typeof ticket.modelVersion==="string"&&ticket.modelVersion!=="QUOTE_IMPLIED_CONTROL_V1"&&
  ticket.lane!=="PREMATCH_ODDS_CONTROL"&&ticket.modelVersion.trim().length>0&&
  Number.isFinite(ticket.modelProbability)&&ticket.modelProbability>0&&ticket.modelProbability<1&&
  Number.isFinite(ticket.odds)&&ticket.odds>1;
@@ -105,7 +105,7 @@ export function PredictionsConsole(){
  const open=tickets.filter(t=>!t.settlement);
  const settled=tickets.filter(t=>Boolean(t.settlement));
  const shown=tickets.filter(t=>tab==="all"||tab==="open"&&!t.settlement||tab==="settled"&&Boolean(t.settlement)).slice(0,40);
- const radarCases=(radar?.rows??[]).filter(x=>x.status!=="PASS");
+ const radarCases=(radar?.rows??[]).filter(x=>x.status!=="PASS"&&x.scenario==="UNDER_4_5_LATE_1_1");
  const stats=[
   {name:"ПРОГНОЗОВ МОДЕЛИ",value:statuses.paper==="ready"?String(tickets.length):"—",detail:"Записаны заранее, независимая модель"},
   {name:"ОЖИДАЮТ ИСХОДА",value:statuses.paper==="ready"?String(open.length):"—",detail:"Результат пока не подтверждён"},
