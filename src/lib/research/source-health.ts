@@ -108,7 +108,7 @@ export function toSourceHealthView(input:{
   "NO_LIVE_MARKETS_RETURNED","NO_RECENT_VERIFIED_SCORE_FIXTURES",
   "ALL_MARKETS_SUSPENDED",
   "STORAGE_WRITE_FAILURE","API_FOOTBALL_LIVE_ODDS_BAD_BODY",
-  "SPORTMONKS_AUTH","SPORTMONKS_SUBSCRIPTION","SPORTMONKS_QUOTA","SPORTMONKS_UPSTREAM",
+  "SPORTMONKS_NOT_CONFIGURED","SPORTMONKS_AUTH","SPORTMONKS_SUBSCRIPTION","SPORTMONKS_QUOTA","SPORTMONKS_UPSTREAM",
   "UPSTREAM_HTTP_400","UPSTREAM_HTTP_401","UPSTREAM_HTTP_403",
   "UPSTREAM_HTTP_404","UPSTREAM_HTTP_429","UPSTREAM_HTTP_500",
   "UPSTREAM_HTTP_502","UPSTREAM_HTTP_503","UPSTREAM_HTTP_504",
@@ -127,7 +127,9 @@ export function toSourceHealthView(input:{
  const validStages=new Set(["FETCH_EVENTS","FETCH_STATE_HISTORY","FETCH_UPSTREAM","PERSIST_FINALS","WRITE_PROVIDER_HEALTH",
   "LIST_ACTIVE_EVENTS","LOAD_MATCH_SNAPSHOTS","FETCH_INPLAY_ODDS","PERSIST_MARKET_QUOTES"]);
  const lastFailureStage=typeof info.failureStage==="string"&&validStages.has(info.failureStage)?info.failureStage:null;
- const quotaHint=lastRunCode==="SPORTMONKS_AUTH"?
+ const quotaHint=lastRunCode==="SPORTMONKS_NOT_CONFIGURED"?
+   "В production отсутствует SPORTMONKS_API_TOKEN. Добавьте ключ в Vercel → vetosport → Environment Variables → Production. Этот источник не опрашивается, пока ключ не подключён.":
+  lastRunCode==="SPORTMONKS_AUTH"?
    "Спортивный API Sportmonks отклонил токен. Подключение доступно только при действующем ключе.":
   lastRunCode==="SPORTMONKS_SUBSCRIPTION"?
    "Sportmonks не разрешает live-счета на текущем уровне подписки.":
@@ -268,4 +270,46 @@ export function sourceHealthSelfcheck(){
   {name:"Server diagnostics and provider quota never leaked",passed:!json.includes("TOP_SECRET")&&!json.includes("quotaRemaining")&&!json.includes("SHOULD_NOT_EXPOSE")&&!json.includes("private service diagnostics")},
  ];
  return{passed:checks.every(c=>c.passed),checks};
+}
+
+
+/** Runtime configuration is more authoritative than stale persisted samples.
+ * Never include a credential's value (or any other env values) in a public
+ * source summary. This does not make paid provider calls. */
+export function applySafeSportmonksRuntimeConfiguration(
+ view:SourceHealthView,configured:boolean
+):SourceHealthView{
+ if(view.id!=="sportmonks-football"||configured)return view;
+ return {...view,state:"waiting",lastRunCode:"SPORTMONKS_NOT_CONFIGURED",
+  upstreamAttempted:false,
+  receivedRecords:null,scannedRecords:null,
+  note:"В production не подключён SPORTMONKS_API_TOKEN. Для живых матчей нужно добавить действующий Sportmonks API-ключ с доступом к live-счёту в Vercel → vetosport → Environment Variables → Production. Никаких запросов Sportmonks без ключа не выполняется."};
+}
+export function sportmonksConfigurationSelfcheck(){
+ const base:SourceHealthView={id:"sportmonks-football",label:"Sportmonks",
+  state:"active",updatedAt:"2026-10-17T08:00:00Z",ageMinutes:120,
+  receivedRecords:3,scannedRecords:7,pendingFixtureChecks:null,
+  matchedFixtures:null,scannedActiveFixtures:null,nearCaptureScoreFixtures:null,
+  medianScoreCaptureAgeSeconds:null,openProviderQuotes:null,
+  quoteWriteFailures:null,journalWriteFailures:null,quoteWriteErrorClass:null,
+  journalWriteErrorClass:null,targetedFixtureProbeUsed:null,targetedFailureCode:null,
+  lastRunCode:null,lastFailureStage:null,upstreamAttempted:true,
+  recentRuns:[],note:"Prior successful sample"};
+ const disabled=applySafeSportmonksRuntimeConfiguration(base,false);
+ const enabled=applySafeSportmonksRuntimeConfiguration(base,true);
+ const independent=applySafeSportmonksRuntimeConfiguration({...base,id:"api-football"},false);
+ const checks=[
+  {name:"Absent token beats obsolete last known ACTIVE status",passed:disabled.state==="waiting"&&disabled.lastRunCode==="SPORTMONKS_NOT_CONFIGURED"},
+  {name:"No provider request or fabricated sample when token is absent",
+   passed:disabled.upstreamAttempted===false&&disabled.receivedRecords===null},
+  {name:"Runtime no-key status never overwrites historical checkedAt",
+   passed:disabled.updatedAt===base.updatedAt&&disabled.recentRuns===base.recentRuns},
+  {name:"Connected provider retains real observed status",passed:enabled===base},
+  {name:"Unrelated providers are never overridden by Sportmonks config",
+   passed:independent.id==="api-football"&&independent.state==="active"},
+  {name:"Only fixed key NAME is exposed, never secret values",
+   passed:disabled.note.includes("SPORTMONKS_API_TOKEN")&&
+    !JSON.stringify(disabled).includes("sk_live_")},
+ ];
+ return{passed:checks.every(x=>x.passed),checks};
 }
