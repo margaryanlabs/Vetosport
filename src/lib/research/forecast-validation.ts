@@ -282,6 +282,7 @@ export function forecastValidationSelfcheck(){
    passed:(()=>{
     const providerId="a".repeat(32),fixture={...first,
      event:{...first.event,canonicalKey:"football::epl::proof",
+      event:{...first.event.event,competition:"EPL"},
       providerRefs:{"the-odds-api":providerId}},
      states:[first.states[0],{eventId:first.event.id,sourceProvider:"the-odds-api",
       capturedAt:first.ftAt,state:{status:"finished",source:"the-odds-api.scores",
@@ -296,6 +297,7 @@ export function forecastValidationSelfcheck(){
     const id="123456",providerId="a".repeat(32);
     const entry={...first,
      event:{...first.event,canonicalKey:"football::epl::proof",
+      event:{...first.event.event,competition:"EPL"},
       providerRefs:{"sportmonks-football":id,"the-odds-api":providerId}},
      states:[{...first.states[0],sourceProvider:"sportmonks-football",
       state:{...first.states[0].state,source:"sportmonks.livescores",providerEventId:id}},
@@ -315,6 +317,7 @@ export function forecastValidationSelfcheck(){
    passed:(()=>{
     const providerId="a".repeat(32),fixture={...first,
      event:{...first.event,canonicalKey:"football::epl::proof",
+      event:{...first.event.event,competition:"EPL"},
       providerRefs:{"the-odds-api":providerId}},
      states:[...first.states,{eventId:first.event.id,sourceProvider:"the-odds-api",
       capturedAt:first.ftAt,state:{status:"finished",source:"the-odds-api.scores",
