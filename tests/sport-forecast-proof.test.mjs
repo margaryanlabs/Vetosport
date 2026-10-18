@@ -29,7 +29,7 @@ test("Scorecard never claims an uncalibrated winning model from short history",(
  const lib=read("src/lib/research/forecast-validation.ts");
  assert.match(lib,/train\.length>=60&&holdout\.length>=20/);
  assert.match(lib,/const baseline=train\.length/);
- assert.match(lib,/const holdout=chronological\.slice\(split\)/);
+ assert.match(lib,/holdout=chronological\.slice\(split\)/);
  assert.match(lib,/const train=chronological\.slice\(0,split\)/);
  assert.match(lib,/holdoutBaselineBrier/);
  assert.match(lib,/brier/);
