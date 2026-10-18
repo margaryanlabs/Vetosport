@@ -1,0 +1,46 @@
+import {readFileSync} from "node:fs";
+import test from "node:test";
+import assert from "node:assert/strict";
+const source=p=>readFileSync(new URL("../"+p,import.meta.url),"utf8");
+test("The Odds API daily exact scores use existing quota gate for research matches without a paper ticket",()=>{
+ const cron=source("src/app/api/cron/the-odds-scores/route.ts");
+ const selector=source("src/lib/paper/odds-research-final-targets.ts");
+ assert.match(cron,/VETO_ODDS_SCORES_ENABLED/);
+ assert.match(cron,/assessFtScoreBudget/);
+ assert.match(cron,/selectOddsResearchFinalTargets/);
+ assert.match(cron,/researchCandidates\.map\(e=>e\.id\)/);
+ assert.match(cron,/additionalProviderCallsForResearch:0/);
+ assert.match(cron,/eventIds/);
+ assert.match(cron,/candidateGames:safeCandidates\.length/);
+ assert.match(cron,/source:"the-odds-api\.scores"/);
+ assert.match(cron,/appendEventState/);
+ assert.match(cron,/appendTruthJournal/);
+ assert.match(selector,/canonicalKey\.startsWith\("football::epl::"\)/);
+ assert.match(selector,/providerRefs\?\.\["the-odds-api"\]/);
+ assert.match(selector,/owners\.get/);
+ assert.match(selector,/oddsResearchFinalTargetsSelfcheck/);
+ assert.doesNotMatch(selector,/fetch\(|https:\/\/|process\.env/);
+});
+test("Discovery only uses exact provider-id historical FT as actual FT, never a bookmaker score guess",()=>{
+ const discovery=source("src/lib/research/auto-discovery.ts");
+ const proof=source("src/lib/research/forecast-validation.ts");
+ const certificate=source("src/lib/paper/odds-score-certification.ts");
+ assert.match(discovery,/certifyPersistedOddsScore/);
+ assert.match(discovery,/finalScores\.delete\(id\)/);
+ assert.match(discovery,/certifiedRegulationFinal\(row,event\)/);
+ assert.match(proof,/certifyPersistedOddsScore/);
+ assert.match(proof,/oddsFinal/);
+ assert.match(proof,/s\.state\.providerEventId===event\.providerRefs/);
+ assert.match(proof,/VETO_SHADOW_AND_ODDS_API_FT/);
+ assert.match(proof,/Conflicting independent finals fail closed/);
+ assert.match(certificate,/providerRefs\?\.\["the-odds-api"\]/);
+ assert.match(certificate,/r\.state\.regulationTimeOnly===true/);
+});
+test("The Odds API score query is still guarded by 100-credit reserve and 20h repeat protection",()=>{
+ const gate=source("src/lib/paper/ft-quota-gate.ts");
+ const cron=source("src/app/api/cron/the-odds-scores/route.ts");
+ assert.match(gate,/FT_SCORE_MIN_PROVEN_CREDITS=100/);
+ assert.match(gate,/FT_SCORE_REPEAT_COOLDOWN_MS=20\*60\*60_000/);
+ assert.match(gate,/QUOTA_PROOF_EXPIRED/);
+ assert.match(cron,/e\.event\.status!=="finished"/);
+});
