@@ -2,6 +2,7 @@ import type {ProviderHealthSample} from "@/lib/persistence/contracts";
 
 export const sourceDescriptors=[
  {id:"api-football",label:"Игровые состояния",cadenceHours:0.5},
+ {id:"sportmonks-football",label:"Sportmonks · альтернативный live",cadenceHours:0.1},
  {id:"api-football-finals",label:"Окончательные результаты",cadenceHours:4},
  {id:"api-football-live-odds",label:"Рыночные котировки",cadenceHours:2},
  {id:"the-odds-api-scores",label:"EPL FT · независимый источник",cadenceHours:24},
@@ -52,6 +53,8 @@ export function toSourceHealthView(input:{
  const info=latest?.metadata??{};
  // Successful request != usable market data. The sparse 2-hour in-play
  // sampling often reaches an empty upstream response.
+ const noSportmonksScores=descriptor.id==="sportmonks-football"&&
+  latest?.status==="healthy"&&info.verifiedLiveStates===0;
  const noModelSamples=descriptor.id==="veto-shadow-score-only"&&
   latest?.status==="healthy"&&info.predictionsPersisted===0;
  const noMarkets=descriptor.id==="api-football-live-odds"&&
@@ -61,10 +64,10 @@ export function toSourceHealthView(input:{
   info.failureCode==="NO_RECENT_VERIFIED_SCORE_FIXTURES"&&
   info.providerCalled===false;
  const state:ProviderReadiness=ageMinutes===null?"unknown":stale?"stale":
-  noVerifiedFixtures?"waiting":noModelSamples?"waiting":noMarkets?"empty":
+  noVerifiedFixtures?"waiting":noSportmonksScores?"waiting":noModelSamples?"waiting":noMarkets?"empty":
   latest?.status==="healthy"?"active":"degraded";
  // Never forward provider message, errors, metadata, ids or quota; metrics only.
- const stored=asSafeCount(info.predictionsPersisted??info.finishedStored??info.certified??info.stored??info.quotesWritten);
+ const stored=asSafeCount(info.verifiedLiveStates??info.predictionsPersisted??info.finishedStored??info.certified??info.stored??info.quotesWritten);
  const scanned=asSafeCount(info.scannedEvents??info.upstreamFixtures??info.providerRows);
  const pending=descriptor.id==="api-football-finals"
   ?asSafeCount(info.eligibleCandidates??info.candidateCount):null;
@@ -105,6 +108,7 @@ export function toSourceHealthView(input:{
   "NO_LIVE_MARKETS_RETURNED","NO_RECENT_VERIFIED_SCORE_FIXTURES",
   "ALL_MARKETS_SUSPENDED",
   "STORAGE_WRITE_FAILURE","API_FOOTBALL_LIVE_ODDS_BAD_BODY",
+  "SPORTMONKS_AUTH","SPORTMONKS_SUBSCRIPTION","SPORTMONKS_QUOTA","SPORTMONKS_UPSTREAM",
   "UPSTREAM_HTTP_400","UPSTREAM_HTTP_401","UPSTREAM_HTTP_403",
   "UPSTREAM_HTTP_404","UPSTREAM_HTTP_429","UPSTREAM_HTTP_500",
   "UPSTREAM_HTTP_502","UPSTREAM_HTTP_503","UPSTREAM_HTTP_504",
@@ -123,7 +127,15 @@ export function toSourceHealthView(input:{
  const validStages=new Set(["FETCH_EVENTS","FETCH_STATE_HISTORY","FETCH_UPSTREAM","PERSIST_FINALS","WRITE_PROVIDER_HEALTH",
   "LIST_ACTIVE_EVENTS","LOAD_MATCH_SNAPSHOTS","FETCH_INPLAY_ODDS","PERSIST_MARKET_QUOTES"]);
  const lastFailureStage=typeof info.failureStage==="string"&&validStages.has(info.failureStage)?info.failureStage:null;
- const quotaHint=lastRunCode==="UPSTREAM_DAILY_QUOTA"?
+ const quotaHint=lastRunCode==="SPORTMONKS_AUTH"?
+   "Спортивный API Sportmonks отклонил токен. Подключение доступно только при действующем ключе.":
+  lastRunCode==="SPORTMONKS_SUBSCRIPTION"?
+   "Sportmonks не разрешает live-счета на текущем уровне подписки.":
+  lastRunCode==="SPORTMONKS_QUOTA"?
+   "Sportmonks ограничил частоту запросов, нужен пересмотр тарифа или графика.":
+  lastRunCode==="SPORTMONKS_UPSTREAM"?
+   "Sportmonks вернул ошибку. Нет права предполагать наличие live-данных.":
+  lastRunCode==="UPSTREAM_DAILY_QUOTA"?
    "Дневной лимит API исчерпан; новые проверки станут возможны после сброса квоты.":
   lastRunCode==="UPSTREAM_MINUTE_QUOTA"?
    "Достигнуто минутное ограничение запросов; источник должен снизить частоту.":
@@ -149,7 +161,11 @@ export function toSourceHealthView(input:{
    "Достигнут резерв бесплатной квоты; новые цены не записывались.":
   lastRunCode==="STORAGE_WRITE_FAILURE"?
    "Ошибка сохранения проверенной котировки; запись и подтверждение рынков неполные.":null;
- const note=quotaHint??(descriptor.id==="veto-shadow-score-only"&&
+ const note=quotaHint??(descriptor.id==="sportmonks-football"&&state==="waiting"?
+   "Sportmonks доступен, но пока не передал ни одного матча с полным проверенным score/clock.":
+  descriptor.id==="sportmonks-football"&&state==="active"?
+   "Состояния Sportmonks получены с точным ID, текущим счётом и периодом; это не подтверждение силы модели.":
+  descriptor.id==="veto-shadow-score-only"&&
   state==="waiting"?
   "Цикл модели выполняется, но без свежего проверенного score/clock не записал новых прогнозов.":
   descriptor.id==="veto-shadow-score-only"&&state==="active"?
@@ -170,7 +186,7 @@ export function toSourceHealthView(input:{
   if(!Number.isFinite(t)||t>now||t<=0)return[];
   const m=run.metadata??{};
   const recorded=asSafeCount(descriptor.id==="api-football-live-odds"&&m.unsuspendedWritten!==undefined?
-   m.unsuspendedWritten:(m.predictionsPersisted??m.finishedStored??m.certified??m.stored??m.quotesWritten));
+   m.unsuspendedWritten:(m.verifiedLiveStates??m.predictionsPersisted??m.finishedStored??m.certified??m.stored??m.quotesWritten));
   const outcome:SafeSourceRun["outcome"]=m.failureCode==="NO_RECENT_VERIFIED_SCORE_FIXTURES"&&m.providerCalled===false?
     "waiting":run.status!=="healthy"?"degraded":
     descriptor.id==="api-football-live-odds"&&recorded===0?"empty":

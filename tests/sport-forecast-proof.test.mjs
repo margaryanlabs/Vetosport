@@ -7,7 +7,8 @@ test("Model verification uses only recorded shadow forecasts and independently c
  assert.match(lib,/certifyStoredPaperFinal/);
  assert.match(lib,/state.sourceProvider==="api-football"/);
  assert.match(lib,/state.state.status==="live"/);
- assert.match(lib,/validStates.has\(p.capturedAt\)/);
+ assert.match(lib,/validStates.has\(origin/);
+ assert.match(lib,/origin=version===SPORTMONKS_SCORE_MODEL_VERSION/);
  assert.match(lib,/capture>=firstFinal/);
  assert.match(lib,/p\.fairProbability<=0\|\|p\.fairProbability>=1/);
  assert.match(lib,/mode==="SHADOW"/);

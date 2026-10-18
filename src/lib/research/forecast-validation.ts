@@ -11,6 +11,7 @@ import {certifyStoredPaperFinal} from "@/lib/paper/paper-verification";
 import {certifyPersistedOddsScore} from "@/lib/paper/odds-score-certification";
 import {observedFootballState} from "@/lib/research/auto-discovery";
 import {isSelfcheckEvent} from "@/lib/live/persisted-utils";
+import {SPORTMONKS_SCORE_MODEL_VERSION} from "@/lib/live/score-only-shadow";
 
 export type VerifiedForecast={
  id:string;eventId:string;match:string;competition:string;modelVersion:string;
@@ -167,15 +168,24 @@ export function validateForwardShadowForecasts(input:{
    .map(s=>finiteTime(s.capturedAt)).filter(Number.isFinite));
   if(!Number.isFinite(firstFinal))continue;
   const kickoff=finiteTime(event.event.startsAt);
-  const validStates=new Set(states.filter(state=>
-   state.sourceProvider==="api-football"&&state.state.status==="live"&&
-   observedFootballState(state.state)!==null&&
-   finiteTime(state.capturedAt)>=kickoff&&finiteTime(state.capturedAt)<=kickoff+105*60000&&
-   finiteTime(state.capturedAt)<firstFinal)
-   .map(state=>state.capturedAt));
+  // Do not treat a Sportmonks model forecast as observed through the
+  // API-Football feed (nor the reverse). Only real, source-matched live
+  // receipts predating the separately certified FT can be paired.
+  const validStates=new Set(states.filter(state=>{
+   const exactSportmonks=state.sourceProvider==="sportmonks-football"&&
+    state.state.source==="sportmonks.livescores"&&
+    event.providerRefs?.["sportmonks-football"]===String(state.state.providerEventId??"");
+   const apiFootball=state.sourceProvider==="api-football";
+   return (exactSportmonks||apiFootball)&&state.state.status==="live"&&
+    observedFootballState(state.state)!==null&&
+    finiteTime(state.capturedAt)>=kickoff&&finiteTime(state.capturedAt)<=kickoff+105*60000&&
+    finiteTime(state.capturedAt)<firstFinal;
+  }).map(state=>state.sourceProvider+"|"+state.capturedAt));
   const candidates=(predictionsByEvent.get(event.id)??[]).flatMap(p=>{
    const version=shadowVersion(p),capture=finiteTime(p.capturedAt),outcome=fullTimeBinaryOutcome(p,final.score);
-   if(!version||outcome===null||!validStates.has(p.capturedAt)||!Number.isFinite(capture)||
+   const origin=version===SPORTMONKS_SCORE_MODEL_VERSION?
+    "sportmonks-football":"api-football";
+   if(!version||outcome===null||!validStates.has(origin+"|"+p.capturedAt)||!Number.isFinite(capture)||
     capture>=firstFinal||capture>=now||
     !Number.isFinite(p.fairProbability)||p.fairProbability<=0||p.fairProbability>=1)return[];
    return[{p,version,outcome}];
@@ -272,6 +282,7 @@ export function forecastValidationSelfcheck(){
    passed:(()=>{
     const providerId="a".repeat(32),fixture={...first,
      event:{...first.event,canonicalKey:"football::epl::proof",
+      event:{...first.event.event,competition:"EPL"},
       providerRefs:{"the-odds-api":providerId}},
      states:[first.states[0],{eventId:first.event.id,sourceProvider:"the-odds-api",
       capturedAt:first.ftAt,state:{status:"finished",source:"the-odds-api.scores",
@@ -281,10 +292,32 @@ export function forecastValidationSelfcheck(){
     return scored.coverage.verifiedSamples===1&&
       scored.recent[0]?.source==="VETO_SHADOW_AND_ODDS_API_FT";
    })()},
+  {name:"Sportmonks forward model requires its own exact-ID live source, never an API-Football timestamp",
+   passed:(()=>{
+    const id="123456",providerId="a".repeat(32);
+    const entry={...first,
+     event:{...first.event,canonicalKey:"football::epl::proof",
+      event:{...first.event.event,competition:"EPL"},
+      providerRefs:{"sportmonks-football":id,"the-odds-api":providerId}},
+     states:[{...first.states[0],sourceProvider:"sportmonks-football",
+      state:{...first.states[0].state,source:"sportmonks.livescores",providerEventId:id}},
+      {eventId:first.event.id,sourceProvider:"the-odds-api",capturedAt:first.ftAt,
+       state:{status:"finished",source:"the-odds-api.scores",
+        providerEventId:providerId,regulationTimeOnly:true,score:{home:2,away:1}}}
+     ] as PersistedEventStateRecord[],
+     pred:{...first.pred,modelSignals:[{mode:"SHADOW",version:SPORTMONKS_SCORE_MODEL_VERSION}]}
+    };
+    const proved=run([entry]);
+    const replaced=run([{...entry,states:[{...first.states[0],
+      state:{...first.states[0].state,source:"api-football.fixtures.live"}},
+      entry.states[1]]}]);
+    return proved.coverage.verifiedSamples===1&&replaced.coverage.verifiedSamples===0;
+   })()},
   {name:"Conflicting independent finals fail closed, no model score published",
    passed:(()=>{
     const providerId="a".repeat(32),fixture={...first,
      event:{...first.event,canonicalKey:"football::epl::proof",
+      event:{...first.event.event,competition:"EPL"},
       providerRefs:{"the-odds-api":providerId}},
      states:[...first.states,{eventId:first.event.id,sourceProvider:"the-odds-api",
       capturedAt:first.ftAt,state:{status:"finished",source:"the-odds-api.scores",

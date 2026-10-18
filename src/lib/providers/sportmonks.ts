@@ -28,7 +28,13 @@ type SportmonksScore = {
   };
 };
 
+type SportmonksPeriod={
+  id?:number;fixture_id?:number;started?:number;ended?:number|null;
+  counts_from?:number;sort_order?:number;ticking?:boolean;
+  minutes?:number;seconds?:number;has_timer?:boolean;
+};
 type SportmonksFixture = {
+  periods?:SportmonksPeriod[];
   id: number;
   league_id?: number;
   state_id?: number;
@@ -113,12 +119,17 @@ export class SportmonksFootballClient {
     const response = await fetch(url, {
       headers: { accept: "application/json" },
       cache: "no-store",
+      signal:AbortSignal.timeout(12_000),
     });
     const receivedAt = new Date();
 
     if (!response.ok) {
-      const body = await response.text();
-      throw new Error(`Sportmonks ${response.status}: ${body.slice(0, 300)}`);
+      // Never echo provider response or query-token in user-facing errors.
+      // Provider restrictions are meaningful to the operator but may contain
+      // account identifiers or API tokens.
+      throw new Error(response.status===401?"SPORTMONKS_AUTH":
+       response.status===403?"SPORTMONKS_SUBSCRIPTION":
+       response.status===429?"SPORTMONKS_QUOTA":"SPORTMONKS_UPSTREAM");
     }
 
     return {
@@ -181,6 +192,15 @@ export class SportmonksFootballClient {
     };
   }
 
+  /** Every 5-minute cron must poll the FULL live-score window.
+   * /fixtures/latest and /livescores/latest ONLY return a 10-second update
+   * window; sampling those every 5 minutes misses most actual games.
+   * /livescores retains in-play games and 15 minutes of completed fixtures. */
+  getActiveLivescores(){
+    return this.request<Paged<SportmonksFixture>>(
+      "/livescores",{include:"participants;state;scores;periods"},
+    );
+  }
   getLatestUpdatedFixtures() {
     return this.request<Paged<SportmonksFixture>>(
       "/fixtures/latest",
@@ -216,34 +236,57 @@ export class SportmonksFootballClient {
     };
   }
 
-  extractFinalScore(fixture: SportmonksFixture) {
-    const scores = fixture.scores ?? [];
-    const preferred = scores.filter((row) =>
-      ["CURRENT", "FULLTIME", "FULL_TIME"].includes(
-        (row.description ?? "").toUpperCase(),
-      ),
-    );
-    const source = preferred.length > 0 ? preferred : scores;
+  /** The Sportmonks state ID 5 is FT after REGULATION.
+   * Do not manufacture an FT score by taking max(half, extra-time,
+   * penalty) as the old fallback did. */
+  extractFinalScore(fixture:SportmonksFixture):{home:number;away:number}|null{
+    const status=fixture.state?.id??fixture.state_id;
+    return status===5?this.extractVerifiedCurrentScore(fixture):null;
+  }
 
-    const latestBySide = new Map<"home" | "away", number>();
-    for (const row of source) {
-      const side = row.score?.participant;
-      const goals = row.score?.goals;
-      if (
-        (side === "home" || side === "away") &&
-        typeof goals === "number" &&
-        Number.isFinite(goals)
-      ) {
-        latestBySide.set(
-          side,
-          Math.max(latestBySide.get(side) ?? 0, goals),
-        );
-      }
-    }
-
-    const home = latestBySide.get("home");
-    const away = latestBySide.get("away");
-    return home == null || away == null ? null : { home, away };
+  /** Reject aggregated HALF-time / extra-time score instead of guessing
+   * CURRENT = full score. The score side is checked against the same two
+   * fixture-specific participants; duplicates fail closed. */
+  extractVerifiedCurrentScore(raw:SportmonksFixture):{home:number;away:number}|null{
+    const home=raw.participants?.filter(p=>p.meta?.location==="home")??[];
+    const away=raw.participants?.filter(p=>p.meta?.location==="away")??[];
+    if(home.length!==1||away.length!==1||home[0].id===away[0].id)return null;
+    const list=(raw.scores??[]).filter(s=>s.fixture_id===raw.id&&
+      s.description?.toUpperCase()==="CURRENT");
+    const h=list.filter(s=>s.score?.participant==="home"&&s.participant_id===home[0].id);
+    const a=list.filter(s=>s.score?.participant==="away"&&s.participant_id===away[0].id);
+    if(h.length!==1||a.length!==1||list.length!==2)return null;
+    const goals=[h[0].score?.goals,a[0].score?.goals];
+    if(!goals.every(v=>Number.isInteger(v)&&typeof v==="number"&&v>=0&&v<=12))
+      return null;
+    return {home:goals[0] as number,away:goals[1] as number};
+  }
+  /** Official Sportmonks period counters are cumulative minutes. For model
+   * inference demand a ticking regular period, not fixture kickoff elapsed
+   * wall-clock, a break, injury time, or extra-time phase. */
+  extractVerifiedLiveClock(raw:SportmonksFixture):
+   {period:"1H"|"2H";minute:number}|null{
+    const code=raw.state?.id??raw.state_id;
+    const expected=code===2?{period:"1H" as const,order:1,from:0}:
+      code===6?{period:"2H" as const,order:2,from:45}:null;
+    if(!expected)return null;
+    const active=(raw.periods??[]).filter(p=>p.ticking===true&&
+      p.fixture_id===raw.id&&p.sort_order===expected.order&&
+      p.counts_from===expected.from);
+    if(active.length!==1)return null;
+    const {minutes,seconds}=active[0];
+    if(!Number.isInteger(minutes)||minutes===undefined||minutes<0||minutes>89||
+      expected.period==="1H"&&minutes>=45||
+      expected.period==="2H"&&minutes<45||
+      seconds!==undefined&&(!Number.isInteger(seconds)||seconds<0||seconds>59))
+      return null;
+    return{period:expected.period,minute:minutes};
+  }
+  getLiveState(raw:SportmonksFixture):{score:{home:number;away:number};
+   period:"1H"|"2H";minute:number}|null{
+    const score=this.extractVerifiedCurrentScore(raw);
+    const clock=this.extractVerifiedLiveClock(raw);
+    return score&&clock?{score,...clock}:null;
   }
 
   normalizeInplayOdds(rows: SportmonksInplayOdd[]): MarketQuote[] {
@@ -294,4 +337,59 @@ export class SportmonksFootballClient {
       }];
     });
   }
+}
+
+
+/** No network. Exact fixture score/period/provenance contract. */
+export function sportmonksLiveAdapterSelfcheck(){
+ const client=new SportmonksFootballClient({apiToken:"selfcheck-never-used"});
+ const raw:SportmonksFixture={
+  id:420,league_id:8,state_id:6,name:"Home vs Away",
+  starting_at:"2026-10-18 15:00:00",
+  participants:[
+   {id:10,name:"Home",meta:{location:"home"}},
+   {id:11,name:"Away",meta:{location:"away"}},
+  ],
+  scores:[
+   {id:1,fixture_id:420,type_id:1,participant_id:10,description:"CURRENT",
+    score:{goals:2,participant:"home"}},
+   {id:2,fixture_id:420,type_id:1,participant_id:11,description:"CURRENT",
+    score:{goals:1,participant:"away"}},
+   {id:3,fixture_id:420,type_id:2,participant_id:10,description:"1ST_HALF",
+    score:{goals:1,participant:"home"}},
+  ],
+  periods:[{id:4,fixture_id:420,sort_order:2,counts_from:45,ticking:true,
+   minutes:62,seconds:20}],
+ };
+ const state=client.getLiveState(raw);
+ const mutate=(field:Partial<SportmonksFixture>)=>client.getLiveState({...raw,...field});
+ const checks=[
+  {name:"Full current score and ticking second-half clock accepted",
+   passed:state?.score.home===2&&state.score.away===1&&
+    state.minute===62&&state.period==="2H"},
+  {name:"No current score, half-time segment alone never fabricates game score",
+   passed:mutate({scores:raw.scores?.filter(s=>s.description!=="CURRENT")})===null},
+  {name:"Wrong provider fixture-ID score cannot be joined",
+   passed:mutate({scores:raw.scores?.map(s=>({...s,fixture_id:999}))})===null},
+  {name:"Duplicate home CURRENT score fails closed",
+   passed:mutate({scores:[...raw.scores!,raw.scores![0]]})===null},
+  {name:"Ticking period missing cannot create a source-only model clock",
+   passed:mutate({periods:[]})===null},
+  {name:"Half-time state without live ticking clock is excluded",
+   passed:mutate({state_id:3})===null},
+  {name:"Extratime is excluded from a 90-minute model",
+   passed:mutate({state_id:9})===null},
+  {name:"Future/invalid minute does not become an in-play feature",
+   passed:mutate({periods:[{...raw.periods![0],minutes:90}]})===null},
+  {name:"Only explicit full-time state with CURRENT exact score can settle",
+   passed:client.extractFinalScore({...raw,state_id:5})?.home===2&&
+    client.extractFinalScore({...raw,state_id:8})===null},
+  {name:"No aggregate max-of-period fallback for full-time score",
+   passed:client.extractFinalScore({...raw,state_id:5,
+    scores:raw.scores?.filter(s=>s.description!=="CURRENT")})===null},
+  {name:"Source request method covers entire live window",
+   passed:client.getActiveLivescores.toString().includes("/livescores")&&
+    !client.getActiveLivescores.toString().includes("/latest")},
+ ];
+ return {passed:checks.every(c=>c.passed),checks};
 }

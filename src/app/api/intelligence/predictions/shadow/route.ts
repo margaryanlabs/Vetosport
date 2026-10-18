@@ -1,7 +1,7 @@
 import {NextResponse} from "next/server";
 import {getPersistence,persistenceConfiguration} from "@/lib/persistence/factory";
 import {isSelfcheckEvent} from "@/lib/live/persisted-utils";
-import {SCORE_ONLY_MODEL_VERSION} from "@/lib/live/score-only-shadow";
+import {SCORE_ONLY_MODEL_VERSION,SPORTMONKS_SCORE_MODEL_VERSION} from "@/lib/live/score-only-shadow";
 import type {PersistedEventStateRecord,PersistedPredictionSnapshotRecord} from "@/lib/persistence/contracts";
 
 export const dynamic="force-dynamic";
@@ -39,7 +39,13 @@ export async function GET(){
   const recentStates=new Map<string,PersistedEventStateRecord>();
   for(const state of states){
    const at=Date.parse(state.capturedAt);
-   if(state.sourceProvider!=="api-football"||state.state.status!=="live"||
+   const exactSource=state.sourceProvider==="api-football"?
+    state.state.source==="api-football.fixtures.live":
+    state.sourceProvider==="sportmonks-football"?
+    state.state.source==="sportmonks.livescores":false;
+   const matching=events.find(e=>e.id===state.eventId);
+   if(!matching||!exactSource||state.state.status!=="live"||
+    matching.providerRefs?.[state.sourceProvider]!==String(state.state.providerEventId??"")||
     !Number.isFinite(at)||at>now||now-at>MAX_SNAPSHOT_AGE_MS)continue;
    const earlier=recentStates.get(state.eventId);
    if(!earlier||Date.parse(earlier.capturedAt)<at)recentStates.set(state.eventId,state);
@@ -88,9 +94,11 @@ export async function GET(){
     marketKey:p.marketKey,selectionKey:p.selectionKey,
     modelProbability:p.fairProbability,modelFairOdds:p.fairOdds,
     modelVersion:model?.version??"SHADOW",
-    modelBasis:model?.version===SCORE_ONLY_MODEL_VERSION?
+    modelBasis:model?.version===SCORE_ONLY_MODEL_VERSION||
+     model?.version===SPORTMONKS_SCORE_MODEL_VERSION?
      "FIXED_UNCALIBRATED_GOAL_PRIORS":"SOURCE_ALIGNED_QUOTE_RESEARCH",
-    bookmakerQuoteRequired:model?.version!==SCORE_ONLY_MODEL_VERSION,
+    bookmakerQuoteRequired:model?.version!==SCORE_ONLY_MODEL_VERSION&&
+     model?.version!==SPORTMONKS_SCORE_MODEL_VERSION,
     independentCalibrationVerified:false,
     predictionAt:p.capturedAt,stateAt:state.capturedAt,
     kickoffAt:event.event.startsAt,
