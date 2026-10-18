@@ -22,6 +22,56 @@ export interface ApiFootballLiveSnapshot {
 export const apiFootballAvailable = () => Boolean(process.env.API_FOOTBALL_KEY);
 export const apiFootballSchedule = {perDay:48,reserve:20,estimatedMaximum:68} as const;
 
+/** Public allowlisted failure diagnostics. Never expose provider error text:
+ * upstream responses may contain credentials/account-specific information. */
+export type ApiFootballLiveFailureCode="UPSTREAM_SUBSCRIPTION"|"UPSTREAM_DAILY_QUOTA"|
+ "UPSTREAM_MINUTE_QUOTA"|"UPSTREAM_AUTH"|"UPSTREAM_INVALID_PARAMETERS"|
+ "UPSTREAM_TIMEOUT"|"UPSTREAM_UNCLASSIFIED"|"MALFORMED_PROVIDER_PAYLOAD";
+export function classifyApiFootballLiveFailure(input:{
+ status?:number;errors?:unknown;cause?:unknown;
+}):ApiFootballLiveFailureCode{
+ const status=input.status;
+ // Inspect provider errors in-process, never return their actual wording.
+ const errors=typeof input.errors==="string"?input.errors:
+  input.errors===undefined?"":JSON.stringify(input.errors);
+ const detail=errors.slice(0,1200).toLowerCase();
+ if(/plan|subscription|free.*access|upgrade|season.*not.*available|access.*season/.test(detail))
+  return"UPSTREAM_SUBSCRIPTION";
+ if(/daily|day.*limit|per.day|requests.*day|rate.*day/.test(detail))
+  return"UPSTREAM_DAILY_QUOTA";
+ if(/minute|second.*limit|too many requests|rate.limit/.test(detail))
+  return"UPSTREAM_MINUTE_QUOTA";
+ if(status===429)return"UPSTREAM_MINUTE_QUOTA";
+ if(status===401||/invalid.*key|missing.*key|unauthorized|authentication|api.key/.test(detail))
+  return"UPSTREAM_AUTH";
+ if(status===403)return"UPSTREAM_SUBSCRIPTION";
+ if(status===400||/invalid.*parameter|parameter.*invalid/.test(detail))
+  return"UPSTREAM_INVALID_PARAMETERS";
+ if(input.cause instanceof Error&&
+  /timeout|abort|timed out|deadline/i.test(input.cause.name+" "+input.cause.message))
+  return"UPSTREAM_TIMEOUT";
+ return"UPSTREAM_UNCLASSIFIED";
+}
+export function apiFootballLiveFailureSelfcheck(){
+ const sample=(errors:unknown,status=200)=>
+  classifyApiFootballLiveFailure({errors,status});
+ const checks=[
+  {name:"Provider Free-plan season restriction identified but raw text not surfaced",
+   pass:sample({plan:"Free plan does not have access to this season"})==="UPSTREAM_SUBSCRIPTION"},
+  {name:"Daily quota known separately from pricing issue",
+   pass:sample({requests:"Daily request limit reached"})==="UPSTREAM_DAILY_QUOTA"},
+  {name:"Minute limit classified independently",
+   pass:sample({requests:"Too many requests per minute"},429)==="UPSTREAM_MINUTE_QUOTA"},
+  {name:"Auth failures distinguished from subscription",
+   pass:sample({token:"Invalid API key"},401)==="UPSTREAM_AUTH"},
+  {name:"Unrecognized provider message never leaks as arbitrary public error",
+   pass:sample({message:"private payment account 12345"})==="UPSTREAM_UNCLASSIFIED"},
+  {name:"Timeout gets safe diagnostic code",
+   pass:classifyApiFootballLiveFailure({cause:new Error("Request timeout")})==="UPSTREAM_TIMEOUT"},
+ ];
+ return{passed:checks.every(x=>x.pass),checks};
+}
+
 // API-Football (api-sports.io): 100 requests/day on FREE. No browser calls.
 // Only the protected 30-minute cron may invoke this client. Never log credentials.
 export async function getApiFootballLiveFixtures():Promise<ApiFootballLiveSnapshot>{
@@ -36,15 +86,22 @@ export async function getApiFootballLiveFixtures():Promise<ApiFootballLiveSnapsh
   const limitHeader=response.headers.get("x-ratelimit-requests-limit");
   const quotaRemaining=remainingHeader===null?null:Number(remainingHeader);
   const quotaLimit=limitHeader===null?null:Number(limitHeader);
-  if(!response.ok)throw new Error(`API-Football HTTP ${response.status}; no state written.`);
+  if(!response.ok){
+    // Failed status may still include documented provider error codes. The
+    // response body is NOT logged or returned, only a sanitized category.
+    let failureBody:unknown;
+    try{failureBody=await response.json();}catch{failureBody=null;}
+    throw new Error(classifyApiFootballLiveFailure({status:response.status,
+      errors:failureBody}));
+  }
   const payload:unknown=await response.json();
-  if(!payload||typeof payload!=="object"||Array.isArray(payload))throw new Error("API-Football payload malformed.");
+  if(!payload||typeof payload!=="object"||Array.isArray(payload))throw new Error("MALFORMED_PROVIDER_PAYLOAD");
   const data=payload as {response?:unknown;errors?:unknown;results?:number};
   const errors=data.errors;
   if(Array.isArray(errors)?errors.length>0:errors&&typeof errors==="object"&&Object.keys(errors).length>0){
-    throw new Error("API-Football reported API-level errors; no data written.");
+    throw new Error(classifyApiFootballLiveFailure({status:response.status,errors}));
   }
-  if(!Array.isArray(data.response))throw new Error("API-Football response array absent.");
+  if(!Array.isArray(data.response))throw new Error("MALFORMED_PROVIDER_PAYLOAD");
   return{
     fetchedAt:new Date().toISOString(),
     quotaRemaining:quotaRemaining!==null&&Number.isFinite(quotaRemaining)?quotaRemaining:null,
