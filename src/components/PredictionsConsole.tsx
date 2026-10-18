@@ -21,6 +21,9 @@ type RadarRow={id:string;status:"PAPER"|"WATCH"|"PASS";scenario:string;
  evidence:{freshScore:boolean;verifiedQuote:boolean;independentProbability:false;executionVerified:false};
  reasons:string[];quote?:{decimalOdds:number;capturedAt:string}};
 type RadarResponse={generatedAt:string;source:string;rows:RadarRow[]};
+type ShadowRow={id:string;eventId:string;competition:string;match:string;marketKey:string;selectionKey:string;
+ modelProbability:number;modelFairOdds:number;modelVersion:string;predictionAt:string;stateAt:string;stage:"UNVALIDATED_SHADOW_FORECAST"};
+type ShadowResponse={ok:boolean;source:string;asOf:string;rows:ShadowRow[];decisionAuthority:false};
 type Status="loading"|"ready"|"error";
 type PredictionTab="all"|"open"|"settled";
 const number=(n:number,digits=1)=>new Intl.NumberFormat("ru-RU",{maximumFractionDigits:digits,minimumFractionDigits:digits}).format(n);
@@ -48,7 +51,8 @@ export function PredictionsConsole(){
  const [paper,setPaper]=useState<PaperResponse|null>(null);
  const [discovery,setDiscovery]=useState<DiscoveryResponse|null>(null);
  const [radar,setRadar]=useState<RadarResponse|null>(null);
- const [statuses,setStatuses]=useState<Record<string,Status>>({paper:"loading",discovery:"loading",radar:"loading"});
+ const [shadow,setShadow]=useState<ShadowResponse|null>(null);
+ const [statuses,setStatuses]=useState<Record<string,Status>>({paper:"loading",discovery:"loading",radar:"loading",shadow:"loading"});
  const [tab,setTab]=useState<PredictionTab>("all");
  const [cycle,setCycle]=useState(0);
  const [now,setNow]=useState(0);
@@ -66,6 +70,7 @@ export function PredictionsConsole(){
    {key:"paper",url:"/api/intelligence/paper-journal/daily"},
    {key:"discovery",url:"/api/intelligence/research/discovery"},
    {key:"radar",url:"/api/intelligence/research/opportunity-radar"},
+   {key:"shadow",url:"/api/intelligence/predictions/shadow"},
   ] as const;
   const update=(key:string,status:Status)=>{if(alive)setStatuses(old=>({...old,[key]:status}));};
   sources.forEach(({key,url})=>{
@@ -82,7 +87,11 @@ export function PredictionsConsole(){
       const item=value as DiscoveryResponse;
       if(item.source!=="PERSISTED_ONLY"||!Array.isArray(item.patterns))throw Error("DISCOVERY_INVALID");
       setDiscovery(item);
-     }else{
+     }else if(key==="shadow"){
+      const item=value as ShadowResponse;
+      if(item.ok!==true||item.source!=="PERSISTED_ONLY"||!Array.isArray(item.rows)||item.decisionAuthority!==false)throw Error("SHADOW_INVALID");
+      setShadow(item);
+    }else{
       const item=value as RadarResponse;
       if(item.source!=="PERSISTED_ONLY"||!Array.isArray(item.rows))throw Error("RADAR_INVALID");
       setRadar(item);
@@ -93,6 +102,7 @@ export function PredictionsConsole(){
      if(key==="paper")setPaper(null);
      if(key==="discovery")setDiscovery(null);
      if(key==="radar")setRadar(null);
+     if(key==="shadow")setShadow(null);
      update(key,"error");
     });
   });
@@ -107,6 +117,7 @@ export function PredictionsConsole(){
  const shown=tickets.filter(t=>tab==="all"||tab==="open"&&!t.settlement||tab==="settled"&&Boolean(t.settlement)).slice(0,40);
  const radarCases=(radar?.rows??[]).filter(x=>x.status!=="PASS"&&x.scenario==="UNDER_4_5_LATE_1_1");
  const stats=[
+  {name:"СВЕЖИХ МОДЕЛЬНЫХ ОЦЕНОК",value:statuses.shadow==="ready"?String(shadow?.rows.length??0):"—",detail:"Shadow-модель на реальных событиях"},
   {name:"ПРОГНОЗОВ МОДЕЛИ",value:statuses.paper==="ready"?String(tickets.length):"—",detail:"Записаны заранее, независимая модель"},
   {name:"ОЖИДАЮТ ИСХОДА",value:statuses.paper==="ready"?String(open.length):"—",detail:"Результат пока не подтверждён"},
   {name:"ПРОВЕРЕНЫ ПО FT",value:statuses.paper==="ready"?String(settled.length):"—",detail:"Отдельное доказательство финального счёта"},
@@ -123,7 +134,7 @@ export function PredictionsConsole(){
    <p>Здесь — не список популярных ставок и не подборка высоких коэффициентов.
     Только заранее зафиксированные прогнозы моделей VETO на реальные события,
     наблюдаемые ситуации и исследуемые закономерности. Каждый вывод можно проверить после матча.</p>
-   <div className="predHeroActions"><a href="#predList">Прогнозы VETO ↓</a><a href="#predHypotheses">Гипотезы ↓</a><a href="#predRadar">Аномалии и радар ↓</a></div>
+   <div className="predHeroActions"><a href="#predNow">Прогнозы VETO ↓</a><a href="#predHypotheses">Гипотезы ↓</a><a href="#predRadar">Аномалии и радар ↓</a></div>
   </section>
   <section className="predStats" aria-label="Состояние исследований">
    {stats.map(s=><article key={s.name}><span>{s.name}</span><strong>{s.value}</strong><small>{s.detail}</small></article>)}
@@ -133,8 +144,34 @@ export function PredictionsConsole(){
     Независимые модели пока проходят бумажную проверку. Контрольные цены букмекера не называем прогнозами VETO.</p></div>
    <button type="button" onClick={refresh}>Обновить из источников ↻</button>
   </div>
+  <section className="predSection" id="predNow">
+   <div className="predSectionHead"><div><span>01 / REAL-TIME MODEL SURFACE</span><h2>Оперативные оценки VETO</h2>
+    <p>Реальные матчи, реальные сохранённые входные данные, предварительные вероятности модели.
+       Без подтверждённого коэффициента букмекера и проверки калибровки это ещё не рекомендация ставить.</p></div></div>
+   {statuses.shadow!=="ready"?<div className="predEmpty" role="status">
+    {statuses.shadow==="error"?"Сохранённые прогнозы shadow-модели недоступны.":"Проверяем последние расчёты модели…"}</div>:
+    (shadow?.rows.length??0)===0?<div className="predEmpty"><b>В актуальном окне нет свежих прогнозов shadow-модели.</b>
+     <p>Алгоритм не должен изображать активный прогноз, когда матч, расчёт или состояние источника устарели.
+        Проверить, почему модель ничего не выпустила, можно в состоянии данных и журнале исследований.</p>
+     <Link href="/research/discovery">Диагностика исследований ↗</Link></div>:
+    <div className="predForecastGrid">{shadow!.rows.slice(0,14).map(x=><article className="predForecast" key={x.id}>
+     <header><span>REAL MATCH / SHADOW MODEL</span><b className="pending">НЕЗАВИСИМАЯ ПРОВЕРКА ВПЕРЕДИ</b></header>
+     <small>{x.competition} · расчёт {time(x.predictionAt)}</small>
+     <h3>{x.match}</h3><p className="predOutcome">{contractLabel(x.marketKey==="football.1x2"?
+      x.selectionKey==="home"?"FT_HOME":x.selectionKey==="away"?"FT_AWAY":"FT_DRAW":
+      "",x.marketKey+" · "+x.selectionKey)}</p>
+     <div className="predNumbers"><div><small>ОЦЕНКА МОДЕЛИ</small><strong>{percent(x.modelProbability)}</strong></div>
+      <div><small>МОДЕЛЬНЫЙ FAIR KF</small><strong>{number(x.modelFairOdds,2)}</strong></div>
+      <div><small>ЦЕНА БУКМЕКЕРА</small><strong>НЕ ПРОВЕРЕНА</strong></div></div>
+     <div className="predForecastProvenance"><span>Источник: сохранённый матч · {time(x.stateAt)}</span>
+      <span>Модель: {x.modelVersion} · {time(x.predictionAt)}</span>
+      <span>Статус: исследовательская модель, не EDGE и не исполнимая котировка.</span></div>
+     <footer><small>Одиночная некалиброванная модель. Нельзя выводить прибыльность без независимой цены и результата.</small>
+      <Link href={"/?view=check&event="+encodeURIComponent(x.eventId)}>Разобрать ↗</Link></footer>
+    </article>)}</div>}
+  </section>
   <section className="predSection" id="predList">
-   <div className="predSectionHead"><div><span>01 / FORWARD MODEL FORECASTS</span><h2>Главные прогнозы VETO</h2>
+   <div className="predSectionHead"><div><span>02 / FORWARD PAPER LEDGER</span><h2>Главные прогнозы VETO</h2>
     <p>Конкретный матч → исход → вероятность модели → цена из источника → проверка результата.</p></div>
     <div className="predTabRow" role="group" aria-label="Фильтр прогнозов">
      {([{id:"all",label:"Все"},{id:"open",label:"Ожидают FT"},{id:"settled",label:"Проверены"}] as const).map(x=>
@@ -173,7 +210,7 @@ export function PredictionsConsole(){
   </section>
   <div className="predLower">
    <section className="predSection" id="predHypotheses">
-    <div className="predSectionHead"><div><span>02 / PATTERN DISCOVERY</span><h2>Найденные гипотезы</h2>
+    <div className="predSectionHead"><div><span>03 / PATTERN DISCOVERY</span><h2>Найденные гипотезы</h2>
      <p>VETO ищет статистические закономерности. Без подтверждённых рыночных цен это ещё не готовый прогноз.</p></div></div>
     {statuses.discovery!=="ready"?<div className="predEmpty">{statuses.discovery==="error"?"Исторические наблюдения недоступны.":"Проверяем исследовательский архив…"}</div>:
      (discovery?.patterns.length??0)===0?<div className="predEmpty">Сохранённых гипотез за доступное окно пока нет.</div>:
@@ -187,7 +224,7 @@ export function PredictionsConsole(){
     <Link className="predLink" href="/research/discovery">Вся лаборатория закономерностей ↗</Link>
    </section>
    <section className="predSection" id="predRadar">
-    <div className="predSectionHead"><div><span>03 / SITUATION SCANNER</span><h2>Необычные ситуации</h2>
+    <div className="predSectionHead"><div><span>04 / SITUATION SCANNER</span><h2>Необычные ситуации</h2>
      <p>Матчи с наблюдаемыми условиями для исследования. Радар не считает их аномалиями с доказанным преимуществом.</p></div></div>
     {statuses.radar!=="ready"?<div className="predEmpty">{statuses.radar==="error"?"Радар временно недоступен.":"Читаем последние сохранённые события…"}</div>:
      radarCases.length===0?<div className="predEmpty">Сейчас нет свежих ситуаций, достаточных даже для исследовательского наблюдения.</div>:
