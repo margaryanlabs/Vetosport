@@ -30,7 +30,9 @@ test("Real model forecast pipeline needs persisted state and verified model prov
  const route=read("src/app/api/intelligence/predictions/shadow/route.ts");
  assert.match(route,/getPersistence/);
  assert.match(route,/at!==Date.parse\(state.capturedAt\)/);
- assert.match(route,/sourceProvider!=="api-football"/);
+ assert.match(route,/state.sourceProvider==="api-football"/);
+ assert.match(route,/state.sourceProvider==="sportmonks-football"/);
+ assert.match(route,/matching.providerRefs\?\.\[state.sourceProvider\]/);
  assert.match(route,/signal.mode==="SHADOW"/);
  assert.match(route,/decisionAuthority:false/);
  assert.doesNotMatch(route,/sandboxEventSummaries|Math\.random|api-sports\.io|the-odds-api\.com/);
