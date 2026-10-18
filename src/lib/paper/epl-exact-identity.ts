@@ -9,8 +9,8 @@ export function isExactEplFixture(event:PersistedEvent):boolean{
  const id=event.providerRefs?.["the-odds-api"];
  if(typeof id!=="string"||!/^[a-f0-9]{32}$/i.test(id))return false;
  const competition=event.event.competition.trim().toLowerCase().replace(/\s+/g," ");
- return event.canonicalKey.startsWith("football::epl::")&&
-  ["epl","premier league","english premier league"].includes(competition)||
+ return (event.canonicalKey.startsWith("football::epl::")&&
+  ["epl","premier league","english premier league"].includes(competition))||
   (event.canonicalKey.startsWith("football::premier-league-england::")&&
    (competition==="premier league · england"||
     competition==="premier league - england"));
