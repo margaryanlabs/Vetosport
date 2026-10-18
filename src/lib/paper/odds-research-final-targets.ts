@@ -1,5 +1,6 @@
 import type {PersistedEvent} from "@/lib/persistence/contracts";
 import {isSelfcheckEvent} from "@/lib/live/persisted-utils";
+import {isExactEplFixture} from "@/lib/paper/epl-exact-identity";
 
 /** Research-only EPL FT target selection for an already scheduled, quota-gated
  * The Odds API scores call. Selection relies on EXACT provider event IDs.
@@ -14,8 +15,7 @@ export function selectOddsResearchFinalTargets(input:{
   return e.event.sport==="football"&&!isSelfcheckEvent(e)&&
    e.event.status!=="finished"&&
    (e.event.status==="scheduled"||e.event.status==="live")&&
-   e.canonicalKey.startsWith("football::epl::")&&
-   /^[a-f0-9]{32}$/i.test(e.providerRefs?.["the-odds-api"]??"")&&
+   isExactEplFixture(e)&&
    Number.isFinite(start)&&now-start>=100*60_000&&now-start<=3*86400_000&&
    !!e.event.home?.name&&!!e.event.away?.name&&
    e.event.home.name.trim().toLowerCase()!==e.event.away.name.trim().toLowerCase();
