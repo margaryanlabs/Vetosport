@@ -165,3 +165,17 @@ html[data-veto-sport-appearance="light"] .predRoot :is(.predControlWarnings p,.p
 html[data-veto-sport-appearance="light"] .predBundesligaSection{background:#f7fbf8;border-color:#acc8b6}
 html[data-veto-sport-appearance="light"] .predBundesligaSection .predForecast{border-color:#bed5c7}
 html[data-veto-sport-appearance="light"] .predBundesligaSection .predForecast header>span{color:#32664e}
+
+
+/* Do not visually conflate immediate community read-through estimates with
+ * immutable, source-proven pre-kickoff prediction snapshots. */
+.predResearchPreview{display:grid;gap:14px;margin-top:18px}
+.predResearchPreviewHeader{padding:18px;border:1px dashed #638572;border-radius:12px;background:rgba(54,124,76,.08)}
+.predResearchPreviewHeader span{font-size:11px;letter-spacing:.12em;font-weight:750;color:#acdbb5}
+.predResearchPreviewHeader p{font-size:12px;line-height:1.7;color:#c3d3c8;margin:10px 0 0}
+.predResearchPreview .predForecast{border-style:dashed}
+.predResearchPreview .predForecast header>b{border:1px solid #729a78;background:rgba(123,147,102,.1);color:#d9d9b1}
+html[data-veto-sport-appearance="light"] .predResearchPreviewHeader{background:#eef7f0;border-color:#8cbea2}
+html[data-veto-sport-appearance="light"] .predResearchPreviewHeader span{color:#276044}
+html[data-veto-sport-appearance="light"] .predResearchPreviewHeader p{color:#456b56}
+@media(max-width:650px){.predResearchPreviewHeader{padding:12px}}
