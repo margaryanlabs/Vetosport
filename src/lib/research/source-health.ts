@@ -99,7 +99,7 @@ export function toSourceHealthView(input:{
   "STORAGE_OR_PROVIDER_FAILURE","UPSTREAM_REJECTED_TARGETED_IDS",
   "MALFORMED_PROVIDER_PAYLOAD","NO_ELIGIBLE_OBSERVED_FIXTURES",
   "UPSTREAM_DAILY_QUOTA","UPSTREAM_MINUTE_QUOTA","UPSTREAM_SUBSCRIPTION",
-  "UPSTREAM_AUTH","UPSTREAM_INVALID_PARAMETERS","UPSTREAM_UNCLASSIFIED",
+  "UPSTREAM_AUTH","UPSTREAM_INVALID_PARAMETERS","UPSTREAM_TIMEOUT","UPSTREAM_UNCLASSIFIED",
   "QUOTA_RESERVE","LIVE_FOOTBALL_OR_STORAGE_NOT_ENABLED",
   "NO_OVERLAPPING_FIXTURES","NO_USABLE_BOOKMAKER_QUOTES",
   "NO_LIVE_MARKETS_RETURNED","NO_RECENT_VERIFIED_SCORE_FIXTURES",
@@ -131,6 +131,8 @@ export function toSourceHealthView(input:{
    "Подписка спортивного провайдера ограничивает этот запрос.":
   lastRunCode==="UPSTREAM_AUTH"?
    "Источник отклонил авторизацию; требуется проверка подключения.":
+  lastRunCode==="UPSTREAM_TIMEOUT"?
+   "Провайдер не ответил вовремя; это не означает, что матчей не было.":
   lastRunCode==="UPSTREAM_INVALID_PARAMETERS"?
    "Источник отклонил параметры запроса; требуется исправление интеграции.":
   lastRunCode==="NO_RECENT_VERIFIED_SCORE_FIXTURES"?
