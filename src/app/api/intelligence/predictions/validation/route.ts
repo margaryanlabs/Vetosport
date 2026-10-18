@@ -4,6 +4,7 @@ import {validateForwardShadowForecasts} from "@/lib/research/forecast-validation
 import {isSelfcheckEvent} from "@/lib/live/persisted-utils";
 import type {PersistedEventStateRecord,PersistedPredictionSnapshotRecord} from "@/lib/persistence/contracts";
 export const dynamic="force-dynamic";
+export const maxDuration=60;
 const headers={"Cache-Control":"no-store","X-Robots-Tag":"noindex"};
 /** Observational forecast validation only: bounded history, no provider calls or bets. */
 export async function GET(){
