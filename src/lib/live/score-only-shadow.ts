@@ -19,6 +19,8 @@ import {getPersistence} from "@/lib/persistence/factory";
 
 export const SCORE_ONLY_FEATURE_VERSION="football.score-clock-prior-input.v1";
 export const SCORE_ONLY_MODEL_VERSION="football.score-clock-prior.v1";
+export const SPORTMONKS_SCORE_MODEL_VERSION="football.score-clock-prior.sportmonks.v1";
+export const SPORTMONKS_SCORE_FEATURE_VERSION="football.score-clock-prior-input.sportmonks.v1";
 export const SCORE_ONLY_PRIOR={home:1.35,away:1.15} as const;
 const MAX_STATE_AGE_MS=38*60_000;
 const MAX_KICKOFF_AGE_MS=125*60_000;
@@ -32,8 +34,8 @@ export type ScoreOnlyBlock="NO_SOURCE_STATE"|"STALE_SOURCE_STATE"|
  "UNTRUSTED_FIXTURE_ID"|"FIXTURE_NOT_LIVE"|"SCORE_CLOCK_INVALID"|
  "KICKOFF_OUT_OF_WINDOW"|"NONREGULATION_PERIOD"|"PROVIDER_STATE_MISMATCH";
 export interface ScoreOnlyPlan{
- eventId:string;capturedAt:string;featureVersion:typeof SCORE_ONLY_FEATURE_VERSION;
- modelVersion:typeof SCORE_ONLY_MODEL_VERSION;
+ eventId:string;capturedAt:string;featureVersion:typeof SCORE_ONLY_FEATURE_VERSION|typeof SPORTMONKS_SCORE_FEATURE_VERSION;
+ modelVersion:typeof SCORE_ONLY_MODEL_VERSION|typeof SPORTMONKS_SCORE_MODEL_VERSION;
  assumption:"FIXED_GOAL_PRIORS_NOT_TEAM_CALIBRATED";
  featureInputs:Record<string,unknown>;
  selections:Array<{marketKey:string;selectionKey:string;probability:number;fairOdds:number}>;
@@ -50,12 +52,15 @@ function relevantObservedState(event:PersistedEvent,state:PersistedEventStateRec
    kickoff>now||now-kickoff>MAX_KICKOFF_AGE_MS)return "KICKOFF_OUT_OF_WINDOW";
  if(event.event.sport!=="football"||event.event.status!=="live"||isSelfcheckEvent(event))
   return "FIXTURE_NOT_LIVE";
- if(state.eventId!==event.id||state.sourceProvider!=="api-football"||
-   state.state.source!=="api-football.fixtures.live"||state.state.status!=="live")
+ const sourceIsKnown=state.sourceProvider==="api-football"?
+   state.state.source==="api-football.fixtures.live":
+   state.sourceProvider==="sportmonks-football"?
+   state.state.source==="sportmonks.livescores":false;
+ if(state.eventId!==event.id||!sourceIsKnown||state.state.status!=="live")
   return "PROVIDER_STATE_MISMATCH";
  if(!Number.isFinite(observed)||observed>now||now-observed>MAX_STATE_AGE_MS||
   observed<kickoff)return "STALE_SOURCE_STATE";
- const providerRef=event.providerRefs?.["api-football"],stateId=state.state.providerEventId;
+ const providerRef=event.providerRefs?.[state.sourceProvider],stateId=state.state.providerEventId;
  if(typeof providerRef!=="string"||!/^[1-9]\d{0,11}$/.test(providerRef)||
   (typeof stateId!=="string"&&typeof stateId!=="number")||
   String(stateId)!==providerRef)return "UNTRUSTED_FIXTURE_ID";
@@ -96,7 +101,10 @@ export function buildScoreOnlyShadowPlan(input:{
  const {event,state}=input;
  return {ok:true,plan:{
   eventId:event.id,capturedAt:observed.observedAt,
-  featureVersion:SCORE_ONLY_FEATURE_VERSION,modelVersion:SCORE_ONLY_MODEL_VERSION,
+  featureVersion:state?.sourceProvider==="sportmonks-football"?
+   SPORTMONKS_SCORE_FEATURE_VERSION:SCORE_ONLY_FEATURE_VERSION,
+  modelVersion:state?.sourceProvider==="sportmonks-football"?
+   SPORTMONKS_SCORE_MODEL_VERSION:SCORE_ONLY_MODEL_VERSION,
   assumption:"FIXED_GOAL_PRIORS_NOT_TEAM_CALIBRATED",
   featureInputs:{
    scoreHome:observed.input.scoreHome,scoreAway:observed.input.scoreAway,
@@ -105,7 +113,8 @@ export function buildScoreOnlyShadowPlan(input:{
    prematchExpectedAwayGoals:SCORE_ONLY_PRIOR.away,
    goalPriorBasis:"UNVALIDATED_FIXED_HEURISTIC",
    quoteFeaturesUsed:false,teamStrengthFeaturesUsed:false,
-   stateSource:"api-football",stateKind:"api-football.fixtures.live",
+   stateSource:state?.sourceProvider??"UNRECOGNIZED",
+   stateKind:state?.state.source??"UNRECOGNIZED",
    providerEventId:observed.sourceId,
    sourceCapturedAt:observed.observedAt,sourceEmissionTimeVerified:false,
    sourceFingerprint:state?.fingerprint??null,
@@ -119,8 +128,10 @@ export async function runScoreOnlyShadowPrediction(eventId:string,at=new Date().
  const event=await store.getEventById(eventId);
  if(!event)return{ok:true,skipped:true,reason:"EVENT_NOT_FOUND",eventId};
  const states=await store.listRecentEventStates({eventIds:[eventId],limit:80});
- const state=states.filter(s=>s.sourceProvider==="api-football"&&
-   s.state.source==="api-football.fixtures.live"&&s.state.status==="live")
+ const state=states.filter(s=>
+   s.sourceProvider==="api-football"&&s.state.source==="api-football.fixtures.live"||
+   s.sourceProvider==="sportmonks-football"&&s.state.source==="sportmonks.livescores")
+   .filter(s=>s.state.status==="live")
    .sort((a,b)=>timestamp(b.capturedAt)-timestamp(a.capturedAt))[0];
  // A late independently recorded final disqualifies any new forward snapshot.
  if(states.some(s=>s.state.status==="finished"&&
@@ -143,7 +154,8 @@ export async function runScoreOnlyShadowPrediction(eventId:string,at=new Date().
    fairProbability:pick.probability,fairOdds:pick.fairOdds,
    modelAgreement:0,uncertainty:1,capturedAt:plan.capturedAt,
    modelSignals:[{
-    modelId:"football.score-clock-prior",
+    modelId:plan.modelVersion===SPORTMONKS_SCORE_MODEL_VERSION?
+     "football.score-clock-prior.sportmonks":"football.score-clock-prior",
     version:plan.modelVersion,
     generatedAt:plan.capturedAt,mode:"SHADOW",
     probability:pick.probability,weight:1,confidence:0,
@@ -198,6 +210,21 @@ export function scoreOnlyShadowSelfcheck(){
    pass:run({...state,state:{...state.state,score:undefined}}).ok===false},
   {name:"Late lingering LIVE label after two hours cannot authorize a fresh forecast",
    pass:run({...state,capturedAt:"2026-10-18T16:13:00Z"},event,"2026-10-18T16:14:00Z").ok===false},
+  {name:"Sportmonks exact-ID genuine period/score accepts second source, separate immutable model version",
+   pass:(()=>{
+     const ev={...event,providerRefs:{"sportmonks-football":"123456"}};
+     const s={...state,sourceProvider:"sportmonks-football",
+      state:{...state.state,source:"sportmonks.livescores"}};
+     const x=run(s,ev);
+     return x.ok&&x.plan.modelVersion===SPORTMONKS_SCORE_MODEL_VERSION&&
+      x.plan.featureInputs.stateSource==="sportmonks-football";
+   })()},
+  {name:"No fuzzy cross-source fixture ID permitted for Sportmonks observations",
+   pass:(()=>{
+     const s={...state,sourceProvider:"sportmonks-football",
+      state:{...state.state,source:"sportmonks.livescores"}};
+     return run(s,event).ok===false;
+   })()},
   {name:"Source timestamp unverified explicitly and no betting decision writes",
    pass:good.ok&&good.plan.sourceEmissionTimeVerified===false&&good.plan.decisionWrites===0},
  ];
