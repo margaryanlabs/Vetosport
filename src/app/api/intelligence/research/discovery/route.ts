@@ -2,6 +2,7 @@ import {NextResponse} from "next/server";
 import {getPersistence,persistenceConfiguration} from "@/lib/persistence/factory";
 import {isSelfcheckEvent} from "@/lib/live/persisted-utils";
 import {discoverObservedPatterns} from "@/lib/research/auto-discovery";
+import {buildHypothesisLiveMatches} from "@/lib/research/hypothesis-live-matches";
 import type {PersistedEvent,PersistedEventStateRecord} from "@/lib/persistence/contracts";
 export const dynamic="force-dynamic";
 const headers={"Cache-Control":"no-store","X-Robots-Tag":"noindex"};
@@ -48,8 +49,37 @@ export async function GET(){
   }
   const windowMayBeCapped=recent.some(b=>b.length>=100)||
    historical.some(b=>b.length>=100)||archiveLimitHit||statesCapped;
+  // Evaluate live, source-backed matches against the SAME historical rule definitions.
+  // Initial pass intentionally reads no odds; price lookup is scoped to matching fixtures.
+  const discovery=discoverObservedPatterns({events,states:snapshots,asOf:at,lookbackHours:168,maxPatterns:200});
+  const active=recentEvents.filter(e=>e.event.status==="live"&&
+   Number.isFinite(Date.parse(e.event.startsAt))&&
+   Date.parse(e.event.startsAt)<=now.getTime()&&
+   now.getTime()-Date.parse(e.event.startsAt)<=4*HOUR);
+  const unmatchedPrice=buildHypothesisLiveMatches({events:active,states:snapshots,
+   patterns:discovery.patterns,quotes:[],asOf:at,maxResults:24});
+  const ids=[...new Set(unmatchedPrice.map(x=>x.eventId))].slice(0,12);
+  let realQuotes:Awaited<ReturnType<typeof persistence.listRecentQuotesForEvents>>=[];
+  let quotesCapped=false,quoteReadFailed=false;
+  if(ids.length){
+   try{
+    realQuotes=await persistence.listRecentQuotesForEvents({eventIds:ids,limit:1000});
+    quotesCapped=realQuotes.length>=1000;
+   }catch{quoteReadFailed=true;}
+  }
+  const liveMatches=buildHypothesisLiveMatches({events:active,states:snapshots,
+   patterns:discovery.patterns,quotes:realQuotes,asOf:at,maxResults:18,
+   quotesCapped:quotesCapped||quoteReadFailed});
   return NextResponse.json({
-   ...discoverObservedPatterns({events,states:snapshots,asOf:at,lookbackHours:168}),
+   ...discovery,
+   // Preserve the existing discovery page's 24-row display; use a wider
+   // research horizon internally so live matches are not hidden by sort order.
+   patterns:discovery.patterns.slice(0,24),
+   liveMatches,
+   matchCoverage:{scannedLiveEvents:active.length,eventsWithHypothesisMatches:ids.length,
+    quotesCapped,quoteReadFailed,matched:liveMatches.length,externalProviderCalls:0,
+    forecastEdgeValidated:false},
+   
    fetchCoverage:{
     eventWindows:recentWindows+historyDays,maxEventsPerWindow:100,
     recentEvents:recentEvents.length,archivedFinishedEventsRetained:Math.min(maxArchived,historicalEvents.length),
