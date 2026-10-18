@@ -1,6 +1,7 @@
 import {assessEventMatch} from "@/lib/canonical/match";
 import type {SportEvent} from "@/lib/domain/types";
 import type {PersistedEvent} from "@/lib/persistence/contracts";
+import {isExactEplFixture} from "@/lib/paper/epl-exact-identity";
 
 /** Conservative one-to-one source identity for persistence/settlement.
  * Generic fuzzy event matching can display observations, but never attach a
@@ -25,6 +26,30 @@ export function exactOddsProviderLink(input:{
  // Two plausible canonicals are ambiguous even if one ranked slightly higher.
  return compatible.length===1?compatible[0]:null;
 }
+/** Attach the LIVE API-Football state to an existing odds-backed EPL
+ * canonical when the pre-match odds were ingested before kickoff.
+ * Exact names/orientation/time ONLY, no fuzzy settlement or status guessing.
+ * Existing live canonical takes precedence; never merge two live histories.
+ */
+export function existingEplOddsCanonicalForLive(input:{
+ candidates:PersistedEvent[];incoming:SportEvent;incomingCanonicalKey:string;
+}):PersistedEvent|null{
+ if(input.incoming.sport!=="football"||input.incoming.status!=="live"||
+  !input.incoming.home?.name||!input.incoming.away?.name)return null;
+ const kickoff=Date.parse(input.incoming.startsAt);
+ if(!Number.isFinite(kickoff))return null;
+ if(input.candidates.some(c=>c.canonicalKey===input.incomingCanonicalKey))return null;
+ const matches=input.candidates.filter(c=>{
+  if(!isExactEplFixture(c)||c.event.status==="finished"||
+   c.event.status==="suspended")return false;
+  const dt=Math.abs(Date.parse(c.event.startsAt)-kickoff);
+  if(!Number.isFinite(dt)||dt>1000)return false;
+  const assessment=assessEventMatch(c.event,input.incoming,25);
+  return assessment.accepted&&!assessment.swapped&&assessment.participantScore>=.999;
+ });
+ return matches.length===1?matches[0]:null;
+}
+
 export function exactOddsProviderLinkSelfcheck(){
  const id="a".repeat(32),incoming:SportEvent={id:"a",sport:"football",competition:"EPL",
   status:"scheduled",startsAt:"2026-10-18T16:00:00Z",
@@ -46,6 +71,15 @@ export function exactOddsProviderLinkSelfcheck(){
   {name:"Existing provider id cannot be overwritten by a different fixture",
    passed:run([{...existing,providerRefs:{"the-odds-api":"b".repeat(32)}}])===null},
   {name:"Malformed provider id is never persisted as truth",passed:run([existing],incoming,"not-a-provider-id")===null},
+  {name:"Pre-match exact EPL fixture safely anchors later live state",
+   passed:existingEplOddsCanonicalForLive({candidates:[{
+    ...existing,id:"odds-only",canonicalKey:"football::epl::odds",
+    providerRefs:{"the-odds-api":id},event:{...existing.event,competition:"EPL",status:"scheduled"},
+   }],incoming:{...incoming,status:"live"},incomingCanonicalKey:"football::premier-league-england::live"})?.id==="odds-only"},
+  {name:"Existing API-Football canonical is never duplicated",
+   passed:existingEplOddsCanonicalForLive({candidates:[existing],
+    incoming:{...incoming,status:"live"},incomingCanonicalKey:existing.canonicalKey})===null},
+
  ];
  return{passed:checks.every(x=>x.passed),checks};
 }
