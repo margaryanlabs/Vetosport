@@ -15,7 +15,7 @@ export type VerifiedForecast={
  id:string;eventId:string;match:string;competition:string;modelVersion:string;
  marketKey:string;selectionKey:string;capturedAt:string;startsAt:string;
  finalAt:string;finalScore:{home:number;away:number};
- probability:number;outcome:0|1;correct:boolean;source:"VETO_SHADOW_AND_API_FOOTBALL_FT";
+ probability:number;outcome:0|1;source:"VETO_SHADOW_AND_API_FOOTBALL_FT";
 };
 export type ModelMetrics={
  samples:number;fixtures:number;wins:number;
@@ -185,7 +185,7 @@ export function validateForwardShadowForecasts(input:{
     marketKey:item.p.marketKey,selectionKey:item.p.selectionKey,
     capturedAt:item.p.capturedAt,startsAt:event.event.startsAt,finalAt:final.capturedAt,
     finalScore:final.score,probability:item.p.fairProbability,
-    outcome:item.outcome,correct:item.outcome===1,
+    outcome:item.outcome,
     source:"VETO_SHADOW_AND_API_FOOTBALL_FT"});
   }
  }
