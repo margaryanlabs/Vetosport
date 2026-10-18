@@ -8,6 +8,7 @@
  */
 import type {PersistedEvent,PersistedEventStateRecord,PersistedPredictionSnapshotRecord} from "@/lib/persistence/contracts";
 import {certifyStoredPaperFinal} from "@/lib/paper/paper-verification";
+import {certifyPersistedOddsScore} from "@/lib/paper/odds-score-certification";
 import {observedFootballState} from "@/lib/research/auto-discovery";
 import {isSelfcheckEvent} from "@/lib/live/persisted-utils";
 
@@ -15,7 +16,7 @@ export type VerifiedForecast={
  id:string;eventId:string;match:string;competition:string;modelVersion:string;
  marketKey:string;selectionKey:string;capturedAt:string;startsAt:string;
  finalAt:string;finalScore:{home:number;away:number};
- probability:number;outcome:0|1;source:"VETO_SHADOW_AND_API_FOOTBALL_FT";
+ probability:number;outcome:0|1;source:"VETO_SHADOW_AND_API_FOOTBALL_FT"|"VETO_SHADOW_AND_ODDS_API_FT";
 };
 export type ModelMetrics={
  samples:number;fixtures:number;wins:number;
@@ -147,13 +148,22 @@ export function validateForwardShadowForecasts(input:{
  const all:VerifiedForecast[]=[];
  let eventsWithFt=0,eventsWithCandidate=0;
  for(const event of eligible){
-  const states=statesByEvent.get(event.id)??[],
-   final=certifyStoredPaperFinal(event,states,at);
+  const states=statesByEvent.get(event.id)??[];
+  const apiFinal=certifyStoredPaperFinal(event,states,at);
+  // An EPL game can be certified through a second independent exact-ID
+  // results feed when the API-Football FT endpoint is subscription-blocked.
+  // This is ONLY the same canonical fixture; never fuzzy-match teams.
+  const oddsFinal=certifyPersistedOddsScore(event,states,at);
+  if(apiFinal&&oddsFinal&&(apiFinal.score.home!==oddsFinal.score.home||
+   apiFinal.score.away!==oddsFinal.score.away))continue;
+  const final=apiFinal??oddsFinal;
   if(!final)continue;
   eventsWithFt++;
   const firstFinal=Math.min(...states.filter(s=>
-   s.sourceProvider==="api-football"&&s.state.status==="finished"&&
-   s.state.source==="api-football.fixtures.results"&&s.state.regulationTimeOnly===true)
+   s.state.status==="finished"&&s.state.regulationTimeOnly===true&&(
+    s.sourceProvider==="api-football"&&s.state.source==="api-football.fixtures.results"||
+    s.sourceProvider==="the-odds-api"&&s.state.source==="the-odds-api.scores"&&
+     s.state.providerEventId===event.providerRefs?.["the-odds-api"]))
    .map(s=>finiteTime(s.capturedAt)).filter(Number.isFinite));
   if(!Number.isFinite(firstFinal))continue;
   const kickoff=finiteTime(event.event.startsAt);
@@ -186,7 +196,7 @@ export function validateForwardShadowForecasts(input:{
     capturedAt:item.p.capturedAt,startsAt:event.event.startsAt,finalAt:final.capturedAt,
     finalScore:final.score,probability:item.p.fairProbability,
     outcome:item.outcome,
-    source:"VETO_SHADOW_AND_API_FOOTBALL_FT"});
+    source:apiFinal?"VETO_SHADOW_AND_API_FOOTBALL_FT":"VETO_SHADOW_AND_ODDS_API_FT"});
   }
  }
  const versions=[...new Set(all.map(r=>r.modelVersion))];
@@ -258,6 +268,30 @@ export function forecastValidationSelfcheck(){
   {name:"Unsupported spread contract is never graded",
    passed:fullTimeBinaryOutcome({marketKey:"football.handicap",selectionKey:"home-1.5"},
     {home:2,away:0})===null},
+  {name:"Exact-ID EPL score can settle a same-canonical-model forecast without API-Football FT",
+   passed:(()=>{
+    const providerId="a".repeat(32),fixture={...first,
+     event:{...first.event,canonicalKey:"football::epl::proof",
+      providerRefs:{"the-odds-api":providerId}},
+     states:[first.states[0],{eventId:first.event.id,sourceProvider:"the-odds-api",
+      capturedAt:first.ftAt,state:{status:"finished",source:"the-odds-api.scores",
+       providerEventId:providerId,regulationTimeOnly:true,score:{home:2,away:1}}} as PersistedEventStateRecord],
+    };
+    const scored=run([fixture]);
+    return scored.coverage.verifiedSamples===1&&
+      scored.recent[0]?.source==="VETO_SHADOW_AND_ODDS_API_FT";
+   })()},
+  {name:"Conflicting independent finals fail closed, no model score published",
+   passed:(()=>{
+    const providerId="a".repeat(32),fixture={...first,
+     event:{...first.event,canonicalKey:"football::epl::proof",
+      providerRefs:{"the-odds-api":providerId}},
+     states:[...first.states,{eventId:first.event.id,sourceProvider:"the-odds-api",
+      capturedAt:first.ftAt,state:{status:"finished",source:"the-odds-api.scores",
+       providerEventId:providerId,regulationTimeOnly:true,score:{home:0,away:4}}} as PersistedEventStateRecord],
+    };
+    return run([fixture]).coverage.verifiedSamples===0;
+   })()},
   {name:"No fabricated positive edge or execution verification",
    passed:base.cohorts.every(x=>x.historicalEdgeValidated===false)&&base.recent.every(x=>x.source==="VETO_SHADOW_AND_API_FOOTBALL_FT")},
  ];

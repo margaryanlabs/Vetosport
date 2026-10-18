@@ -118,11 +118,33 @@ export class SupabaseRestPersistence implements VetoPersistence {
     return (text ? JSON.parse(text) : undefined) as T;
   }
 
+  /** Preserve foreign fixture identifiers during a canonical upsert.
+   * Replacing provider_refs with only the latest input used to erase The Odds
+   * API score ID after the next API-Football live-state refresh. */
+  private mergeProviderRefs(existing:Record<string,string>|null|undefined,
+    providerRef?:{provider:string;id:string}):Record<string,string>{
+    const refs:Record<string,string>={};
+    for(const [key,value] of Object.entries(existing??{})){
+      if(typeof value==="string"&&value.trim())refs[key]=value;
+    }
+    if(providerRef)refs[providerRef.provider]=providerRef.id;
+    return refs;
+  }
+
   async upsertEvent(
     event: SportEvent,
     canonicalKey: string,
     providerRef?: { provider: string; id: string },
   ): Promise<PersistedEvent> {
+    // Important: PostgREST merge-duplicates overwrites JSONB columns wholesale;
+    // a second provider's upsert MUST NOT erase the first provider's exact ID.
+    const lookup=new URLSearchParams();
+    lookup.set("canonical_key",`eq.${canonicalKey}`);
+    lookup.set("select","provider_refs");
+    lookup.set("limit","1");
+    const stored=await this.request<Array<{provider_refs?:Record<string,string>|null}>>(
+      this.tablePath("sports_events",lookup.toString()),{method:"GET"});
+    const providerRefs=this.mergeProviderRefs(stored[0]?.provider_refs,providerRef);
     const body = {
       canonical_key: canonicalKey,
       sport: event.sport,
@@ -133,9 +155,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
       home_participant_name: event.home?.name,
       away_participant_id: event.away?.id,
       away_participant_name: event.away?.name,
-      provider_refs: providerRef
-        ? { [providerRef.provider]: providerRef.id }
-        : {},
+      provider_refs:providerRefs,
       updated_at: new Date().toISOString(),
     };
 
@@ -154,6 +174,7 @@ export class SupabaseRestPersistence implements VetoPersistence {
     return {
       id: row.id,
       canonicalKey: row.canonical_key,
+      providerRefs,
       event,
     };
   }

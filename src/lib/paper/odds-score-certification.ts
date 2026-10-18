@@ -3,6 +3,7 @@
  * Only standard EPL 90-minute full-time results are admissible to this lane.
  */
 import type {PersistedEvent,PersistedEventStateRecord} from "@/lib/persistence/contracts";
+import {isExactEplFixture} from "@/lib/paper/epl-exact-identity";
 export type OddsScoreCandidate={externalId:string;startsAt:string;
  home:string;away:string;score:{home:number;away:number};
  observedAt:string;source:"the-odds-api.scores";regulationTimeOnly:true};
@@ -34,7 +35,7 @@ export function parseOddsApiScore(value:unknown,asOf:string):OddsScoreCandidate|
 }
 export function matchOddsApiScore(e:PersistedEvent,score:OddsScoreCandidate):boolean{
  if(e.event.sport!=="football"||e.event.status==="finished"||
-  !e.canonicalKey.startsWith("football::epl::")||
+  !isExactEplFixture(e)||
   e.providerRefs?.["the-odds-api"]!==score.externalId||
   Date.parse(e.event.startsAt)!==Date.parse(score.startsAt)||
   !e.event.home?.name||!e.event.away?.name)return false;
@@ -47,7 +48,7 @@ export function certifyPersistedOddsScore(e:PersistedEvent|null,
  states:PersistedEventStateRecord[],asOf:string):{
  score:{home:number;away:number};capturedAt:string;provider:"the-odds-api"}|null{
  if(!e||e.event.sport!=="football"||e.event.status!=="finished"||
-  !e.canonicalKey.startsWith("football::epl::"))return null;
+  !isExactEplFixture(e))return null;
  const owner=e.providerRefs?.["the-odds-api"],kickoff=Date.parse(e.event.startsAt),now=Date.parse(asOf);
  if(!owner||!Number.isFinite(kickoff)||!Number.isFinite(now)||kickoff>now-60*60_000)return null;
  const ft=states.filter(r=>r.eventId===e.id&&r.sourceProvider==="the-odds-api"&&

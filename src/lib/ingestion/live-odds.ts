@@ -1,5 +1,6 @@
 import { canonicalEventKey } from "@/lib/canonical/id";
 import { chooseBestEventMatch } from "@/lib/canonical/match";
+import {exactOddsProviderLink} from "@/lib/canonical/exact-source-identity";
 import { journalizeMarketQuotes } from "@/lib/data-plane/journalize";
 import { getPersistence } from "@/lib/persistence/factory";
 import { getTheOddsApiClient } from "@/lib/providers/factory";
@@ -38,11 +39,23 @@ export const ingestLiveOdds = async (input: {
       toleranceMinutes: 25,
     });
     const match = chooseBestEventMatch(candidates, incoming);
+    // Fuzzy matching is useful for browsing, but an exact sportsbook score
+    // identifier is a durable claim. Require one uniquely oriented match,
+    // essentially identical teams, and kickoff within one second.
+    const linked=match?exactOddsProviderLink({
+      candidates,incoming,externalId:externalEvent.id,
+    }):null;
 
     let eventId: string;
 
-    if (match) {
-      eventId = match.candidate.id;
+    if (linked) {
+      // Reuse the observed state unchanged: a scheduled bookmaker listing
+      // must never downgrade an actually LIVE football fixture to scheduled.
+      // upsertEvent preserves existing api-football provider_refs.
+      const updated=await persistence.upsertEvent(linked.event,linked.canonicalKey,{
+        provider:client.id,id:externalEvent.id,
+      });
+      eventId=updated.id;
     } else {
       const key = canonicalEventKey({
         sport,
@@ -62,6 +75,7 @@ export const ingestLiveOdds = async (input: {
       );
     }
 
+    if(match&&!linked)warnings.push("Skipped ambiguous source identity: wrote independent odds fixture instead of attaching an unverified FT provider id.");
     const quotes = client.normalizeQuotes(externalEvent);
 
     journalRows += await persistence.appendTruthJournal(

@@ -4,6 +4,7 @@ export const sourceDescriptors=[
  {id:"api-football",label:"Игровые состояния",cadenceHours:0.5},
  {id:"api-football-finals",label:"Окончательные результаты",cadenceHours:4},
  {id:"api-football-live-odds",label:"Рыночные котировки",cadenceHours:2},
+ {id:"the-odds-api-scores",label:"EPL FT · независимый источник",cadenceHours:24},
 ] as const;
 export type ProviderReadiness="active"|"empty"|"waiting"|"degraded"|"stale"|"unknown";
 export interface SafeSourceRun{
@@ -60,7 +61,7 @@ export function toSourceHealthView(input:{
   noVerifiedFixtures?"waiting":noMarkets?"empty":
   latest?.status==="healthy"?"active":"degraded";
  // Never forward provider message, errors, metadata, ids or quota; metrics only.
- const stored=asSafeCount(info.finishedStored??info.stored??info.quotesWritten);
+ const stored=asSafeCount(info.finishedStored??info.certified??info.stored??info.quotesWritten);
  const scanned=asSafeCount(info.scannedEvents??info.upstreamFixtures??info.providerRows);
  const pending=descriptor.id==="api-football-finals"
   ?asSafeCount(info.eligibleCandidates??info.candidateCount):null;
@@ -148,6 +149,8 @@ export function toSourceHealthView(input:{
   state==="empty"?"Источник ответил без новых рыночных данных. Проверять нечего, цены отсутствуют.":
   state==="waiting"?"Нет подходящих наблюдений: внешний источник коэффициентов не запрашивался.":
   state==="degraded"?"Последний запуск сообщил об ограничении, ошибке или неполных данных.":
+  descriptor.id==="the-odds-api-scores"?
+   "EPL: отдельный платёжно-ограниченный источник FT. Результат только по точному ID и датам, без доказанного преимущества.":
   descriptor.id==="api-football-finals"?
    "Проверка окончательных результатов выполнена. Положительная доходность не следует из количества FT.":
    "Последняя проверка источника прошла. Это не гарантирует полноту и секундную свежесть.");
@@ -157,7 +160,7 @@ export function toSourceHealthView(input:{
   if(!Number.isFinite(t)||t>now||t<=0)return[];
   const m=run.metadata??{};
   const recorded=asSafeCount(descriptor.id==="api-football-live-odds"&&m.unsuspendedWritten!==undefined?
-   m.unsuspendedWritten:(m.finishedStored??m.stored??m.quotesWritten));
+   m.unsuspendedWritten:(m.finishedStored??m.certified??m.stored??m.quotesWritten));
   const outcome:SafeSourceRun["outcome"]=m.failureCode==="NO_RECENT_VERIFIED_SCORE_FIXTURES"&&m.providerCalled===false?
     "waiting":run.status!=="healthy"?"degraded":
     descriptor.id==="api-football-live-odds"&&recorded===0?"empty":

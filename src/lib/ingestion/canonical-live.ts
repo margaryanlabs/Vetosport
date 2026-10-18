@@ -6,6 +6,7 @@ import type {
   SportEvent,
 } from "@/lib/domain/types";
 import { canonicalEventKey } from "@/lib/canonical/id";
+import {existingEplOddsCanonicalForLive} from "@/lib/canonical/exact-source-identity";
 import {
   journalizeEventState,
   journalizeEvidence,
@@ -377,7 +378,7 @@ export const ingestCanonicalLivePayload = async (
   input: CanonicalLivePayload,
 ) => {
   const persistence = getPersistence();
-  const canonicalKey = canonicalEventKey({
+  const incomingCanonicalKey = canonicalEventKey({
     sport: input.event.sport,
     competition: input.event.competition,
     startsAt: input.event.startsAt,
@@ -385,6 +386,17 @@ export const ingestCanonicalLivePayload = async (
     away: input.event.away?.name,
     participants: input.event.participants?.map((item) => item.name),
   });
+  let canonicalKey=incomingCanonicalKey;
+  if(input.provider==="api-football"&&input.event.sport==="football"&&
+     input.event.status==="live"){
+    const candidates=await persistence.findEventsAround({
+      sport:"football",startsAt:input.event.startsAt,toleranceMinutes:2,
+    });
+    const oddsCanonical=existingEplOddsCanonicalForLive({
+      candidates,incoming:input.event,incomingCanonicalKey,
+    });
+    if(oddsCanonical)canonicalKey=oddsCanonical.canonicalKey;
+  }
 
   const persisted = await persistence.upsertEvent(
     input.event,
