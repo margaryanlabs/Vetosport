@@ -3,6 +3,7 @@ import type {ProviderHealthSample} from "@/lib/persistence/contracts";
 export const sourceDescriptors=[
  {id:"api-football",label:"Игровые состояния",cadenceHours:0.5},
  {id:"sportmonks-football",label:"Sportmonks · альтернативный live",cadenceHours:0.1},
+ {id:"openligadb-community",label:"OpenLigaDB · Бундеслига (до матча)",cadenceHours:12},
  {id:"api-football-finals",label:"Окончательные результаты",cadenceHours:4},
  {id:"api-football-live-odds",label:"Рыночные котировки",cadenceHours:2},
  {id:"the-odds-api-scores",label:"EPL FT · независимый источник",cadenceHours:24},
@@ -55,6 +56,8 @@ export function toSourceHealthView(input:{
  // sampling often reaches an empty upstream response.
  const noSportmonksScores=descriptor.id==="sportmonks-football"&&
   latest?.status==="healthy"&&info.verifiedLiveStates===0;
+ const noCommunityPredictions=descriptor.id==="openligadb-community"&&
+  latest?.status==="healthy"&&info.predictionsPersisted===0;
  const noModelSamples=descriptor.id==="veto-shadow-score-only"&&
   latest?.status==="healthy"&&info.predictionsPersisted===0;
  const noMarkets=descriptor.id==="api-football-live-odds"&&
@@ -64,7 +67,7 @@ export function toSourceHealthView(input:{
   info.failureCode==="NO_RECENT_VERIFIED_SCORE_FIXTURES"&&
   info.providerCalled===false;
  const state:ProviderReadiness=ageMinutes===null?"unknown":stale?"stale":
-  noVerifiedFixtures?"waiting":noSportmonksScores?"waiting":noModelSamples?"waiting":noMarkets?"empty":
+  noVerifiedFixtures?"waiting":noSportmonksScores?"waiting":noCommunityPredictions?"waiting":noModelSamples?"waiting":noMarkets?"empty":
   latest?.status==="healthy"?"active":"degraded";
  // Never forward provider message, errors, metadata, ids or quota; metrics only.
  const stored=asSafeCount(info.verifiedLiveStates??info.predictionsPersisted??info.finishedStored??info.certified??info.stored??info.quotesWritten);
@@ -108,7 +111,7 @@ export function toSourceHealthView(input:{
   "NO_LIVE_MARKETS_RETURNED","NO_RECENT_VERIFIED_SCORE_FIXTURES",
   "ALL_MARKETS_SUSPENDED",
   "STORAGE_WRITE_FAILURE","API_FOOTBALL_LIVE_ODDS_BAD_BODY",
-  "SPORTMONKS_NOT_CONFIGURED","SPORTMONKS_AUTH","SPORTMONKS_SUBSCRIPTION","SPORTMONKS_QUOTA","SPORTMONKS_UPSTREAM",
+  "OPENLIGADB_SOURCE_OR_STORAGE_FAILURE","SPORTMONKS_NOT_CONFIGURED","SPORTMONKS_AUTH","SPORTMONKS_SUBSCRIPTION","SPORTMONKS_QUOTA","SPORTMONKS_UPSTREAM",
   "UPSTREAM_HTTP_400","UPSTREAM_HTTP_401","UPSTREAM_HTTP_403",
   "UPSTREAM_HTTP_404","UPSTREAM_HTTP_429","UPSTREAM_HTTP_500",
   "UPSTREAM_HTTP_502","UPSTREAM_HTTP_503","UPSTREAM_HTTP_504",
@@ -163,7 +166,11 @@ export function toSourceHealthView(input:{
    "Достигнут резерв бесплатной квоты; новые цены не записывались.":
   lastRunCode==="STORAGE_WRITE_FAILURE"?
    "Ошибка сохранения проверенной котировки; запись и подтверждение рынков неполные.":null;
- const note=quotaHint??(descriptor.id==="sportmonks-football"&&state==="waiting"?
+ const note=quotaHint??(descriptor.id==="openligadb-community"&&state==="waiting"?
+   "Бесплатный источник OpenLigaDB работает, но пока нет матчей с достаточной подтверждённой историей для предматчевого прогноза. Это НЕ LIVE-трансляция.":
+  descriptor.id==="openligadb-community"&&state==="active"?
+   "Предматчевые Poisson-оценки Бундеслиги из реальных результатов сообщества. Не калибровано, LIVE-таймер и прибыльность не подтверждены.":
+  descriptor.id==="sportmonks-football"&&state==="waiting"?
    "Sportmonks доступен, но пока не передал ни одного матча с полным проверенным score/clock.":
   descriptor.id==="sportmonks-football"&&state==="active"?
    "Состояния Sportmonks получены с точным ID, текущим счётом и периодом; это не подтверждение силы модели.":
