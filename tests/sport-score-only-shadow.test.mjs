@@ -7,8 +7,10 @@ test("Real source-only shadow model forecasts do not need bookmaker quotes or fa
  const model=read("src/lib/live/score-only-shadow.ts");
  assert.match(model,/SCORE_ONLY_MODEL_VERSION="football.score-clock-prior.v1"/);
  assert.match(model,/SCORE_ONLY_PRIOR=\{home:1\.35,away:1\.15\}/);
- assert.match(model,/state.sourceProvider!=="api-football"/);
- assert.match(model,/state\.state\.source!=="api-football\.fixtures\.live"/);
+ assert.match(model,/state.sourceProvider==="api-football"/);
+ assert.match(model,/state.sourceProvider==="sportmonks-football"/);
+ assert.match(model,/state.state.source==="api-football.fixtures.live"/);
+ assert.match(model,/state.state.source==="sportmonks.livescores"/);
  assert.match(model,/String\(stateId\)!==providerRef/);
  assert.match(model,/now-observed>MAX_STATE_AGE_MS/);
  assert.match(model,/observedScore\.minute>89/);
