@@ -24,7 +24,7 @@ export async function GET(){
    quotesCapped:false,externalProviderCalls:0,automaticBettingEnabled:false},{headers});
   const quotes=await store.listRecentQuotesForEvents({eventIds:events.map(e=>e.id),limit:1500});
   const quotesCapped=quotes.length>=1500;
-  const rows=findPriceDispersion({events,quotes,asOf,quotesCapped,maxResults:16});
+  const rows=findPriceDispersion({events,quotes,asOf,quotesCapped,limit:16});
   return NextResponse.json({ok:true,source:"PERSISTED_ONLY",asOf,rows,
    fixturesScanned:events.length,scanMayBeCapped:windows.some(w=>w.length>=100),
    quotesScanned:quotes.length,quotesCapped,
