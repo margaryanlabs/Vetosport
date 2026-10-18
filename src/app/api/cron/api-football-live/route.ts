@@ -67,11 +67,14 @@ export async function GET(request:Request){
     // obscuring the real cause of missing models and FT observations.
     // Publish only allowlisted failure categories, never raw API payloads or keys.
     const message=error instanceof Error?error.message:"";
-    const failureCode=/HTTP 401\b/.test(message)?"UPSTREAM_AUTH":
-      /HTTP 403\b/.test(message)?"UPSTREAM_HTTP_403":
-      /HTTP 429\b/.test(message)?"UPSTREAM_HTTP_429":
-      /HTTP 5[0-9][0-9]\b/.test(message)?"UPSTREAM_UNCLASSIFIED":
-      "STORAGE_OR_PROVIDER_FAILURE";
+    const safeCodes=new Set([
+      "UPSTREAM_SUBSCRIPTION","UPSTREAM_DAILY_QUOTA","UPSTREAM_MINUTE_QUOTA",
+      "UPSTREAM_AUTH","UPSTREAM_INVALID_PARAMETERS","UPSTREAM_TIMEOUT",
+      "UPSTREAM_UNCLASSIFIED","MALFORMED_PROVIDER_PAYLOAD",
+    ]);
+    const failureCode=safeCodes.has(message)?message:
+      error instanceof Error&&/timeout|aborted|deadline/i.test(error.message)?
+       "UPSTREAM_TIMEOUT":"STORAGE_OR_PROVIDER_FAILURE";
     try{
       await getPersistence().appendProviderHealth({
         providerId:"api-football",status:"degraded",checkedAt:new Date().toISOString(),
