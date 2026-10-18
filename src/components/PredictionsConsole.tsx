@@ -55,6 +55,15 @@ type ModelProof={ok:boolean;source:string;selected:ModelProofCohort|null;selecte
  coverage:{eventsScanned:number;eventsWithFt:number;predictionRowsRead:number;verifiedSamples:number;
  scanMayBeCapped:boolean;sampleMayBeCapped:boolean};
  profitableStrategyVerified:false;historicalEdgeValidated:false;lookbackDays:number};
+type MarketReference={eventId:string;match:string;competition:string;startsAt:string;
+ sampleAt:string;latestSourceAt:string;bookmakers:number;source:"PERSISTED_THE_ODDS_API";
+ probability:{home:number;draw:number;away:number};
+ minMax:{home:[number,number];draw:[number,number];away:[number,number]};
+ overroundPct:{min:number;max:number;median:number};freshestBookmakers:string[];
+ confidence:"MARKET_REFERENCE_ONLY";independentVetoModel:false;
+ executablePriceVerified:false;profitabilityVerified:false};
+type MarketReferenceResponse={ok:boolean;source:string;asOf:string;rows:MarketReference[];
+ quotesScanned:number;fixturesScanned:number;eventsCapped:boolean;quotesCapped:boolean;independentModel:false};
 type OperationalSource={id:string;label:string;state:"active"|"empty"|"waiting"|"degraded"|"stale"|"unknown";
  updatedAt:string|null;lastRunCode:string|null;ageMinutes:number|null;note:string};
 type OperationalFeed={source:"PERSISTED_ONLY";providers:OperationalSource[]};
@@ -89,7 +98,8 @@ export function PredictionsConsole(){
  const [anomalies,setAnomalies]=useState<AnomalyResponse|null>(null);
  const [proof,setProof]=useState<ModelProof|null>(null);
  const [sourceHealth,setSourceHealth]=useState<OperationalFeed|null>(null);
- const [statuses,setStatuses]=useState<Record<string,Status>>({paper:"loading",discovery:"loading",radar:"loading",shadow:"loading",anomalies:"loading",proof:"loading",sources:"loading"});
+ const [benchmark,setBenchmark]=useState<MarketReferenceResponse|null>(null);
+ const [statuses,setStatuses]=useState<Record<string,Status>>({paper:"loading",discovery:"loading",radar:"loading",shadow:"loading",anomalies:"loading",proof:"loading",sources:"loading",benchmark:"loading"});
  const [tab,setTab]=useState<PredictionTab>("all");
  const [cycle,setCycle]=useState(0);
  const [now,setNow]=useState(0);
@@ -108,6 +118,7 @@ export function PredictionsConsole(){
    {key:"discovery",url:"/api/intelligence/research/discovery"},
    {key:"radar",url:"/api/intelligence/research/opportunity-radar"},
    {key:"shadow",url:"/api/intelligence/predictions/shadow"},
+   {key:"benchmark",url:"/api/intelligence/predictions/market-reference"},
    {key:"anomalies",url:"/api/intelligence/predictions/anomalies"},
    {key:"proof",url:"/api/intelligence/predictions/validation"},
    {key:"sources",url:"/api/intelligence/research/source-health"},
@@ -119,7 +130,15 @@ export function PredictionsConsole(){
     .then(async response=>{if(!response.ok)throw Error("SOURCE_UNAVAILABLE");return response.json();})
     .then((value:unknown)=>{
      if(!alive)return;
-     if(key==="sources"){
+     if(key==="benchmark"){
+      const item=value as MarketReferenceResponse;
+      if(item.ok!==true||item.source!=="PERSISTED_ONLY"||
+       !Array.isArray(item.rows)||item.independentModel!==false||
+       item.rows.some(x=>x.independentVetoModel!==false||
+        x.executablePriceVerified!==false||x.profitabilityVerified!==false))
+       throw Error("MARKET_REFERENCE_INVALID");
+      setBenchmark(item);
+    }else if(key==="sources"){
       const item=value as OperationalFeed;
       if(item.source!=="PERSISTED_ONLY"||!Array.isArray(item.providers))throw Error("SOURCE_HEALTH_INVALID");
       setSourceHealth(item);
@@ -160,6 +179,7 @@ export function PredictionsConsole(){
      if(key==="anomalies")setAnomalies(null);
      if(key==="proof")setProof(null);
      if(key==="sources")setSourceHealth(null);
+     if(key==="benchmark")setBenchmark(null);
      update(key,"error");
     });
   });
@@ -176,6 +196,7 @@ export function PredictionsConsole(){
  const liveHypotheses=(discovery?.liveMatches??[]).filter(x=>now>0&&Number.isFinite(Date.parse(x.observedAt))&&
   Date.parse(x.observedAt)<=now&&now-Date.parse(x.observedAt)<=120_000);
  const stats=[
+  {name:"РЫНОЧНЫХ ОРИЕНТИРОВ",value:statuses.benchmark==="ready"?String(benchmark?.rows.length??0):"—",detail:"Без маржи, НЕ независимая модель"},
   {name:"АНОМАЛИЙ КОТИРОВОК",value:statuses.anomalies==="ready"?String(anomalies?.rows.length??0):"—",detail:"Необычный разброс цен, не EDGE"},
   {name:"СВЕЖИХ МОДЕЛЬНЫХ ОЦЕНОК",value:statuses.shadow==="ready"?String(shadow?.rows.length??0):"—",detail:"Shadow-модель на реальных событиях"},
   {name:"ПРОГНОЗОВ МОДЕЛИ",value:statuses.paper==="ready"?String(tickets.length):"—",detail:"Записаны заранее, независимая модель"},
@@ -194,7 +215,7 @@ export function PredictionsConsole(){
    <p>Здесь — не список популярных ставок и не подборка высоких коэффициентов.
     Только заранее зафиксированные прогнозы моделей VETO на реальные события,
     наблюдаемые ситуации и исследуемые закономерности. Каждый вывод можно проверить после матча.</p>
-   <div className="predHeroActions"><a href="#predNow">Прогнозы VETO ↓</a><a href="#predLinked">Совпадения гипотез ↓</a><a href="#predAnomalies">Аномалии и радар ↓</a><a href="#predProof">Проверка моделей ↓</a></div>
+   <div className="predHeroActions"><a href="#predNow">Прогнозы VETO ↓</a><a href="#predBenchmark">Контроль рынка ↓</a><a href="#predLinked">Совпадения гипотез ↓</a><a href="#predAnomalies">Аномалии и радар ↓</a><a href="#predProof">Проверка моделей ↓</a></div>
   </section>
   <section className="predStats" aria-label="Состояние исследований">
    {stats.map(s=><article key={s.name}><span>{s.name}</span><strong>{s.value}</strong><small>{s.detail}</small></article>)}
@@ -255,6 +276,50 @@ export function PredictionsConsole(){
      <footer><small>Вероятности пока условны: реальный матч ≠ доказанная точность или ценовое преимущество.</small>
       <Link href={"/?view=check&event="+encodeURIComponent(x.eventId)}>Разобрать ↗</Link></footer>
     </article>)}</div>}
+  </section>
+  <section className="predSection predBenchmarkSection" id="predBenchmark">
+   <div className="predSectionHead"><div>
+    <span>MARKET REFERENCE / NO INDEPENDENT MODEL</span><h2>Рыночный ориентир перед матчами</h2>
+    <p>Когда спортивный live-источник недоступен, мы можем показать реальные сохранённые котировки
+      предстоящих матчей EPL. Отдельно рассчитываем вероятности <b>из рынка</b>, убрав букмекерскую маржу.
+      Это объективный контроль для сравнения с будущими моделями VETO, но <b>не новый прогноз VETO</b>
+      и не сигнал для ставки.</p>
+   </div><a className="predLink" href="/api/intelligence/predictions/market-reference/selfcheck" target="_blank" rel="noopener noreferrer">Проверить расчёты ↗</a></div>
+   {statuses.benchmark!=="ready"?<div className="predEmpty" role="status">
+     {statuses.benchmark==="error"?"Не удалось прочитать базу сохранённых рыночных котировок.":
+      "Проверяем полные котировки 1X2 минимум двух независимых букмекеров…"}</div>:
+    !benchmark?.rows.length?<div className="predEmpty"><b>Сейчас нет полного рыночного ориентира.</b>
+      <p>Для расчёта нужны полный набор «1–X–2» у каждого из двух разных букмекеров,
+      одна временная выборка, подтверждённый ID матча и актуальные цены до начала события.
+      Пустоту не заполняем предположениями.</p>
+      <p>Матчей проверено: {benchmark?.fixturesScanned??0}; котировок: {benchmark?.quotesScanned??0}.
+      {benchmark?.eventsCapped||benchmark?.quotesCapped?" Источник ограничил объём чтения — расчёт заблокирован.":""}</p>
+      <Link href="/research/paper-lab">Смотреть настоящие бумажные эксперименты ↗</Link>
+    </div>:
+    <div className="predForecastGrid">
+     {benchmark.rows.slice(0,12).map(m=><article className="predForecast" key={m.eventId}>
+      <header><span>THE ODDS API / 1X2 DEVIGGED</span>
+       <b className="pending">КОНТРОЛЬ РЫНКА</b></header>
+      <small>{m.competition} · начало {time(m.startsAt)}</small><h3>{m.match}</h3>
+      <p className="predOutcome">Общерыночная оценка трёх исходов</p>
+      <div className="predNumbers">
+       <div><small>ПОБЕДА 1</small><strong>{percent(m.probability.home)}</strong></div>
+       <div><small>НИЧЬЯ X</small><strong>{percent(m.probability.draw)}</strong></div>
+       <div><small>ПОБЕДА 2</small><strong>{percent(m.probability.away)}</strong></div>
+      </div>
+      <div className="predForecastProvenance">
+       <span>Полные наборы 1X2: {m.bookmakers} букмекеров</span>
+       <span>Снимок рынка: {time(m.sampleAt)} · обновление источника {time(m.latestSourceAt)}</span>
+       <span>Диапазон исходных марж: {number(m.overroundPct.min,2)}–{number(m.overroundPct.max,2)}%</span>
+       <span>Источники: {m.freshestBookmakers.join(", ")}</span>
+      </div>
+      <footer>
+       <small>Вероятности выведены из котировок, не рассчитаны независимой моделью VETO.
+       Исполнение, доходность и преимущество не проверены.</small>
+       <Link href={"/?view=check&event="+encodeURIComponent(m.eventId)}>Матч ↗</Link>
+      </footer>
+     </article>)}
+    </div>}
   </section>
   <section className="predSection predProofSection" id="predProof">
    <div className="predSectionHead"><div><span>02 / MODEL VERIFICATION · REAL FULL TIME</span>
